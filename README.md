@@ -4,8 +4,10 @@
 
 Uma aplicação web client-side interna para gerenciar, documentar e acompanhar casos de teste de software.
 
-![Captura de Tela da Aplicação]([https://github.com/beyondBitsLtda/Controle-de-Teste/blob/main/print.png]))
-*(Recomendação: Substitua o link acima por uma captura de tela real da sua aplicação)*
+<p align="center">
+ <img width="1000" src="print.png" alt="icon"/>
+</p>
+
 
 ## 📜 Sobre o Projeto
 
