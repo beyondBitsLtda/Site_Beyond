@@ -4479,4 +4479,52 @@ function executeSelectedRunsExport(macroId) {
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
     closeModal('export-modal');
+
+
+      // Imports do Firebase
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+      import { 
+        getFirestore, 
+        collection, 
+        addDoc, 
+        getDocs 
+      } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+      // Config do seu projeto
+      const firebaseConfig = {
+        apiKey: "AIzaSyBt16B6FnPwft82OEkPA-dnBwIlNt1RsqU",
+        authDomain: "beyond-test-4c87a.firebaseapp.com",
+        projectId: "beyond-test-4c87a",
+        storageBucket: "beyond-test-4c87a.firebasestorage.app",
+        messagingSenderId: "467835877240",
+        appId: "1:467835877240:web:b35759acb6e604275cba8d",
+        measurementId: "G-MWZNHFL7JW"
+      };
+
+      // Inicializa Firebase
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      window.db = db;
+
+      // 🔍 TESTE
+      async function testarFirebase() {
+        console.log("🔍 Testando conexão com Firebase...");
+
+        try {
+          const ref = await addDoc(collection(db, "teste_conexao"), {
+            funcionando: true,
+            timestamp: new Date()
+          });
+
+          console.log("🔥 Documento criado! ID:", ref.id);
+
+          const snapshot = await getDocs(collection(db, "teste_conexao"));
+          console.log("📚 Documentos lidos:", snapshot.size);
+        } catch (erro) {
+          console.error("❌ Firebase NÃO conectou!", erro);
+        }
+      }
+
+      testarFirebase()
+
 }
