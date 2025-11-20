@@ -559,8 +559,7 @@
         </div>
     </div>
 
-   <!-- Inicialização do Firebase + teste -->
-    <!-- Inicialização do Firebase + teste -->
+     <!-- Inicialização do Firebase + teste -->
     <script type="module">
       // Imports do Firebase
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
@@ -584,17 +583,14 @@
 
       // Inicializa Firebase
       const app = initializeApp(firebaseConfig);
-
-      // Inicializa Firestore e expõe no window
       const db = getFirestore(app);
       window.db = db;
 
-      // 🔍 TESTE: criar e ler um documento no Firestore
+      // 🔍 TESTE
       async function testarFirebase() {
         console.log("🔍 Testando conexão com Firebase...");
 
         try {
-          // Criar documento de teste
           const ref = await addDoc(collection(db, "teste_conexao"), {
             funcionando: true,
             timestamp: new Date()
@@ -602,7 +598,6 @@
 
           console.log("🔥 Documento criado! ID:", ref.id);
 
-          // Ler documentos
           const snapshot = await getDocs(collection(db, "teste_conexao"));
           console.log("📚 Documentos lidos:", snapshot.size);
         } catch (erro) {
@@ -613,10 +608,8 @@
       testarFirebase();
     </script>
 
-    <!-- SEU JS NORMAL (SEM import dentro dele) -->
     <script src="script.js"></script>
-  </body>
-</html>
+
 
 
 <!-- SEU JS NORMAL (SEM import aqui dentro) -->
