@@ -4319,7 +4319,7 @@ function renderMacroProjectsList(containerId, mode = 'manage') {
             actionButtons = `<button class="btn btn-load" onclick="showRunListForMacroProject('${mp.macroId}')">Carregar</button>`;
         }
 
-        item.innerHTML = `  
+        item.innerHTML = `
             <div class="macro-project-info">
                 <strong>${mp.macroName}</strong>
                 <span>Criado em: ${date} | ${mp.runs.length} execução(ões)</span>
