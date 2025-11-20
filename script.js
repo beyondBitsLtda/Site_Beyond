@@ -4482,14 +4482,15 @@ function executeSelectedRunsExport(macroId) {
 
 };
 
-// Imports do Firebase
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-      import { 
-        getFirestore, 
-        collection, 
-        addDoc, 
-        getDocs 
-      } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+(async function initializeFirebase() {
+      // Imports do Firebase usando importação dinâmica para evitar erro de módulo
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js");
+      const {
+        getFirestore,
+        collection,
+        addDoc,
+        getDocs
+      } = await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js");
 
       // Config do seu projeto
       const firebaseConfig = {
@@ -4526,4 +4527,5 @@ function executeSelectedRunsExport(macroId) {
         }
       }
 
-      testarFirebase()
+      testarFirebase();
+})();
