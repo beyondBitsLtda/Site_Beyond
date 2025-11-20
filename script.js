@@ -4480,4 +4480,3 @@ function executeSelectedRunsExport(macroId) {
     URL.revokeObjectURL(link.href);
     closeModal('export-modal');
 }
-
