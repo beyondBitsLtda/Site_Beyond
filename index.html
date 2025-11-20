@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Plano de Testes</title>
-    <a href="sobre.html">Ir para a Página Sobre</a>
+   
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.7.0/mammoth.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 </head>
 <body>
-
+     <a href="sobre.html">Ir para a Página Sobre</a>
     <div class="background-wallpaper">
         <svg class="triangle-1" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="0,0 100,0 0,100"></polygon></svg>
         <svg class="triangle-2" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="0,100 100,100 50,0"></polygon></svg>
@@ -559,6 +559,32 @@
         </div>
     </div>
 
+    <!-- Inicialização do Firebase -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-analytics.js";
+      // Se quiser Firestore, já deixa importado:
+      // import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBt16B6FnPwft82OEkPA-dnBwIlNt1RsqU",
+        authDomain: "beyond-test-4c87a.firebaseapp.com",
+        projectId: "beyond-test-4c87a",
+        storageBucket: "beyond-test-4c87a.firebasestorage.app",
+        messagingSenderId: "467835877240",
+        appId: "1:467835877240:web:b35759acb6e604275cba8d",
+        measurementId: "G-MWZNHFL7JW"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+
+      // Se for usar Firestore:
+      // const db = getFirestore(app);
+      // window.db = db; // deixa disponível pro script.js
+    </script>
+
+    <!-- SEU JS, DEPOIS DO FIREBASE -->
     <script src="script.js"></script>
-</body>
+  </body>
 </html>
