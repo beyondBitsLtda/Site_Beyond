@@ -4480,8 +4480,9 @@ function executeSelectedRunsExport(macroId) {
     URL.revokeObjectURL(link.href);
     closeModal('export-modal');
 
+};
 
-      // Imports do Firebase
+// Imports do Firebase
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
       import { 
         getFirestore, 
@@ -4526,5 +4527,3 @@ function executeSelectedRunsExport(macroId) {
       }
 
       testarFirebase()
-
-}
