@@ -4482,6 +4482,9 @@ function executeSelectedRunsExport(macroId) {
 
 };
 
+let firebaseApp = null;
+let firebaseDb = null;
+
 (async function initializeFirebase() {
       // Imports do Firebase usando importação dinâmica para evitar erro de módulo
       const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js");
@@ -4503,29 +4506,33 @@ function executeSelectedRunsExport(macroId) {
         measurementId: "G-MWZNHFL7JW"
       };
 
-      // Inicializa Firebase
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-      window.db = db;
+      // Inicializa Firebase apenas uma vez
+      firebaseApp = firebaseApp || initializeApp(firebaseConfig);
+      firebaseDb = firebaseDb || getFirestore(firebaseApp);
+      window.db = firebaseDb;
 
       // 🔍 TESTE
       async function testarFirebase() {
         console.log("🔍 Testando conexão com Firebase...");
 
         try {
-          const ref = await addDoc(collection(db, "teste_conexao"), {
+          const ref = await addDoc(collection(firebaseDb, "teste_conexao"), {
             funcionando: true,
             timestamp: new Date()
           });
 
           console.log("🔥 Documento criado! ID:", ref.id);
 
-          const snapshot = await getDocs(collection(db, "teste_conexao"));
+          const snapshot = await getDocs(collection(firebaseDb, "teste_conexao"));
           console.log("📚 Documentos lidos:", snapshot.size);
         } catch (erro) {
           console.error("❌ Firebase NÃO conectou!", erro);
         }
       }
 
+      // Disponibiliza o teste no console para reuso manual
+      window.testarFirebase = testarFirebase;
+
+      // Executa um teste inicial para validar a conexão
       testarFirebase();
 })();
