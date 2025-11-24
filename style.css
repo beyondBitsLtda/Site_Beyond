@@ -118,7 +118,7 @@ body {
 }
 
 .sidebar {
-    width: 320px; 
+    width: 320px;
     flex-shrink: 0;
     background: #ffffff;
     border-radius: 15px;
@@ -129,6 +129,47 @@ body {
     gap: 12px;
     overflow-y: auto;
     transition: background-color 0.3s, border-color 0.3s;
+}
+
+.auth-card {
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    padding: 15px;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.auth-card h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--cor-primaria);
+    text-align: left;
+    border-bottom: none;
+}
+
+.auth-status {
+    font-weight: 600;
+    color: var(--cor-texto-claro);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
+    border-top: 1px dashed var(--cor-borda);
+}
+
+.auth-form:first-of-type {
+    border-top: none;
+}
+
+.auth-feedback {
+    min-height: 18px;
+    font-size: 0.85rem;
+    margin: 0;
 }
 
 .sidebar h2 {
