@@ -278,7 +278,8 @@ function getGeminiApiKey(showAlert = true) {
     return isConfigured ? key : null;
 }
 
-const GEMINI_MODEL = 'gemini-1.5-flash-latest';
+// Utilize o alias estável do modelo para evitar erros 404 em diferentes versões da API.
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 function buildGeminiEndpoint(showAlert = true) {
     const key = getGeminiApiKey(showAlert);
