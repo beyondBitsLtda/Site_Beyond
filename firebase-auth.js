@@ -24,10 +24,7 @@ const logoutBtn = document.getElementById("logout-btn");
 const authStatus = document.getElementById("auth-status");
 const registerFeedback = document.getElementById("register-feedback");
 const loginFeedback = document.getElementById("login-feedback");
-const authScreen = document.getElementById("auth-screen");
-const appShell = document.getElementById("app-shell");
-
-// Garante que a tela de autenticação fique visível caso algo impeça a inicialização do Firebase.
+// Garante que o usuário receba feedback caso algo impeça a inicialização do Firebase.
 if (!auth) {
   if (registerFeedback) {
     registerFeedback.textContent =
@@ -39,8 +36,6 @@ if (!auth) {
       "Não foi possível carregar o Firebase Auth. Revise as credenciais.";
     loginFeedback.style.color = "red";
   }
-  authScreen?.classList.remove("hidden");
-  appShell?.classList.add("hidden");
 }
 
 function formatAuthError(error) {
@@ -63,15 +58,11 @@ function updateAuthUI(user) {
   if (isLoggedIn) {
     authStatus.textContent = `Autenticado como: ${user.displayName || user.email}`;
     logoutBtn.style.display = "block";
-    authScreen?.classList.add("hidden");
-    appShell?.classList.remove("hidden");
   } else {
     authStatus.textContent = "Não autenticado";
     logoutBtn.style.display = "none";
     registerForm?.reset();
     loginForm?.reset();
-    authScreen?.classList.remove("hidden");
-    appShell?.classList.add("hidden");
   }
 }
 
