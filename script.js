@@ -2744,10 +2744,16 @@ async function getAssistantResponse() {
         document.getElementById('chat-send-btn').disabled = false;
         return;
     }
-    const requestBody = { contents: chatHistory, system_instruction: { parts: [{ text: SYSTEM_PROMPT }] } };
+    const requestBody = {
+        contents: chatHistory,
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
+    };
     try {
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        if (!response.ok) { const errorData = await response.json(); throw new Error(`Erro na API: ${response.status} ${response.statusText}. Detalhes: ${JSON.stringify(errorData)}`); }
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Erro na API: ${response.status} ${response.statusText}. Detalhes: ${JSON.stringify(errorData)}`);
+        }
         const data = await response.json();
         const thinkingMessage = document.querySelector('.assistant-message.thinking');
         if (thinkingMessage) thinkingMessage.remove();
@@ -2760,7 +2766,8 @@ async function getAssistantResponse() {
         console.error("Erro ao chamar a API do Assistente:", error);
         const thinkingMessage = document.querySelector('.assistant-message.thinking');
         if (thinkingMessage) thinkingMessage.remove();
-        displayMessage('Desculpe, ocorreu um erro de comunicação com a IA. Verifique sua chave de API e a conexão.', 'assistant');
+        const errorMsg = error?.message || 'Erro desconhecido.';
+        displayMessage(`Desculpe, ocorreu um erro de comunicação com a IA. Verifique sua chave de API e a conexão. Detalhes: ${errorMsg}`, 'assistant');
     } finally {
         isAssistantTyping = false;
         document.getElementById('chat-send-btn').disabled = false;
