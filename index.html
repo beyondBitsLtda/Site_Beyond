@@ -17,52 +17,66 @@
         <svg class="triangle-3" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="100,0 100,100 0,100"></polygon></svg>
     </div>
 
-    <div class="container">
-       
-        <div class="header">
-             <img src="logo.png" alt="Logo da Empresa" class="header-logo">
-           
-            <div class="header-text">
-                
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-panel">
+            <div>
+                <img src="logo.png" alt="Logo da Empresa" class="auth-logo">
                 <h1>Controle de Plano de Testes</h1>
-                <p>Gerenciamento de Casos de Teste e Tickets</p>
+                <p class="auth-subtitle">Acesse para ver seu painel de projetos e tickets.</p>
+            </div>
+
+            <div class="auth-forms-grid">
+                <form id="register-form" class="auth-form-card">
+                    <h2>Criar conta</h2>
+                    <label class="form-label" for="register-username">Nome de usuário</label>
+                    <input id="register-username" type="text" class="form-input" placeholder="ex: maria.qa" required>
+
+                    <label class="form-label" for="register-email">E-mail</label>
+                    <input id="register-email" type="email" class="form-input" placeholder="email@empresa.com" required>
+
+                    <label class="form-label" for="register-password">Senha</label>
+                    <input id="register-password" type="password" class="form-input" placeholder="••••••••" required>
+
+                    <button type="submit" class="btn btn-add" style="width: 100%; margin-top: 10px;">Criar conta</button>
+                    <p id="register-feedback" class="auth-feedback"></p>
+                </form>
+
+                <form id="login-form" class="auth-form-card">
+                    <h2>Entrar</h2>
+                    <label class="form-label" for="login-email">E-mail</label>
+                    <input id="login-email" type="email" class="form-input" placeholder="email@empresa.com" required>
+
+                    <label class="form-label" for="login-password">Senha</label>
+                    <input id="login-password" type="password" class="form-input" placeholder="••••••••" required>
+
+                    <button type="submit" class="btn btn-import" style="width: 100%; margin-top: 10px;">Entrar</button>
+                    <p id="login-feedback" class="auth-feedback"></p>
+                </form>
             </div>
         </div>
+    </div>
 
-        <div class="content-wrapper">
+    <div id="app-shell" class="app-shell hidden">
+        <div class="container">
 
-            <aside class="sidebar">
-                <div class="auth-card">
-                    <h2>Login e Cadastro</h2>
-                    <p id="auth-status" class="auth-status">Não autenticado</p>
+            <div class="header">
+                 <img src="logo.png" alt="Logo da Empresa" class="header-logo">
 
-                    <form id="register-form" class="auth-form">
-                        <label class="form-label" for="register-username">Nome de usuário</label>
-                        <input id="register-username" type="text" class="form-input" placeholder="ex: maria.qa" required>
+                <div class="header-text">
 
-                        <label class="form-label" for="register-email">E-mail</label>
-                        <input id="register-email" type="email" class="form-input" placeholder="email@empresa.com" required>
-
-                        <label class="form-label" for="register-password">Senha</label>
-                        <input id="register-password" type="password" class="form-input" placeholder="••••••••" required>
-
-                        <button type="submit" class="btn btn-add" style="width: 100%; margin-top: 10px;">Criar conta</button>
-                        <p id="register-feedback" class="auth-feedback"></p>
-                    </form>
-
-                    <form id="login-form" class="auth-form">
-                        <label class="form-label" for="login-email">E-mail</label>
-                        <input id="login-email" type="email" class="form-input" placeholder="email@empresa.com" required>
-
-                        <label class="form-label" for="login-password">Senha</label>
-                        <input id="login-password" type="password" class="form-input" placeholder="••••••••" required>
-
-                        <button type="submit" class="btn btn-import" style="width: 100%; margin-top: 10px;">Entrar</button>
-                        <p id="login-feedback" class="auth-feedback"></p>
-                    </form>
-
-                    <button id="logout-btn" class="btn btn-clear-logs" style="width: 100%; display: none;">Sair</button>
+                    <h1>Controle de Plano de Testes</h1>
+                    <p>Gerenciamento de Casos de Teste e Tickets</p>
                 </div>
+            </div>
+
+            <div class="content-wrapper">
+
+                <aside class="sidebar">
+                    <div class="auth-card">
+                        <h2>Autenticação</h2>
+                        <p id="auth-status" class="auth-status">Não autenticado</p>
+                        <button id="logout-btn" class="btn btn-clear-logs" style="width: 100%; display: none;">Sair</button>
+                    </div>
 
                 <h2>Gerenciar Projetos</h2>
                 <button class="btn" style="background-color: #007bff;" onclick="showMacroProjectManagementModal()">🏢 Gerenciar Macro-Projetos</button>
@@ -171,6 +185,8 @@
             <button class="btn btn-action-discrete btn-warning" id="filter-failed-button" onclick="filterFailedTests()" title="Mostrar Apenas Reprovados">⚠️</button>
             <button class="btn btn-action-discrete btn-add" onclick="addNewTestCase()" title="Adicionar Novo Caso de Teste">➕</button>
         </div>
+    </div>
+
     </div>
 
     <div id="email-modal" class="modal-overlay" onclick="closeModalIfOverlay(event, 'email-modal')">

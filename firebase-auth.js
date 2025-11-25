@@ -7,9 +7,10 @@ import {
   onAuthStateChanged,
   signOut,
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { firebaseApp } from "./firebase-init.js";
 
 // Recupera a instância do app inicializada em firebase-init.js para reutilizar a mesma configuração do projeto.
-const auth = getAuth(window.firebaseApp);
+const auth = getAuth(firebaseApp);
 
 // Seletores do DOM usados no painel de login/cadastro.
 const registerForm = document.getElementById("register-form");
@@ -18,16 +19,38 @@ const logoutBtn = document.getElementById("logout-btn");
 const authStatus = document.getElementById("auth-status");
 const registerFeedback = document.getElementById("register-feedback");
 const loginFeedback = document.getElementById("login-feedback");
+const authScreen = document.getElementById("auth-screen");
+const appShell = document.getElementById("app-shell");
+
+function formatAuthError(error) {
+  const code = error?.code || "";
+  if (code === "auth/configuration-not-found") {
+    return "Configuração do Firebase Auth ausente. Verifique as credenciais e habilite Email/Senha no console do Firebase.";
+  }
+  if (code === "auth/email-already-in-use") {
+    return "Este e-mail já está cadastrado.";
+  }
+  if (code === "auth/invalid-credential") {
+    return "Credenciais inválidas. Revise e tente novamente.";
+  }
+  return error?.message || "Não foi possível concluir a operação.";
+}
 
 // Atualiza visualmente o painel de acordo com o usuário autenticado.
 function updateAuthUI(user) {
-  if (user) {
-    // Mostra o nome ou e-mail do usuário autenticado.
+  const isLoggedIn = Boolean(user);
+  if (isLoggedIn) {
     authStatus.textContent = `Autenticado como: ${user.displayName || user.email}`;
     logoutBtn.style.display = "block";
+    authScreen?.classList.add("hidden");
+    appShell?.classList.remove("hidden");
   } else {
     authStatus.textContent = "Não autenticado";
     logoutBtn.style.display = "none";
+    registerForm?.reset();
+    loginForm?.reset();
+    authScreen?.classList.remove("hidden");
+    appShell?.classList.add("hidden");
   }
 }
 
@@ -48,7 +71,7 @@ registerForm?.addEventListener("submit", async (event) => {
     registerFeedback.style.color = "green";
   } catch (error) {
     // Exibe mensagens claras de erro para facilitar a depuração.
-    registerFeedback.textContent = `Erro ao cadastrar: ${error.message}`;
+    registerFeedback.textContent = `Erro ao cadastrar: ${formatAuthError(error)}`;
     registerFeedback.style.color = "red";
   }
 });
@@ -65,7 +88,7 @@ loginForm?.addEventListener("submit", async (event) => {
     loginFeedback.textContent = "✅ Login realizado";
     loginFeedback.style.color = "green";
   } catch (error) {
-    loginFeedback.textContent = `Erro ao entrar: ${error.message}`;
+    loginFeedback.textContent = `Erro ao entrar: ${formatAuthError(error)}`;
     loginFeedback.style.color = "red";
   }
 });
