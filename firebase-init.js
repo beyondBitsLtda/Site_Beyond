@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
 
-const firebaseConfig = {
+export const firebaseConfig = {
     apiKey: "AIzaSyBt16B6FnPwft82OEkPA-dnBwIlNt1RsqU",
     authDomain: "beyond-test-4c87a.firebaseapp.com",
     projectId: "beyond-test-4c87a",
@@ -11,10 +11,10 @@ const firebaseConfig = {
     measurementId: "G-JRQY3VC9WT"
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
+export const firebaseApp = initializeApp(firebaseConfig);
 getAnalytics(firebaseApp);
 
-function logFirebaseConnection() {
+export function logFirebaseConnection() {
     console.log(
         `[Firebase] Conexão ativa: app "${firebaseApp.name}" (Project ID: ${firebaseConfig.projectId})`
     );
