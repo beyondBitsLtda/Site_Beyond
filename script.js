@@ -30,13 +30,15 @@ const LOCAL_STORAGE_KEY = 'testCaseProjects'; // Esta chave pode ser removida ou
 const USER_SETTINGS_KEY = 'testAppUserSettings';
 
 // --- CHAVE DE API GLOBAL ---
-// INSIRA SUA CHAVE DE API DO GOOGLE AQUI. ELA DEVE COMEÇAR COM "AIzaSy..."
-const GOOGLE_AI_API_KEY = "AIzaSyCLCk4E7pW34K4LmsK3QCVKofA2FxYP-ik";
+// Defina um valor padrão apenas para desenvolvimento; a chave pode ser salva pelo usuário no painel de controle.
+const DEFAULT_GOOGLE_AI_API_KEY = "SUA_CHAVE_DE_API_VAI_AQUI";
+let GOOGLE_AI_API_KEY = DEFAULT_GOOGLE_AI_API_KEY;
 
 let userSettings = {
     authorName: 'Anônimo',
     profilePicture: 'profile_default.png',
     darkMode: false,
+    aiApiKey: '',
     ai: {
         generateDescription: true,
         generateFlowchart: true,
@@ -199,6 +201,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('retrospective-btn').onclick = showRetrospective;
     document.getElementById('analytics-btn').onclick = showAnalyticsPanel;
 
+    const controlPanelLogoutBtn = document.getElementById('control-panel-logout-btn');
+    if (controlPanelLogoutBtn) controlPanelLogoutBtn.onclick = () => document.getElementById('logout-btn')?.click();
+
     document.getElementById('ticket-filter-status').addEventListener('change', renderTicketKanbanBoard);
     document.getElementById('ticket-filter-priority').addEventListener('change', renderTicketKanbanBoard);
     document.getElementById('ticket-filter-assignee').addEventListener('input', renderTicketKanbanBoard);
@@ -233,6 +238,7 @@ function loadUserSettings() {
 function saveUserSettings() {
     userSettings.authorName = document.getElementById('control-panel-name').value.trim() || 'Anônimo';
     userSettings.darkMode = document.getElementById('toggle-dark-mode').checked;
+    userSettings.aiApiKey = document.getElementById('ai-api-key').value.trim();
     for (const key in userSettings.ai) {
         const toggle = document.getElementById(`toggle-ai-${key}`);
         if (toggle) userSettings.ai[key] = toggle.checked;
@@ -256,10 +262,37 @@ function applyAISettings() {
     }
 }
 
+function getConfiguredGeminiApiKey() {
+    const savedKey = (userSettings.aiApiKey || '').trim();
+    const fallbackKey = (GOOGLE_AI_API_KEY || '').trim();
+    return savedKey || fallbackKey || DEFAULT_GOOGLE_AI_API_KEY;
+}
+
+function getGeminiApiKey(showAlert = true) {
+    const key = getConfiguredGeminiApiKey();
+    const isConfigured = Boolean(key && key !== DEFAULT_GOOGLE_AI_API_KEY);
+    if (!isConfigured && showAlert) {
+        alert("Por favor, configure sua chave de API do Google AI Studio no Painel de Controle.");
+        return null;
+    }
+    return isConfigured ? key : null;
+}
+
+const GEMINI_MODEL = 'gemini-1.5-flash-latest';
+
+function buildGeminiEndpoint(showAlert = true) {
+    const key = getGeminiApiKey(showAlert);
+    if (!key) return null;
+    // Usa a versão v1 da API, que fornece o alias "-latest" para os modelos atuais.
+    return `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${key}`;
+}
+
 function showControlPanel() {
     document.getElementById('control-panel-name').value = userSettings.authorName;
     document.getElementById('control-panel-img').src = userSettings.profilePicture;
     document.getElementById('toggle-dark-mode').checked = userSettings.darkMode;
+    const apiKeyInput = document.getElementById('ai-api-key');
+    if (apiKeyInput) apiKeyInput.value = userSettings.aiApiKey || '';
     for (const key in userSettings.ai) {
         const toggle = document.getElementById(`toggle-ai-${key}`);
         if (toggle) toggle.checked = userSettings.ai[key];
@@ -2705,11 +2738,25 @@ async function getAssistantResponse() {
     isAssistantTyping = true;
     document.getElementById('chat-send-btn').disabled = true;
     displayMessage('Pensando...', 'assistant thinking');
-    const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
-    const requestBody = { contents: chatHistory, system_instruction: { parts: [{ text: SYSTEM_PROMPT }] } };
+    const API_ENDPOINT = buildGeminiEndpoint();
+    if (!API_ENDPOINT) {
+        const thinkingMessage = document.querySelector('.assistant-message.thinking');
+        if (thinkingMessage) thinkingMessage.remove();
+        displayMessage('Configure sua chave de API no Painel de Controle para usar o assistente.', 'assistant');
+        isAssistantTyping = false;
+        document.getElementById('chat-send-btn').disabled = false;
+        return;
+    }
+    const requestBody = {
+        contents: chatHistory,
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
+    };
     try {
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        if (!response.ok) { const errorData = await response.json(); throw new Error(`Erro na API: ${response.status} ${response.statusText}. Detalhes: ${JSON.stringify(errorData)}`); }
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Erro na API: ${response.status} ${response.statusText}. Detalhes: ${JSON.stringify(errorData)}`);
+        }
         const data = await response.json();
         const thinkingMessage = document.querySelector('.assistant-message.thinking');
         if (thinkingMessage) thinkingMessage.remove();
@@ -2722,7 +2769,8 @@ async function getAssistantResponse() {
         console.error("Erro ao chamar a API do Assistente:", error);
         const thinkingMessage = document.querySelector('.assistant-message.thinking');
         if (thinkingMessage) thinkingMessage.remove();
-        displayMessage('Desculpe, ocorreu um erro de comunicação com a IA. Verifique sua chave de API e a conexão.', 'assistant');
+        const errorMsg = error?.message || 'Erro desconhecido.';
+        displayMessage(`Desculpe, ocorreu um erro de comunicação com a IA. Verifique sua chave de API e a conexão. Detalhes: ${errorMsg}`, 'assistant');
     } finally {
         isAssistantTyping = false;
         document.getElementById('chat-send-btn').disabled = false;
@@ -2731,7 +2779,6 @@ async function getAssistantResponse() {
 
 async function generateFlowchartFromDescription() {
     if (!userSettings.ai.generateFlowchart) return;
-    if (GOOGLE_AI_API_KEY === "SUA_CHAVE_DE_API_VAI_AQUI") { alert("Por favor, configure sua chave de API do Google AI Studio."); return; }
     const description = document.getElementById('flowchart-description').value.trim();
     if (!description) { alert("Por favor, descreva o fluxo que você deseja criar."); return; }
     const button = document.getElementById('generate-flowchart-btn');
@@ -2742,7 +2789,8 @@ async function generateFlowchartFromDescription() {
     codeTextarea.value = "A IA está processando sua descrição...";
     preview.innerHTML = "";
     const prompt = `Aja como um especialista em sintaxe de fluxogramas Mermaid.js. Converta a descrição a seguir em um código de fluxograma Mermaid válido (graph TD). Responda APENAS com o bloco de código. Descrição: --- ${description} ---`;
-    const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    const API_ENDPOINT = buildGeminiEndpoint();
+    if (!API_ENDPOINT) { button.disabled = false; button.textContent = "🤖 Gerar Fluxograma com IA"; return; }
     try {
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
         if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
@@ -2761,7 +2809,6 @@ async function generateFlowchartFromDescription() {
 
 async function generateDescriptionWithAI(caseId) {
     if (!userSettings.ai.generateDescription) return;
-    if (GOOGLE_AI_API_KEY === "SUA_CHAVE_DE_API_VAI_AQUI") { alert("Por favor, configure sua chave de API do Google AI Studio."); return; }
     const itemTestadoInput = document.querySelector(`#${caseId} input[onchange*="itemTestado"]`);
     const descriptionTextarea = document.getElementById(`${caseId}-descricao`);
     const button = event.target;
@@ -2771,7 +2818,8 @@ async function generateDescriptionWithAI(caseId) {
     button.textContent = "🧠 Pensando...";
     descriptionTextarea.value = "Aguarde, a IA está gerando a descrição...";
     const prompt = `Como um QA Sênior, crie uma descrição detalhada de caso de teste para o item "${itemTestado}". Use o formato: 1. Objetivo do Teste; 2. Pré-condições; 3. Passos para Execução; 4. Resultados Esperados.`;
-    const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    const API_ENDPOINT = buildGeminiEndpoint();
+    if (!API_ENDPOINT) { button.disabled = false; button.textContent = "🤖 Gerar Descrição com IA"; return; }
     try {
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
         if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
@@ -2790,7 +2838,6 @@ async function generateDescriptionWithAI(caseId) {
 
 async function analyzeLogWithAI() {
     if (!userSettings.ai.analyzeLog) return;
-    if (GOOGLE_AI_API_KEY === "SUA_CHAVE_DE_API_VAI_AQUI") { alert("Por favor, configure sua chave de API do Google AI Studio."); return; }
     if (!attachingLogToCaseId) { alert("Erro: Não foi possível identificar o caso de teste para análise."); return; }
     const logText = document.getElementById('log-attach-textarea').value.trim();
     if (!logText) { alert("Por favor, cole o log do console na área de texto."); return; }
@@ -2798,7 +2845,8 @@ async function analyzeLogWithAI() {
     button.disabled = true;
     button.textContent = "🧠 Analisando...";
     const prompt = `Como um dev sênior, analise o log a seguir e retorne um resumo e a causa provável. Formato: "**Resumo do Erro:** [resumo]\n**Causa Provável:** [causa]". Log: --- ${logText} ---`;
-    const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    const API_ENDPOINT = buildGeminiEndpoint();
+    if (!API_ENDPOINT) { button.disabled = false; button.textContent = "🤖 Analisar Log com IA"; return; }
     try {
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
         if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
@@ -2816,7 +2864,6 @@ async function analyzeLogWithAI() {
 
 async function analyzeAndPrioritizeFailure(caseId) {
     if (!userSettings.ai.prioritizeFailure) return;
-    if (GOOGLE_AI_API_KEY === "SUA_CHAVE_DE_API_VAI_AQUI") return;
     const caseData = testCaseData[caseId];
     if (!caseData) return;
     const priorityOutput = document.getElementById(`${caseId}-priority-output`);
@@ -2825,7 +2872,8 @@ async function analyzeAndPrioritizeFailure(caseId) {
     teamOutput.innerHTML = "🤖 Analisando...";
     const dataForAI = { itemTestado: caseData.itemTestado, descricao: caseData.descricao, tipoFalha: caseData.tipoFalha };
     const prompt = `Como um Gerente de Projetos de TI, analise estes dados de um teste reprovado: ${JSON.stringify(dataForAI)}. Responda APENAS com um objeto JSON com as chaves "prioridade" ('Crítica', 'Alta', 'Média', 'Baixa'), "equipeSugerida" ('Frontend', 'Backend', 'Banco de Dados', 'Infraestrutura') e "justificativa" (string curta).`;
-    const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    const API_ENDPOINT = buildGeminiEndpoint(false);
+    if (!API_ENDPOINT) { priorityOutput.textContent = "Chave de API não configurada"; teamOutput.textContent = "Chave de API não configurada"; return; }
     try {
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
         if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
@@ -2850,7 +2898,6 @@ async function analyzeAndPrioritizeFailure(caseId) {
 // SUBSTITUA A SUA FUNÇÃO 'generateRoadmapSummaryAI' POR ESTA:
 async function generateRoadmapSummaryAI(summaryData) {
     if (!userSettings.ai.summarizeRoadmap) return;
-    if (GOOGLE_AI_API_KEY === "SUA_CHAVE_DE_API_VAI_AQUI") return;
     const aiSummaryContainer = document.getElementById('roadmap-ai-summary');
     aiSummaryContainer.style.display = 'block';
     aiSummaryContainer.innerHTML = '<h3>Análise da IA</h3><p>🤖 Gerando análise qualitativa...</p>';
@@ -2866,7 +2913,8 @@ async function generateRoadmapSummaryAI(summaryData) {
 - "Falha Nova (Aguardando Ticket)" são os riscos que ainda não foram endereçados.
 Forneça uma recomendação clara baseada nesses números.`;
 
-    const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    const API_ENDPOINT = buildGeminiEndpoint(false);
+    if (!API_ENDPOINT) { aiSummaryContainer.innerHTML = '<h3>Análise da IA</h3><p>Configure sua chave de API para gerar a análise.</p>'; return; }
     try {
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
         if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
@@ -2906,9 +2954,9 @@ async function handleWordUpload(event) {
 }
 
 async function generateTestCasesFromText(scopeText) {
-    if (GOOGLE_AI_API_KEY === "SUA_CHAVE_DE_API_VAI_AQUI") { alert("Configure sua chave de API do Google AI Studio."); return null; }
     const prompt = `Como um QA Sênior, analise o escopo a seguir e crie casos de teste. Para cada um, defina "itemTestado" e "condicaoAprovacao". Responda APENAS com um array de objetos JSON. Escopo: --- ${scopeText} ---`;
-    const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    const API_ENDPOINT = buildGeminiEndpoint();
+    if (!API_ENDPOINT) return null;
     try {
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
         if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
@@ -2921,10 +2969,8 @@ async function generateTestCasesFromText(scopeText) {
 
 async function generateAIReport(allTestCaseData) {
     if (!userSettings.ai.generateEmailReport) return null;
-    if (GOOGLE_AI_API_KEY === "SUA_CHAVE_DE_API_VAI_AQUI") {
-        alert("Configure sua chave de API do Google AI Studio.");
-        return null;
-    }
+    const API_ENDPOINT = buildGeminiEndpoint();
+    if (!API_ENDPOINT) return null;
 
     // ALTERAÇÃO: Enriquecemos os dados com o novo status geral dos tickets.
     const simplifiedData = Object.values(allTestCaseData).map(tc => {
@@ -2955,7 +3001,6 @@ async function generateAIReport(allTestCaseData) {
 4.  **Itens Aprovados e Estáveis:** Liste os casos com 'resultadoQA' como 'Aprovado' e 'statusGeralTickets' como 'Sem Tickets'.
 5.  **Conclusão e Próximos Passos:** Uma breve conclusão focada nas ações necessárias.`;
 
-    const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
     try {
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
@@ -2975,16 +3020,16 @@ async function generateAIReport(allTestCaseData) {
 
 async function analyzeVideoWithAI(event, caseId, evidenceSrc) {
     if (!userSettings.ai.analyzeMedia) return;
-    event.stopPropagation(); 
+    event.stopPropagation();
     const button = event.target;
     button.disabled = true;
-    button.textContent = "⏳"; 
-    if (GOOGLE_AI_API_KEY === "SUA_CHAVE_DE_API_VAI_AQUI") { alert("Configure sua chave de API do Google AI Studio."); button.disabled = false; button.textContent = "🤖 Analisar Vídeo"; return; }
+    button.textContent = "⏳";
+    const API_ENDPOINT = buildGeminiEndpoint();
+    if (!API_ENDPOINT) { button.disabled = false; button.textContent = "🤖 Analisar Vídeo"; return; }
     try {
         const base64Data = evidenceSrc.split(',')[1];
         const prompt = `Analise este vídeo de um teste de software. Descreva as ações do usuário em bullet points. Se houver um erro, destaque-o com "ERRO:".`;
         const requestBody = { contents: [ { parts: [ { text: prompt }, { inline_data: { mime_type: "video/webm", data: base64Data } } ] } ] };
-        const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
         if (!response.ok) { const errorText = await response.text(); throw new Error(`Erro na API: ${response.statusText}. Detalhes: ${errorText}`); }
         const data = await response.json();
@@ -3002,16 +3047,16 @@ async function analyzeVideoWithAI(event, caseId, evidenceSrc) {
 
 async function analyzeImageWithAI(event, caseId, evidenceSrc, mimeType) {
     if (!userSettings.ai.analyzeMedia) return;
-    event.stopPropagation(); 
+    event.stopPropagation();
     const button = event.target;
     button.disabled = true;
-    button.textContent = "⏳"; 
-    if (GOOGLE_AI_API_KEY === "SUA_CHAVE_DE_API_VAI_AQUI") { alert("Configure sua chave de API do Google AI Studio."); button.disabled = false; button.textContent = "🤖 Analisar Imagem"; return; }
+    button.textContent = "⏳";
+    const API_ENDPOINT = buildGeminiEndpoint();
+    if (!API_ENDPOINT) { button.disabled = false; button.textContent = "🤖 Analisar Imagem"; return; }
     try {
         const base64Data = evidenceSrc.split(',')[1];
         const prompt = `Analise esta imagem. Extraia todo o texto visível (OCR). Descreva mensagens de erro e resuma o que a tela representa.`;
         const requestBody = { contents: [ { parts: [ { text: prompt }, { inline_data: { mime_type: mimeType, data: base64Data } } ] } ] };
-        const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
         if (!response.ok) { const errorText = await response.text(); throw new Error(`Erro na API: ${response.statusText}. Detalhes: ${errorText}`); }
         const data = await response.json();
@@ -3079,12 +3124,12 @@ async function runAICorrection() {
     const suggestionTextarea = document.getElementById('ai-correction-suggestion');
     const generateBtn = document.getElementById('run-ai-correction-btn');
     if (!userPrompt) { alert("Por favor, digite uma instrução para a IA."); return; }
-    if (GOOGLE_AI_API_KEY === "SUA_CHAVE_DE_API_VAI_AQUI") { alert("Por favor, configure sua chave de API do Google AI Studio."); return; }
     generateBtn.disabled = true;
     generateBtn.textContent = '🧠 Pensando...';
     suggestionTextarea.value = 'Aguarde, a IA está trabalhando na sua solicitação...';
     const prompt = `Aja como um assistente de edição de texto. Sua tarefa é reescrever o "Texto Original" com base na "Instrução" fornecida. Responda APENAS com o texto reescrito, sem adicionar nenhuma explicação ou formatação extra.\n\nInstrução: "${userPrompt}"\n\nTexto Original: "${originalText}"`;
-    const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    const API_ENDPOINT = buildGeminiEndpoint();
+    if (!API_ENDPOINT) { generateBtn.disabled = false; generateBtn.textContent = 'Gerar Sugestão'; return; }
     try {
         const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
         if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);

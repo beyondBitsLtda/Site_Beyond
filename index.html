@@ -443,7 +443,16 @@
                     </div>
                 </div>
             </div>
+            <div class="panel-section settings-section">
+                <h3>Chave da API Gemini</h3>
+                <div class="form-group">
+                    <label for="ai-api-key" class="form-label">Defina sua chave do Google AI Studio</label>
+                    <input type="password" id="ai-api-key" class="form-input" placeholder="AIza..." autocomplete="off">
+                    <small>A chave fica salva apenas no seu navegador e é usada pelas funções de IA.</small>
+                </div>
+            </div>
             <div class="modal-actions">
+                <button class="btn btn-clear-logs" id="control-panel-logout-btn" type="button">Sair da Conta</button>
                 <button class="btn btn-add" onclick="saveUserSettings()">Salvar e Fechar</button>
             </div>
         </div>
