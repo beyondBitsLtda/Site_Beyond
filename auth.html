@@ -19,8 +19,21 @@
             <h1>Controle de Plano de Testes</h1>
             <p class="auth-page-subtitle">Acesse ou crie sua conta para entrar no painel.</p>
 
-            <form id="register-form" class="auth-form">
-                <h3>Cadastro</h3>
+            <form id="login-form" class="auth-form">
+                <h3>Login</h3>
+                <label class="form-label" for="login-email">E-mail</label>
+                <input id="login-email" type="email" class="form-input" placeholder="email@empresa.com" required>
+
+                <label class="form-label" for="login-password">Senha</label>
+                <input id="login-password" type="password" class="form-input" placeholder="••••••••" required>
+
+                <button type="submit" class="btn btn-import" style="width: 100%; margin-top: 4px;">Entrar</button>
+                <p class="auth-switch">Não tem uma conta? <button type="button" id="open-register" class="link-button">Criar uma</button></p>
+                <p id="login-feedback" class="auth-feedback"></p>
+            </form>
+
+            <form id="register-form" class="auth-form" style="display: none;">
+                <h3>Criar conta</h3>
                 <label class="form-label" for="register-username">Nome de usuário</label>
                 <input id="register-username" type="text" class="form-input" placeholder="ex: maria.qa" required>
 
@@ -31,24 +44,11 @@
                 <input id="register-password" type="password" class="form-input" placeholder="••••••••" required>
 
                 <button type="submit" class="btn btn-add" style="width: 100%; margin-top: 4px;">Criar conta</button>
+                <p class="auth-switch">Já tem uma conta? <button type="button" id="back-to-login" class="link-button">Fazer login</button></p>
                 <p id="register-feedback" class="auth-feedback"></p>
             </form>
 
-            <div class="auth-divider"></div>
-
-            <form id="login-form" class="auth-form">
-                <h3>Login</h3>
-                <label class="form-label" for="login-email">E-mail</label>
-                <input id="login-email" type="email" class="form-input" placeholder="email@empresa.com" required>
-
-                <label class="form-label" for="login-password">Senha</label>
-                <input id="login-password" type="password" class="form-input" placeholder="••••••••" required>
-
-                <button type="submit" class="btn btn-import" style="width: 100%; margin-top: 4px;">Entrar</button>
-                <p id="login-feedback" class="auth-feedback"></p>
-            </form>
-
-            <p class="auth-page-note">Ao autenticar, você será redirecionado para o painel principal.</p>
+            <p class="auth-page-note">Faça login para ser levado ao painel principal.</p>
         </div>
     </main>
 

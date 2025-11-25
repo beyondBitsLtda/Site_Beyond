@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
   onAuthStateChanged,
+  signOut,
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import { firebaseApp } from "./firebase-init.js";
 
@@ -13,6 +14,8 @@ const registerForm = document.getElementById("register-form");
 const loginForm = document.getElementById("login-form");
 const registerFeedback = document.getElementById("register-feedback");
 const loginFeedback = document.getElementById("login-feedback");
+const openRegisterBtn = document.getElementById("open-register");
+const backToLoginBtn = document.getElementById("back-to-login");
 
 function formatAuthError(error) {
   const code = error?.code || "";
@@ -32,6 +35,21 @@ function redirectToApp() {
   window.location.href = "index.html";
 }
 
+function showLogin() {
+  loginForm?.setAttribute("style", "");
+  registerForm?.setAttribute("style", "display: none;");
+  registerFeedback.textContent = "";
+}
+
+function showRegister() {
+  loginForm?.setAttribute("style", "display: none;");
+  registerForm?.setAttribute("style", "");
+  loginFeedback.textContent = "";
+}
+
+openRegisterBtn?.addEventListener("click", showRegister);
+backToLoginBtn?.addEventListener("click", showLogin);
+
 registerForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   registerFeedback.textContent = "";
@@ -42,9 +60,10 @@ registerForm?.addEventListener("submit", async (event) => {
   try {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(user, { displayName });
-    registerFeedback.textContent = "✅ Cadastro realizado com sucesso";
+    await signOut(auth);
+    registerFeedback.textContent = "✅ Conta criada. Agora faça login para continuar.";
     registerFeedback.style.color = "green";
-    redirectToApp();
+    showLogin();
   } catch (error) {
     registerFeedback.textContent = `Erro ao cadastrar: ${formatAuthError(error)}`;
     registerFeedback.style.color = "red";
