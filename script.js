@@ -1633,8 +1633,46 @@ function importAndDisplayProject(event) {
 
 function getSummaryData() {
     const allCases = Object.values(testCaseData);
-    const summary = { total: allCases.length, approved: allCases.filter(tc => tc.resultado === 'Aprovado').length, failed: allCases.filter(tc => tc.resultado === 'Reprovado').length, invalid: allCases.filter(tc => tc.resultado === 'Inválido').length };
-    summary.notRun = summary.total - (summary.approved + summary.failed + summary.invalid);
+    const summary = {
+        total: allCases.length,
+        approved: 0,
+        failed: 0,
+        invalid: 0,
+        notRun: 0,
+        inDev: 0,
+        readyForQa: 0,
+        awaitingTicket: 0
+    };
+
+    allCases.forEach(testCase => {
+        const workflowStatus = getTestCaseWorkflowStatus(testCase);
+
+        switch (workflowStatus) {
+            case 'Aprovado e Concluído':
+                summary.approved++;
+                break;
+            case 'Em Andamento (DEV)':
+                summary.failed++;
+                summary.inDev++;
+                break;
+            case 'Pronto para Re-teste (QA)':
+                summary.failed++;
+                summary.readyForQa++;
+                break;
+            case 'Falha Nova (Aguardando Ticket)':
+                summary.failed++;
+                summary.awaitingTicket++;
+                break;
+            case 'Inválido':
+                summary.invalid++;
+                break;
+            case 'Pendente':
+            default:
+                summary.notRun++;
+                break;
+        }
+    });
+
     return summary;
 }
 
@@ -4078,38 +4116,59 @@ function generateTextReport() {
     const summary = getSummaryData();
     report += `RESUMO GERAL:\n`;
     report += `- Total de Casos: ${summary.total}\n`;
-    report += `- Aprovados: ${summary.approved}\n`;
-    report += `- Reprovados: ${summary.failed}\n`;
+    report += `- Aprovados e Concluídos: ${summary.approved}\n`;
+    report += `- Com Tickets em Desenvolvimento: ${summary.inDev}\n`;
+    report += `- Aguardando Re-teste (QA): ${summary.readyForQa}\n`;
+    report += `- Falhas Novas (Aguardando Ticket): ${summary.awaitingTicket}\n`;
     report += `- Inválidos: ${summary.invalid}\n`;
     report += `- Não Executados: ${summary.notRun}\n\n`;
 
-    const approved = allData.filter(tc => tc.resultado === 'Aprovado');
-    const failed = allData.filter(tc => tc.resultado === 'Reprovado');
-    const invalid = allData.filter(tc => tc.resultado === 'Inválido');
+    const byWorkflow = {
+        approved: [],
+        inDev: [],
+        readyForQa: [],
+        awaitingTicket: [],
+        invalid: [],
+        pending: []
+    };
 
-    if (failed.length > 0) {
-        report += `ITENS REPROVADOS:\n`;
-        failed.forEach(tc => {
-            report += `- ID #${tc.displayId}: ${tc.itemTestado} (Tipo de Falha: ${tc.tipoFalha})\n`;
-        });
-        report += `\n`;
-    }
+    allData.forEach(tc => {
+        const status = getTestCaseWorkflowStatus(tc);
+        switch (status) {
+            case 'Aprovado e Concluído':
+                byWorkflow.approved.push(tc);
+                break;
+            case 'Em Andamento (DEV)':
+                byWorkflow.inDev.push(tc);
+                break;
+            case 'Pronto para Re-teste (QA)':
+                byWorkflow.readyForQa.push(tc);
+                break;
+            case 'Falha Nova (Aguardando Ticket)':
+                byWorkflow.awaitingTicket.push(tc);
+                break;
+            case 'Inválido':
+                byWorkflow.invalid.push(tc);
+                break;
+            default:
+                byWorkflow.pending.push(tc);
+                break;
+        }
+    });
 
-    if (approved.length > 0) {
-        report += `ITENS APROVADOS:\n`;
-        approved.forEach(tc => {
-            report += `- ID #${tc.displayId}: ${tc.itemTestado}\n`;
-        });
+    const appendSection = (title, list, formatter) => {
+        if (list.length === 0) return;
+        report += `${title}:\n`;
+        list.forEach(tc => { report += formatter(tc); });
         report += `\n`;
-    }
-    
-    if (invalid.length > 0) {
-        report += `ITENS INVÁLIDOS:\n`;
-        invalid.forEach(tc => {
-            report += `- ID #${tc.displayId}: ${tc.itemTestado}\n`;
-        });
-        report += `\n`;
-    }
+    };
+
+    appendSection('TICKETS EM DESENVOLVIMENTO', byWorkflow.inDev, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado} (Tickets abertos: ${(tc.tickets || []).length})\n`);
+    appendSection('AGUARDANDO RE-TESTE (QA)', byWorkflow.readyForQa, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado} (Tickets fechados: ${(tc.tickets || []).length})\n`);
+    appendSection('FALHAS NOVAS (AGUARDANDO TICKET)', byWorkflow.awaitingTicket, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado}\n`);
+    appendSection('ITENS APROVADOS', byWorkflow.approved, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado}\n`);
+    appendSection('ITENS INVÁLIDOS', byWorkflow.invalid, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado}\n`);
+    appendSection('NÃO EXECUTADOS / PENDENTES', byWorkflow.pending, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado}\n`);
 
     report += `========================================\nFim do Relatório.`;
     return report;
