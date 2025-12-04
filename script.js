@@ -1166,7 +1166,7 @@ function filterFailedTests() {
     document.querySelectorAll('.test-case-card').forEach(card => {
         const caseData = testCaseData[card.id];
         if (!caseData) return;
-        card.style.display = isFilteringFailed && caseData.resultado !== 'Reprovado' ? 'none' : '';
+        card.style.display = isFilteringFailed && !isCaseFailed(caseData) ? 'none' : '';
     });
     button.classList.toggle('active-filter', isFilteringFailed);
     if (isFilteringFailed) {
@@ -1641,7 +1641,8 @@ function getSummaryData() {
         notRun: 0,
         inDev: 0,
         readyForQa: 0,
-        awaitingTicket: 0
+        awaitingTicket: 0,
+        openTickets: Object.values(ticketData).filter(t => t.status !== 'Fechado').length
     };
 
     allCases.forEach(testCase => {
@@ -1682,6 +1683,8 @@ function updateSummary() {
     document.getElementById('total-approved').textContent = summary.approved;
     document.getElementById('total-failed').textContent = summary.failed;
     document.getElementById('total-invalid').textContent = summary.invalid;
+    const openTicketsEl = document.getElementById('total-open-tickets');
+    if (openTicketsEl) openTicketsEl.textContent = summary.openTickets;
 }
 
 // SUBSTITUA SUA FUNÇÃO generateTicket POR ESTA
@@ -2177,6 +2180,8 @@ function generateTestRoadmap() {
         'Pendente': []
     };
 
+    const openTicketCount = Object.values(ticketData).filter(t => t.status !== 'Fechado').length;
+
     allTestCases.forEach(testCase => {
         if (!testCase.isReTest && (testCase.reTestCount || 0) > maxRetests) {
             maxRetests = testCase.reTestCount;
@@ -2195,7 +2200,7 @@ function generateTestRoadmap() {
         }
     });
     
-    roadmapAggregatedData = { 
+    roadmapAggregatedData = {
         classifiedData,
         resultsCount: {
             'Em Andamento (DEV)': classifiedData['Em Andamento (DEV)'].length,
@@ -2206,9 +2211,16 @@ function generateTestRoadmap() {
             'Inválido': classifiedData['Inválido'].length,
             'Pendente': classifiedData['Pendente'].length
         },
-        failureTypeCounts, 
-        mostRetestedCase, 
-        maxRetests 
+        totalsByStatus: {
+            aprovado: classifiedData['Aprovado e Concluído'].length,
+            reprovado: classifiedData['Em Andamento (DEV)'].length + classifiedData['Pronto para Re-teste (QA)'].length + classifiedData['Falha Nova (Aguardando Ticket)'].length,
+            invalido: classifiedData['Inválido'].length,
+            pendente: classifiedData['Pendente'].length,
+            openTickets: openTicketCount
+        },
+        failureTypeCounts,
+        mostRetestedCase,
+        maxRetests
     };
     
     // O restante da função permanece igual
@@ -2269,12 +2281,13 @@ function renderRoadmapTextualDetails(classifiedData) {
 }
 
 function copyRoadmapText() {
-    const { resultsCount, failureTypeCounts, groupedByTypes, mostRetestedCase, maxRetests } = roadmapAggregatedData;
+    const { resultsCount, failureTypeCounts, groupedByTypes, mostRetestedCase, maxRetests, totalsByStatus } = roadmapAggregatedData;
     if (!resultsCount) { alert("Dados do roadmap não encontrados. Gere o roadmap primeiro."); return; }
     let textToCopy = '🗺️ Detalhes dos Testes\n\n';
     if (mostRetestedCase && maxRetests > 0) textToCopy += `🔄 Caso de Teste com Mais Re-testes\nO caso de teste ID #${mostRetestedCase.displayId} (${mostRetestedCase.itemTestado || 'Item não informado'}) teve ${maxRetests} re-testes.\n\n`;
     const total = Object.values(resultsCount).reduce((a, b) => a + b, 0);
-    textToCopy += `📊 Resumo dos Resultados\nTotal: ${total} | Aprovados: ${resultsCount['Aprovado']} | Reprovados: ${resultsCount['Reprovado']} | Inválidos: ${resultsCount['Inválido']} | Pendentes: ${resultsCount['Pendente']}\n\n`;
+    const failedTotal = totalsByStatus ? totalsByStatus.reprovado : 0;
+    textToCopy += `📊 Resumo dos Resultados\nTotal: ${total} | Aprovados: ${totalsByStatus?.aprovado ?? 0} | Reprovados (inclui casos com ticket): ${failedTotal} | Inválidos: ${totalsByStatus?.invalido ?? 0} | Pendentes: ${totalsByStatus?.pendente ?? 0} | Tickets abertos: ${totalsByStatus?.openTickets ?? 0}\n\n`;
     const failedTypes = Object.entries(failureTypeCounts).filter(([, count]) => count > 0);
     if (failedTypes.length > 0) {
         textToCopy += '📉 Resumo dos Tipos de Falha\n';
@@ -3180,7 +3193,7 @@ function getTestCaseWorkflowStatus(testCase) {
     if (testCase.tickets && testCase.tickets.length > 0) {
         const totalTickets = testCase.tickets.length;
         const closedTickets = testCase.tickets.filter(id => ticketData[id]?.status === 'Fechado').length;
-        
+
         if (closedTickets < totalTickets) {
             return 'Em Andamento (DEV)';
         } else { // Todos os tickets fechados
@@ -3203,6 +3216,11 @@ function getTestCaseWorkflowStatus(testCase) {
         default:
             return 'Pendente'; // "Selecione um resultado" e sem tickets
     }
+}
+
+function isCaseFailed(testCase) {
+    const workflowStatus = getTestCaseWorkflowStatus(testCase);
+    return ['Em Andamento (DEV)', 'Pronto para Re-teste (QA)', 'Falha Nova (Aguardando Ticket)'].includes(workflowStatus);
 }
 
 // NOVA FUNÇÃO para o modal de detalhes (estilo Trello)
@@ -4120,6 +4138,7 @@ function generateTextReport() {
     report += `- Com Tickets em Desenvolvimento: ${summary.inDev}\n`;
     report += `- Aguardando Re-teste (QA): ${summary.readyForQa}\n`;
     report += `- Falhas Novas (Aguardando Ticket): ${summary.awaitingTicket}\n`;
+    report += `- Tickets Abertos (totais): ${summary.openTickets}\n`;
     report += `- Inválidos: ${summary.invalid}\n`;
     report += `- Não Executados: ${summary.notRun}\n\n`;
 
@@ -4180,7 +4199,7 @@ function generateRoadmapSummary(summaryData) {
 
     summaryContainer.style.display = 'block';
     
-    const { resultsCount } = summaryData;
+    const { resultsCount, totalsByStatus } = summaryData;
     let summaryText = `<p><strong>Análise dos Dados:</strong></p><ul>`;
     
     if (resultsCount['Em Andamento (DEV)'] > 0) {
@@ -4191,6 +4210,9 @@ function generateRoadmapSummary(summaryData) {
     }
      if (resultsCount['Falha Nova (Aguardando Ticket)'] > 0) {
         summaryText += `<li><strong style="color:var(--cor-status-reprovado);">${resultsCount['Falha Nova (Aguardando Ticket)']}</strong> nova(s) falha(s) foram identificadas e precisam de triagem para a criação de tickets.</li>`;
+    }
+    if (totalsByStatus?.openTickets > 0) {
+        summaryText += `<li>Há <strong>${totalsByStatus.openTickets}</strong> ticket(s) abertos impactando o status geral e mantendo os casos como reprovados até a resolução.</li>`;
     }
     if (Object.values(resultsCount).every(v => v === 0)) {
          summaryText += `<li>Não há dados significativos para análise no momento.</li>`;
