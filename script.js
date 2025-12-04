@@ -10,7 +10,7 @@ let attachingLogToCaseId = null;
 let attachingFlowchartToCaseId = null;
 let currentAuthor = null; 
 let currentView = 'list'; // 'list' ou 'kanban' ou 'tickets'
-let aiCorrectionContext = { caseId: null, field: null };
+
 let stagedTicketEvidences = {}; // NOVO: Armazena evidências para o próximo ticket a ser gerado
 let currentMacroProjectId = null;
 // --- SUBSTITUA AS CONSTANTES DE ARMAZENAMENTO NO TOPO DO ARQUIVO ---
@@ -29,28 +29,12 @@ let activeFilters = {
 const LOCAL_STORAGE_KEY = 'testCaseProjects'; // Esta chave pode ser removida ou mantida para migração futura
 const USER_SETTINGS_KEY = 'testAppUserSettings';
 
-// --- CHAVE DE API GLOBAL ---
-// Defina um valor padrão apenas para desenvolvimento; a chave pode ser salva pelo usuário no painel de controle.
-const DEFAULT_GOOGLE_AI_API_KEY = "SUA_CHAVE_DE_API_VAI_AQUI";
-let GOOGLE_AI_API_KEY = DEFAULT_GOOGLE_AI_API_KEY;
 
 let userSettings = {
     authorName: 'Anônimo',
     profilePicture: 'profile_default.png',
     darkMode: false,
-    aiApiKey: '',
-    ai: {
-        generateDescription: true,
-        generateFlowchart: true,
-        importFromWord: true,
-        prioritizeFailure: true,
-        summarizeRoadmap: true,
-        generateEmailReport: true,
-        analyzeLog: true,
-        analyzeMedia: true,
-        chatAssistant: true,
-        correctWithAI: true
-    }
+    
 };
 
 window.addEventListener('message', function(event) {
@@ -183,117 +167,69 @@ const failureTypeColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
 
 // SUBSTITUA TODA A SUA FUNÇÃO 'DOMContentLoaded'
 document.addEventListener('DOMContentLoaded', () => {
+    // Funções de inicialização que permanecem
     mermaid.initialize({ startOnLoad: false, theme: 'default' });
     loadUserSettings();
     setupConsoleLogger();
-    if (Object.keys(testCaseData).length === 0) showInitialView();
-    else showTestCaseView();
+    if (Object.keys(testCaseData).length === 0) {
+        showInitialView();
+    } else {
+        showTestCaseView();
+    }
     updateSummary();
     renderGlobalTagFilter();
     window.addEventListener('message', receiveCaptureData);
-    document.getElementById('open-chat-btn').onclick = () => toggleChatAssistant(true);
-    document.getElementById('chat-close-btn').onclick = () => toggleChatAssistant(false);
-    document.getElementById('chat-send-btn').onclick = handleSendMessage;
-    document.getElementById('chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleSendMessage(); } });
-    document.getElementById('view-toggle-btn').onclick = toggleView;
 
-    // Listeners adicionados
+    // REMOVIDO: As 3 linhas abaixo que causavam o erro foram excluídas.
+    // document.getElementById('open-chat-btn').onclick = () => toggleChatAssistant(true);
+    // document.getElementById('chat-close-btn').onclick = () => toggleChatAssistant(false);
+    // document.getElementById('chat-send-btn').onclick = handleSendMessage;
+    
+    // Listeners que devem permanecer
+    document.getElementById('view-toggle-btn').onclick = toggleView;
     document.getElementById('retrospective-btn').onclick = showRetrospective;
     document.getElementById('analytics-btn').onclick = showAnalyticsPanel;
-
-    const controlPanelLogoutBtn = document.getElementById('control-panel-logout-btn');
-    if (controlPanelLogoutBtn) controlPanelLogoutBtn.onclick = () => document.getElementById('logout-btn')?.click();
-
     document.getElementById('ticket-filter-status').addEventListener('change', renderTicketKanbanBoard);
     document.getElementById('ticket-filter-priority').addEventListener('change', renderTicketKanbanBoard);
     document.getElementById('ticket-filter-assignee').addEventListener('input', renderTicketKanbanBoard);
+    
+    // REMOVIDO: O listener de teclado para o chat de IA também foi excluído.
+    // document.getElementById('chat-input').addEventListener('keydown', ...);
 });
 
 function loadUserSettings() {
-    // --- NOVO: Ícone de perfil SVG embutido para não depender de arquivos externos ---
+    // Apenas define as configurações padrão para a sessão atual, sem ler nada.
     const defaultProfilePic = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-
-    const savedSettings = localStorage.getItem(USER_SETTINGS_KEY);
-    if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-        // Garante que a foto de perfil não seja nula ou vazia
-        if (!parsedSettings.profilePicture) {
-            parsedSettings.profilePicture = defaultProfilePic;
-        }
-        userSettings = { ...userSettings, ...parsedSettings, ai: { ...userSettings.ai, ...(parsedSettings.ai || {}) } };
-        const img = new Image();
-        img.src = userSettings.profilePicture;
-        // Se a imagem salva falhar ao carregar, usa o SVG padrão
-        img.onerror = () => { 
-            userSettings.profilePicture = defaultProfilePic; 
-            document.getElementById('control-panel-img').src = userSettings.profilePicture; 
-        };
-    } else {
-        userSettings.profilePicture = defaultProfilePic;
-    }
+    userSettings.profilePicture = defaultProfilePic;
     currentAuthor = userSettings.authorName;
     applySettings();
 }
 
 function saveUserSettings() {
+    // Aplica as configurações na tela, mas não salva no localStorage.
     userSettings.authorName = document.getElementById('control-panel-name').value.trim() || 'Anônimo';
     userSettings.darkMode = document.getElementById('toggle-dark-mode').checked;
-    userSettings.aiApiKey = document.getElementById('ai-api-key').value.trim();
-    for (const key in userSettings.ai) {
-        const toggle = document.getElementById(`toggle-ai-${key}`);
-        if (toggle) userSettings.ai[key] = toggle.checked;
-    }
-    localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(userSettings));
+    
     currentAuthor = userSettings.authorName;
     applySettings();
-    alert("Configurações salvas!");
+    
+    // A linha localStorage.setItem foi removida.
+    alert("Configurações aplicadas para esta sessão!");
     closeModal('control-panel-modal');
 }
-
 function applySettings() {
     document.body.classList.toggle('dark-mode', userSettings.darkMode);
     applyAISettings();
 }
 
 function applyAISettings() {
-    for (const feature in userSettings.ai) {
-        const isEnabled = userSettings.ai[feature];
-        document.querySelectorAll(`[data-ai-feature="${feature}"]`).forEach(el => el.style.display = isEnabled ? '' : 'none');
-    }
-}
-
-function getConfiguredGeminiApiKey() {
-    const savedKey = (userSettings.aiApiKey || '').trim();
-    const fallbackKey = (GOOGLE_AI_API_KEY || '').trim();
-    return savedKey || fallbackKey || DEFAULT_GOOGLE_AI_API_KEY;
-}
-
-function getGeminiApiKey(showAlert = true) {
-    const key = getConfiguredGeminiApiKey();
-    const isConfigured = Boolean(key && key !== DEFAULT_GOOGLE_AI_API_KEY);
-    if (!isConfigured && showAlert) {
-        alert("Por favor, configure sua chave de API do Google AI Studio no Painel de Controle.");
-        return null;
-    }
-    return isConfigured ? key : null;
-}
-
-// Utilize o alias estável do modelo para evitar erros 404 em diferentes versões da API.
-const GEMINI_MODEL = 'gemini-2.5-flash';
-
-function buildGeminiEndpoint(showAlert = true) {
-    const key = getGeminiApiKey(showAlert);
-    if (!key) return null;
-    // Usa a versão v1 da API, que fornece o alias "-latest" para os modelos atuais.
-    return `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${key}`;
+    
 }
 
 function showControlPanel() {
     document.getElementById('control-panel-name').value = userSettings.authorName;
     document.getElementById('control-panel-img').src = userSettings.profilePicture;
     document.getElementById('toggle-dark-mode').checked = userSettings.darkMode;
-    const apiKeyInput = document.getElementById('ai-api-key');
-    if (apiKeyInput) apiKeyInput.value = userSettings.aiApiKey || '';
     for (const key in userSettings.ai) {
         const toggle = document.getElementById(`toggle-ai-${key}`);
         if (toggle) toggle.checked = userSettings.ai[key];
@@ -332,7 +268,7 @@ function toggleView() {
     } else {
         currentView = 'list';
         kanbanModal.style.display = 'none';
-        toggleBtn.textContent = 'Planejamento'; // Garante o texto correto
+        toggleBtn.textContent = 'Ver Quadro de Acompanhamento'; // Garante o texto correto
         listContainer.style.display = 'block';
     }
 }
@@ -353,7 +289,7 @@ function showTestCaseView() {
     currentView = 'list';
     document.getElementById('kanban-modal').style.display = 'none';
     document.getElementById('test-case-container').style.display = 'block';
-    document.getElementById('view-toggle-btn').textContent = 'Ver Modo Kanban';
+    document.getElementById('view-toggle-btn').textContent = 'Planejamento';
 }
 
 function setupConsoleLogger() {
@@ -423,7 +359,7 @@ function addNewTestCase(data = {}) {
     const buildOptions = (options, selectedValue) => options.map(opt => `<option value="${opt}" ${opt === selectedValue ? 'selected' : ''}>${opt}</option>`).join('');
     const showDevCommentSection = (data.devComments && data.devComments.length > 0);
     
-    // HTML SEM a seção de planejamento visual
+    // HTML SEM a seção de planejamento visual e SEM os botões de IA
     card.innerHTML = `
         <div id="${currentId}-status-indicator" class="status-indicator"></div>
         <div class="test-case-header">
@@ -452,17 +388,14 @@ function addNewTestCase(data = {}) {
         </div>
 
         <div class="test-case-body">
-            <div class="form-group form-group-with-icon"><label class="form-label">Nome do item a ser testado:</label><input type="text" class="form-input" value="${data.itemTestado || ''}" onchange="updateTestCaseData('${currentId}', 'itemTestado', this.value)" data-field="itemTestado" ${isReTest ? 'readonly' : ''}><button class="btn-ai-correct" title="Corrigir com IA" data-ai-feature="correctWithAI" onclick="openAICorrectionModal('${currentId}', 'itemTestado')">✨</button></div>
+            <div class="form-group"><label class="form-label">Nome do item a ser testado:</label><input type="text" class="form-input" value="${data.itemTestado || ''}" onchange="updateTestCaseData('${currentId}', 'itemTestado', this.value)" data-field="itemTestado" ${isReTest ? 'readonly' : ''}></div>
             <div class="form-group"><label class="form-label">Condição de aprovação:</label><textarea class="form-textarea" onchange="updateTestCaseData('${currentId}', 'condicaoAprovacao', this.value)">${data.condicaoAprovacao || ''}</textarea></div>
-            
-            <div class="form-group form-group-with-icon"><label class="form-label">Descrição do caso de teste:</label><textarea id="${currentId}-descricao" class="form-textarea" onchange="updateTestCaseData('${currentId}', 'descricao', this.value)" data-field="descricao">${data.descricao || ''}</textarea><button class="btn-ai-correct" title="Corrigir com IA" data-ai-feature="correctWithAI" onclick="openAICorrectionModal('${currentId}', 'descricao')">✨</button></div>
-            <button class="btn btn-record" data-ai-feature="generateDescription" style="margin-bottom: 15px;" onclick="generateDescriptionWithAI('${currentId}')">🤖 Gerar Descrição com IA</button>
+            <div class="form-group"><label class="form-label">Descrição do caso de teste:</label><textarea id="${currentId}-descricao" class="form-textarea" onchange="updateTestCaseData('${currentId}', 'descricao', this.value)" data-field="descricao">${data.descricao || ''}</textarea></div>
             <div class="form-group"><label class="form-label">Tipo de teste:</label><select class="form-select" onchange="updateTestCaseData('${currentId}', 'tipoTeste', this.value)">${buildOptions(testTypes, data.tipoTeste)}</select></div>
             <div id="${currentId}-result-container" class="form-group"><label class="form-label">Resultado:</label><select class="form-select" onchange="handleResultChange('${currentId}', this.value)">${buildOptions(testResults, data.resultado)}</select></div>
-            <div id="${currentId}-failure-field" class="form-group ${data.resultado === 'Reprovado' ? '' : 'hidden-field'}"><label class="form-label">Tipo de falha:</label><select class="form-select" onchange="updateTestCaseData('${currentId}', 'tipoFalha', this.value)">${buildOptions(failureTypes, data.tipoFalha)}</select></div>
+            <div id="${currentId}-failure-field" class="form-group ${data.resultado === 'Reprovado' ? '' : 'hidden-field'}"><label class="form-label">Tipo de falha:</label><select class="form-select" onchange="updateTestCaseData('${currentId}', 'tipoFalha', this.value); handleResultChange('${currentId}', testCaseData['${currentId}'].resultado);">${buildOptions(failureTypes, data.tipoFalha)}</select></div>
             <div id="${currentId}-resolution-status-field" class="form-group ${data.resultado === 'Reprovado' || data.resultado === 'Inválido' ? '' : 'hidden-field'}"><label class="form-label">Status da Resolução:</label><select class="form-select" onchange="updateTestCaseData('${currentId}', 'resolutionStatus', this.value)">${buildOptions(resolutionStatusTypes, data.resolutionStatus)}</select></div>
-            <div id="${currentId}-priority-field" class="form-group hidden-field" data-ai-feature="prioritizeFailure"><label class="form-label">Prioridade Sugerida (IA):</label><div class="ai-suggestion-box" id="${currentId}-priority-output"></div></div>
-            <div id="${currentId}-team-field" class="form-group hidden-field" data-ai-feature="prioritizeFailure"><label class="form-label">Equipe Sugerida (IA):</label><div class="ai-suggestion-box" id="${currentId}-team-output"></div></div>
+            <div id="${currentId}-priority-field" class="form-group hidden-field"><label class="form-label">Prioridade Sugerida:</label><div class="ai-suggestion-box" id="${currentId}-priority-output"></div></div>
             <div id="${currentId}-ticket-generation-section" class="hidden-field"><hr class="sidebar-divider"><div class="form-group"><label class="form-label" style="color: var(--cor-status-reprovado); font-weight: bold;">Descrição do Erro (para o Ticket):</label><textarea id="${currentId}-error-description" class="form-textarea" placeholder="Detalhe o erro encontrado para que um ticket seja criado para a equipe de desenvolvimento."></textarea></div><button class="btn btn-generate-ticket" onclick="generateTicket('${currentId}')">🎫 Gerar Novo Ticket</button><hr class="sidebar-divider"></div>
             <button class="btn btn-toggle-dev-comment" onclick="toggleDevComment('${currentId}', this)">${showDevCommentSection ? '💬 Ocultar Comentários' : '💬 Exibir Comentários'}</button>
             <div id="${currentId}-dev-comment-wrapper" class="dev-comment-section ${showDevCommentSection ? '' : 'hidden-field'}"><div id="${currentId}-dev-comments-list" class="dev-comments-list"></div><div class="new-comment-area"><label class="form-label">Adicionar novo comentário técnico/resposta:</label><textarea id="${currentId}-new-dev-comment" class="form-textarea" placeholder="Digite seu comentário aqui..."></textarea><button class="btn btn-add-comment-dev" onclick="addComment('${currentId}', 'DEV')">Adicionar Comentário DEV</button><button class="btn btn-add-comment-qa" onclick="addComment('${currentId}', 'QA')">Adicionar Resposta QA</button></div></div>
@@ -484,7 +417,6 @@ function addNewTestCase(data = {}) {
     const evidenceGrid = document.getElementById(`${currentId}-evidence-grid`);
     if (evidenceGrid) evidenceGrid.addEventListener('paste', (event) => handlePastedEvidence(event, currentId));
     
-    // O objeto de dados continua salvando os campos, mesmo sem inputs visíveis
     testCaseData[currentId] = { 
         id: testCaseCounter, 
         displayId, 
@@ -501,11 +433,9 @@ function addNewTestCase(data = {}) {
         evidences: data.evidences || [], 
         devComments: data.devComments || [], 
         priority: data.priority || null, 
-        suggestedTeam: data.suggestedTeam || null, 
         tags: data.tags || [], 
         executionHistory: data.executionHistory || [], 
         tickets: data.tickets || [],
-        // Os dados de planejamento continuam aqui
         dataEntrega: data.dataEntrega || '',
         responsavel: data.responsavel || '',
         prioridadePlanejamento: data.prioridadePlanejamento || planningPriorities[0],
@@ -522,7 +452,6 @@ function addNewTestCase(data = {}) {
     updateStatusIndicator(currentId);
     updateResolutionStatusStyle(currentId);
     updateSummary();
-    applyAISettings(); 
     if (currentView === 'kanban') renderKanbanBoard();
 }
 function addReTest(parentCaseId) {
@@ -579,7 +508,6 @@ function handleResultChange(caseId, result) {
     const failureField = document.getElementById(`${caseId}-failure-field`);
     const statusField = document.getElementById(`${caseId}-resolution-status-field`);
     const priorityField = document.getElementById(`${caseId}-priority-field`);
-    const teamField = document.getElementById(`${caseId}-team-field`);
     const ticketGenSection = document.getElementById(`${caseId}-ticket-generation-section`);
     const caseData = testCaseData[caseId];
     const isFailed = result === 'Reprovado';
@@ -588,14 +516,15 @@ function handleResultChange(caseId, result) {
     ticketGenSection.classList.toggle('hidden-field', !(isFailed || isInvalid));
     const shouldShowStatusField = isFailed || isInvalid || (caseData && caseData.resolutionStatus === 'Corrigido');
     statusField.classList.toggle('hidden-field', !shouldShowStatusField);
-    if (isFailed && userSettings.ai.prioritizeFailure) {
-        priorityField.style.display = '';
-        teamField.style.display = '';
-        analyzeAndPrioritizeFailure(caseId);
+
+    // LÓGICA DE SUGESTÃO SEM IA
+    if (isFailed) {
+        priorityField.classList.remove('hidden-field');
+        suggestPriority(caseId); // Nova função baseada em lógica
     } else {
-        priorityField.style.display = 'none';
-        teamField.style.display = 'none';
+        priorityField.classList.add('hidden-field');
     }
+
     if (!isFailed) {
         updateTestCaseData(caseId, 'tipoFalha', failureTypes[0]);
         if(failureField.querySelector('select')) failureField.querySelector('select').value = failureTypes[0];
@@ -1250,36 +1179,34 @@ function filterFailedTests() {
 }
 
 async function exportForEmail() {
-    if (Object.keys(testCaseData).length === 0) { alert("Não há dados no projeto para exportar."); return; }
-    const emailButtonInModal = document.querySelector('#email-modal .btn-email');
-    const originalButtonText = emailButtonInModal.innerHTML;
-    const feedbackElement = document.getElementById('email-copy-feedback');
-    feedbackElement.textContent = '';
-    feedbackElement.style.color = "var(--cor-status-aprovado)";
-    emailButtonInModal.disabled = true;
-    emailButtonInModal.innerHTML = '🤖 Gerando com IA...';
+    if (Object.keys(testCaseData).length === 0) {
+        alert("Não há dados no projeto para exportar.");
+        return;
+    }
+    
     document.getElementById('email-modal').style.display = 'flex';
+    const feedbackElement = document.getElementById('email-copy-feedback');
+
     try {
-        const aiReport = await generateAIReport(testCaseData);
-        let subject, body;
-        if (aiReport && aiReport.assunto && aiReport.corpoEmail) {
-            subject = encodeURIComponent(aiReport.assunto);
-            await navigator.clipboard.writeText(aiReport.corpoEmail);
-            feedbackElement.textContent = "Relatório copiado para a área de transferência!";
-            const shortBody = "Prezados,\n\nO relatório completo foi copiado para a sua área de transferência.\n\nPor favor, cole o conteúdo (Ctrl+V ou Cmd+V) aqui.\n\nAtenciosamente,";
-            body = encodeURIComponent(shortBody);
-        } else {
-            throw new Error("A IA não conseguiu gerar o relatório. Nenhuma ação foi tomada.");
-        }
+        const reportText = generateTextReport(); // Chama a nova função de relatório
+        navigator.clipboard.writeText(reportText).then(() => {
+            feedbackElement.textContent = "Relatório de texto copiado para a área de transferência!";
+            feedbackElement.style.color = "var(--cor-status-aprovado)";
+        }, () => {
+            throw new Error("Falha ao copiar para a área de transferência.");
+        });
+
+        const subject = encodeURIComponent(`Relatório de Status do Projeto: ${currentLoadedProjectName || 'Projeto Atual'}`);
+        const body = encodeURIComponent("Prezados,\n\nO relatório de status foi copiado. Por favor, cole o conteúdo (Ctrl+V) no corpo deste e-mail.\n\nAtenciosamente,");
         document.getElementById('email-link').href = `mailto:?subject=${subject}&body=${body}`;
+
     } catch (error) {
         alert(error.message);
         feedbackElement.textContent = "Ocorreu um erro. Tente novamente.";
         feedbackElement.style.color = "var(--cor-status-reprovado)";
-    } finally {
-        emailButtonInModal.disabled = false;
-        emailButtonInModal.innerHTML = originalButtonText;
     }
+
+    // Lógica para download do JSON permanece a mesma
     const downloadButton = document.getElementById('download-json-button');
     const projectToExport = { name: currentLoadedProjectName || `Backup Projeto - ${new Date().toLocaleDateString()}`, timestamp: new Date().toISOString(), status: 'Ativo', state: { counter: testCaseCounter, data: testCaseData, ticketCounter: ticketCounter, ticketData: ticketData } };
     const dataStr = JSON.stringify([projectToExport], null, 2);
@@ -1311,76 +1238,71 @@ function showSaveRunModal() {
         return;
     }
 
-    const macroProjects = JSON.parse(localStorage.getItem(MACRO_PROJECTS_KEY)) || [];
-    if (macroProjects.length === 0) {
-        alert("Nenhum Macro-Projeto encontrado. Por favor, crie um primeiro em 'Gerenciar Macro-Projetos'.");
-        return;
-    }
-
-    const select = document.getElementById('macro-project-select');
-    select.innerHTML = '';
-    macroProjects.forEach(mp => {
-        const option = document.createElement('option');
-        option.value = mp.macroId;
-        option.textContent = mp.macroName;
-        select.appendChild(option);
-    });
-
-    document.getElementById('run-name-input').value = `Execução - ${new Date().toLocaleString('pt-BR')}`;
+    // Apenas define um nome padrão e exibe o modal
+    document.getElementById('run-name-input').value = `Execucao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`;
     document.getElementById('save-run-modal').style.display = 'flex';
 }
 function executeSaveRun() {
-    const macroId = document.getElementById('macro-project-select').value;
-    const runName = document.getElementById('run-name-input').value.trim();
+    const runNameInput = document.getElementById('run-name-input');
+    const runName = runNameInput.value.trim();
 
-    if (!macroId) {
-        alert("Por favor, selecione um Macro-Projeto.");
-        return;
-    }
     if (!runName) {
         alert("O nome da execução não pode ser vazio.");
+        runNameInput.focus();
+        return;
+    }
+
+    if (Object.keys(testCaseData).length === 0) {
+        alert("Não há dados de execução na tela para salvar.");
         return;
     }
 
     try {
-        const macroProjects = JSON.parse(localStorage.getItem(MACRO_PROJECTS_KEY)) || [];
-        const projectIndex = macroProjects.findIndex(mp => mp.macroId === macroId);
-
-        if (projectIndex === -1) {
-            alert("Erro: Macro-Projeto não encontrado. Tente novamente.");
-            return;
-        }
-
-        const runExists = macroProjects[projectIndex].runs.some(run => run.runName === runName);
-        if (runExists) {
-            if (!confirm(`Já existe uma execução com o nome "${runName}" neste Macro-Projeto. Deseja sobrescrevê-la?`)) {
-                return;
-            }
-        }
-
-        const currentState = { counter: testCaseCounter, data: testCaseData, ticketCounter: ticketCounter, ticketData: ticketData };
-        const newRun = {
-            runId: `run-${Date.now()}`,
-            runName: runName,
-            timestamp: new Date().toISOString(),
-            state: currentState
+        // 1. Coleta o estado atual da aplicação
+        const currentState = { 
+            counter: testCaseCounter, 
+            data: testCaseData, 
+            ticketCounter: ticketCounter, 
+            ticketData: ticketData 
         };
 
-        if (runExists) {
-            // Sobrescreve a execução existente
-            const runIndex = macroProjects[projectIndex].runs.findIndex(run => run.runName === runName);
-            macroProjects[projectIndex].runs[runIndex] = newRun;
-        } else {
-            // Adiciona nova execução
-            macroProjects[projectIndex].runs.push(newRun);
-        }
+        // 2. Cria a estrutura do projeto para exportação.
+        // O formato de array com um objeto é para manter a compatibilidade
+        // com a função de importação existente.
+        const projectToExport = [{
+            name: runName,
+            timestamp: new Date().toISOString(),
+            status: 'Ativo', // Status padrão
+            state: currentState
+        }];
 
-        localStorage.setItem(MACRO_PROJECTS_KEY, JSON.stringify(macroProjects));
-        alert(`Execução "${runName}" salva com sucesso no Macro-Projeto "${macroProjects[projectIndex].macroName}"!`);
+        // 3. Converte o objeto para uma string JSON
+        const dataStr = JSON.stringify(projectToExport, null, 2);
+
+        // 4. Cria um Blob (Binary Large Object) com os dados
+        const blob = new Blob([dataStr], { type: "application/json" });
+
+        // 5. Cria um link de download na memória
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        
+        // Formata o nome do arquivo para ser seguro
+        const fileName = `${runName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+        link.download = fileName;
+
+        // 6. Simula o clique no link para iniciar o download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // 7. Libera a memória do URL do Blob
+        URL.revokeObjectURL(link.href);
+
+        alert(`Execução "${runName}" salva com sucesso como ${fileName}!`);
         closeModal('save-run-modal');
 
     } catch (error) {
-        alert("Ocorreu um erro ao salvar a execução.");
+        alert("Ocorreu um erro ao gerar o arquivo de salvamento.");
         console.error("Erro em executeSaveRun:", error);
     }
 }
@@ -1474,6 +1396,7 @@ function showRunListForMacroProject(macroId) {
 }
 
 function loadRunFromStorage(macroId, runId) {
+    return; // Adicione esta linha
     if (!confirm(`Carregar esta execução substituirá todos os dados atuais na tela. Deseja continuar?`)) return;
 
     try {
@@ -1643,80 +1566,67 @@ function showExportModal() {
 }
 
 
-// SUBSTITUA A FUNÇÃO 'importAndDisplayProject' INTEIRA POR ESTA VERSÃO:
-
 /**
- * IMPORTAÇÃO INTELIGENTE DE PROJETOS (NOVA VERSÃO)
- * Lê um arquivo .json contendo uma lista de Macro-Projetos.
- * Em vez de sobrescrever os dados na tela, esta função "funde" (merge) os dados importados
- * com os Macro-Projetos já existentes no localStorage do navegador.
- * - Se um Macro-Projeto do arquivo não existe localmente, ele é adicionado.
- * - Se um Macro-Projeto já existe, a função adiciona apenas as execuções (runs) novas, evitando duplicatas.
- * Isso torna o processo de importação seguro e não destrutivo.
- * @param {Event} event - O evento do input de arquivo.
+ * IMPORTAÇÃO CORRIGIDA
+ * Lê um arquivo de backup JSON e popula a aplicação com os dados.
  */
-function importAndMergeProjects(event) {
+function importAndDisplayProject(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    if (!confirm('Isso substituirá todos os dados atuais na tela pelos dados do arquivo. Deseja continuar?')) {
+        event.target.value = ''; // Limpa o seletor de arquivo se o usuário cancelar
+        return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
             const fileContent = e.target.result;
-            const importedMacroProjects = JSON.parse(fileContent);
+            // 1. Lê o conteúdo do arquivo e converte de JSON para objeto
+            const projectState = JSON.parse(fileContent);
 
-            if (!Array.isArray(importedMacroProjects) || !importedMacroProjects.every(p => p.macroId && p.macroName && Array.isArray(p.runs))) {
-                throw new Error("O arquivo não parece ser um backup de Macro-Projetos válido. A estrutura esperada é uma lista de projetos, cada um com 'macroId', 'macroName' e 'runs'.");
+            // 2. Valida se o objeto importado tem os dados mínimos necessários
+            if (typeof projectState !== 'object' || !projectState.testCaseData) {
+                throw new Error("O arquivo de backup é inválido ou não contém os dados de teste necessários ('testCaseData').");
             }
 
-            const existingMacroProjects = JSON.parse(localStorage.getItem(MACRO_PROJECTS_KEY)) || [];
-            let newProjectsCount = 0;
-            let updatedProjectsCount = 0;
-            let newRunsCount = 0;
-
-            importedMacroProjects.forEach(importedProject => {
-                const existingProjectIndex = existingMacroProjects.findIndex(p => p.macroId === importedProject.macroId);
-
-                if (existingProjectIndex > -1) {
-                    // O Macro-Projeto já existe, então vamos fundir as execuções.
-                    const existingProject = existingMacroProjects[existingProjectIndex];
-                    let runsAddedToExisting = 0;
-                    
-                    importedProject.runs.forEach(importedRun => {
-                        const runExists = existingProject.runs.some(r => r.runId === importedRun.runId);
-                        if (!runExists) {
-                            existingProject.runs.push(importedRun);
-                            newRunsCount++;
-                            runsAddedToExisting++;
-                        }
-                    });
-
-                    if(runsAddedToExisting > 0) {
-                        updatedProjectsCount++;
-                    }
-                } else {
-                    // O Macro-Projeto é novo, então adicionamos ele inteiro.
-                    existingMacroProjects.push(importedProject);
-                    newProjectsCount++;
-                    newRunsCount += importedProject.runs.length;
-                }
+            // 3. Limpa a tela e os dados atuais
+            showTestCaseView();
+            document.getElementById('test-case-container').innerHTML = '';
+            testCaseData = {};
+            ticketData = {};
+            testCaseCounter = 0;
+            ticketCounter = 0;
+            
+            // 4. Carrega os novos dados do arquivo
+            ticketCounter = projectState.ticketCounter || 0;
+            ticketData = projectState.ticketData || {};
+            // testCaseCounter = projectState.testCaseCounter || 0; // <-- LINHA REMOVIDA (ESTE ERA O BUG)
+            
+            // 5. Renderiza os casos de teste na tela, um por um
+            // Garante a ordem correta de renderização (principais antes de re-testes)
+            const sortedData = Object.values(projectState.testCaseData).sort((a, b) => a.id - b.id);
+            sortedData.forEach(testCase => {
+                addNewTestCase(testCase);
             });
             
-            localStorage.setItem(MACRO_PROJECTS_KEY, JSON.stringify(existingMacroProjects));
+            // 6. Garante que o contador principal está correto APÓS a importação
+            testCaseCounter = projectState.testCaseCounter || Object.keys(projectState.testCaseData).length;
+
+            currentLoadedProjectName = `Backup de ${new Date(projectState.exportedAt).toLocaleDateString() || file.name}`;
             
-            alert(`Importação concluída com sucesso!\n\n- ${newProjectsCount} novo(s) Macro-Projeto(s) adicionado(s).\n- ${updatedProjectsCount} Macro-Projeto(s) existente(s) atualizado(s).\n- ${newRunsCount} nova(s) Execução(ões) importada(s) no total.`);
+            updateSummary();
+            renderGlobalTagFilter();
+            alert(`Backup carregado com sucesso!`);
 
         } catch (error) {
-            console.error("Erro ao importar e fundir projetos:", error);
-            alert("Erro ao processar o arquivo de backup: " + error.message);
+            alert("Erro ao carregar o backup do arquivo: " + error.message);
+            currentLoadedProjectName = null;
         } finally {
-            // Limpa o valor do input para permitir importar o mesmo arquivo novamente
+            // Limpa o input de arquivo para permitir a importação do mesmo arquivo novamente
             event.target.value = '';
         }
-    };
-    reader.onerror = () => {
-        alert("Ocorreu um erro ao ler o arquivo.");
-        event.target.value = '';
     };
     reader.readAsText(file);
 }
@@ -2220,7 +2130,6 @@ function generateTestRoadmap() {
     let mostRetestedCase = null;
     let maxRetests = -1;
 
-    // Novas categorias para o roadmap usando a função central
     const classifiedData = {
         'Em Andamento (DEV)': [],
         'Pronto para Re-teste (QA)': [],
@@ -2231,32 +2140,29 @@ function generateTestRoadmap() {
     };
 
     allTestCases.forEach(testCase => {
-        // Lógica de Re-testes (continua a mesma)
-        if (!testCase.isReTest && testCase.reTestCount > maxRetests) {
+        if (!testCase.isReTest && (testCase.reTestCount || 0) > maxRetests) {
             maxRetests = testCase.reTestCount;
             mostRetestedCase = testCase;
         }
 
-        // Lógica de Tipos de Falha (continua a mesma)
         if (testCase.resultado === 'Reprovado') {
             if (testCase.tipoFalha && testCase.tipoFalha !== 'N/A') {
                 failureTypeCounts[testCase.tipoFalha] = (failureTypeCounts[testCase.tipoFalha] || 0) + 1;
             }
         }
         
-        // --- CLASSIFICAÇÃO INTELIGENTE USANDO A FUNÇÃO CENTRAL ---
         const workflowStatus = getTestCaseWorkflowStatus(testCase);
         if (classifiedData[workflowStatus]) {
             classifiedData[workflowStatus].push(testCase);
         }
     });
     
-    // Agrega os dados para passar para as outras funções
     roadmapAggregatedData = { 
         classifiedData,
-        resultsCount: { // Contagens para o gráfico e sumário
+        resultsCount: {
             'Em Andamento (DEV)': classifiedData['Em Andamento (DEV)'].length,
             'Pronto para Re-teste (QA)': classifiedData['Pronto para Re-teste (QA)'].length,
+            // CORREÇÃO: O parêntese extra foi removido da chave abaixo.
             'Aprovado e Concluído': classifiedData['Aprovado e Concluído'].length,
             'Falha Nova (Aguardando Ticket)': classifiedData['Falha Nova (Aguardando Ticket)'].length,
             'Inválido': classifiedData['Inválido'].length,
@@ -2267,7 +2173,11 @@ function generateTestRoadmap() {
         maxRetests 
     };
     
-    generateRoadmapSummaryAI(roadmapAggregatedData);
+    // O restante da função permanece igual
+    
+    // Chamada para a nova função de resumo LÓGICO
+    generateRoadmapSummary(roadmapAggregatedData); 
+    
     renderResultsChart(roadmapAggregatedData.resultsCount);
     
     const failureTypesContainer = document.getElementById('failureTypesChart').parentElement;
@@ -2693,386 +2603,6 @@ function handleDrop(e) {
     }
 }
 
-const SYSTEM_PROMPT = `Você é o "Assistente de Testes", um especialista amigável e prestativo para a ferramenta "Controle de Plano de Testes". Sua única função é responder perguntas sobre como usar esta ferramenta. Seja claro, direto e use listas de passos quando apropriado.
-
-Base de Conhecimento da Ferramenta:
-- **Casos de Teste:** Para adicionar, clique no '➕'. Cada caso tem ID, nome, etc. '🔄 Re-testar' cria um sub-item.
-- **Gerenciamento de Projetos (Menu Lateral):** Salvar, Carregar (substitui dados na tela), Gerenciar (alterar status/excluir).
-- **Relatórios (Menu Lateral):** Exportar Email (IA gera texto e copia), Gerar Roadmap (dashboard visual).
-- **Evidências:** Anexe arquivos, grave tela (com painel flutuante de controle e desenho), cole logs, ou crie fluxogramas com IA. Visualizar vídeos permite comentários por tempo e Post-its.
-- **Funcionalidades com IA ('🤖'):** Gerar descrição, analisar logs/mídia, priorizar falhas, importar de Word.
-- **Painel de Controle ('⚙️'):** Defina seu nome/foto, veja estatísticas, ative/desative funções de IA e o Modo Noturno.
-- **Outras Funcionalidades:** Modo Kanban (arraste para atualizar status), Importar/Exportar Backup (.json), Filtrar Reprovados ('⚠️').
-- **Tickets:** Quando um teste falha, um botão "Gerar Ticket" aparece. Isso cria um item no quadro de tickets. No menu "Gerenciar Tickets", você vê um Kanban de tickets (Aberto, Em Análise, etc.), onde pode arrastá-los para mudar o status. Clicar em um ticket abre seus detalhes para edição, comentários e visualização das evidências originais.
-Se a pergunta não for sobre a ferramenta, responda educadamente que só pode ajudar com o "Controle de Plano de Testes".`;
-
-function toggleChatAssistant(show) {
-    const chatModal = document.getElementById('chat-assistant-modal');
-    if (show) {
-        chatModal.style.display = 'flex';
-        if (chatHistory.length === 0) displayMessage('Olá! Como posso ajudar você a usar a ferramenta de testes hoje?', 'assistant');
-    } else chatModal.style.display = 'none';
-}
-
-function handleSendMessage() {
-    const input = document.getElementById('chat-input');
-    const userMessage = input.value.trim();
-    if (!userMessage || isAssistantTyping) return;
-    displayMessage(userMessage, 'user');
-    chatHistory.push({ role: 'user', parts: [{ text: userMessage }] });
-    input.value = '';
-    input.focus();
-    getAssistantResponse();
-}
-
-function displayMessage(message, sender) {
-    const messagesContainer = document.getElementById('chat-messages');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `chat-message ${sender}-message`;
-    messageDiv.textContent = message;
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-async function getAssistantResponse() {
-    if (!userSettings.ai.chatAssistant) { displayMessage('O assistente de IA está desativado. Você pode ativá-lo no Painel de Controle.', 'assistant'); return; }
-    isAssistantTyping = true;
-    document.getElementById('chat-send-btn').disabled = true;
-    displayMessage('Pensando...', 'assistant thinking');
-    const API_ENDPOINT = buildGeminiEndpoint();
-    if (!API_ENDPOINT) {
-        const thinkingMessage = document.querySelector('.assistant-message.thinking');
-        if (thinkingMessage) thinkingMessage.remove();
-        displayMessage('Configure sua chave de API no Painel de Controle para usar o assistente.', 'assistant');
-        isAssistantTyping = false;
-        document.getElementById('chat-send-btn').disabled = false;
-        return;
-    }
-    const requestBody = {
-        contents: chatHistory,
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
-    };
-    try {
-        const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(`Erro na API: ${response.status} ${response.statusText}. Detalhes: ${JSON.stringify(errorData)}`);
-        }
-        const data = await response.json();
-        const thinkingMessage = document.querySelector('.assistant-message.thinking');
-        if (thinkingMessage) thinkingMessage.remove();
-        if (data.candidates && data.candidates.length > 0) {
-            const assistantResponse = data.candidates[0].content.parts[0].text;
-            displayMessage(assistantResponse, 'assistant');
-            chatHistory.push({ role: 'model', parts: [{ text: assistantResponse }] });
-        } else displayMessage('Não recebi uma resposta válida da IA. Pode ser um filtro de segurança. Tente reformular sua pergunta.', 'assistant');
-    } catch (error) {
-        console.error("Erro ao chamar a API do Assistente:", error);
-        const thinkingMessage = document.querySelector('.assistant-message.thinking');
-        if (thinkingMessage) thinkingMessage.remove();
-        const errorMsg = error?.message || 'Erro desconhecido.';
-        displayMessage(`Desculpe, ocorreu um erro de comunicação com a IA. Verifique sua chave de API e a conexão. Detalhes: ${errorMsg}`, 'assistant');
-    } finally {
-        isAssistantTyping = false;
-        document.getElementById('chat-send-btn').disabled = false;
-    }
-}
-
-async function generateFlowchartFromDescription() {
-    if (!userSettings.ai.generateFlowchart) return;
-    const description = document.getElementById('flowchart-description').value.trim();
-    if (!description) { alert("Por favor, descreva o fluxo que você deseja criar."); return; }
-    const button = document.getElementById('generate-flowchart-btn');
-    const codeTextarea = document.getElementById('flowchart-code');
-    const preview = document.getElementById('flowchart-preview');
-    button.disabled = true;
-    button.textContent = "🧠 Gerando...";
-    codeTextarea.value = "A IA está processando sua descrição...";
-    preview.innerHTML = "";
-    const prompt = `Aja como um especialista em sintaxe de fluxogramas Mermaid.js. Converta a descrição a seguir em um código de fluxograma Mermaid válido (graph TD). Responda APENAS com o bloco de código. Descrição: --- ${description} ---`;
-    const API_ENDPOINT = buildGeminiEndpoint();
-    if (!API_ENDPOINT) { button.disabled = false; button.textContent = "🤖 Gerar Fluxograma com IA"; return; }
-    try {
-        const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-        if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-        const data = await response.json();
-        const mermaidCode = data.candidates[0].content.parts[0].text.trim().replace(/```mermaid/g, '').replace(/```/g, '');
-        codeTextarea.value = mermaidCode;
-        await renderFlowchartPreview();
-    } catch (error) {
-        codeTextarea.value = `Ocorreu um erro: ${error.message}`;
-        preview.innerHTML = `<div class="error-text">Falha ao gerar o diagrama.</div>`;
-    } finally {
-        button.disabled = false;
-        button.textContent = "🤖 Gerar Fluxograma com IA";
-    }
-}
-
-async function generateDescriptionWithAI(caseId) {
-    if (!userSettings.ai.generateDescription) return;
-    const itemTestadoInput = document.querySelector(`#${caseId} input[onchange*="itemTestado"]`);
-    const descriptionTextarea = document.getElementById(`${caseId}-descricao`);
-    const button = event.target;
-    const itemTestado = itemTestadoInput.value;
-    if (!itemTestado) { alert("Por favor, preencha o campo 'Nome do item a ser testado'."); return; }
-    button.disabled = true;
-    button.textContent = "🧠 Pensando...";
-    descriptionTextarea.value = "Aguarde, a IA está gerando a descrição...";
-    const prompt = `Como um QA Sênior, crie uma descrição detalhada de caso de teste para o item "${itemTestado}". Use o formato: 1. Objetivo do Teste; 2. Pré-condições; 3. Passos para Execução; 4. Resultados Esperados.`;
-    const API_ENDPOINT = buildGeminiEndpoint();
-    if (!API_ENDPOINT) { button.disabled = false; button.textContent = "🤖 Gerar Descrição com IA"; return; }
-    try {
-        const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-        if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-        const data = await response.json();
-        const generatedText = data.candidates[0].content.parts[0].text.trim();
-        descriptionTextarea.value = generatedText;
-        updateTestCaseData(caseId, 'descricao', generatedText);
-    } catch (error) {
-        alert("Ocorreu um erro ao se comunicar com a IA.");
-        descriptionTextarea.value = "Ocorreu um erro. Tente novamente.";
-    } finally {
-        button.disabled = false;
-        button.textContent = "🤖 Gerar Descrição com IA";
-    }
-}
-
-async function analyzeLogWithAI() {
-    if (!userSettings.ai.analyzeLog) return;
-    if (!attachingLogToCaseId) { alert("Erro: Não foi possível identificar o caso de teste para análise."); return; }
-    const logText = document.getElementById('log-attach-textarea').value.trim();
-    if (!logText) { alert("Por favor, cole o log do console na área de texto."); return; }
-    const button = event.target;
-    button.disabled = true;
-    button.textContent = "🧠 Analisando...";
-    const prompt = `Como um dev sênior, analise o log a seguir e retorne um resumo e a causa provável. Formato: "**Resumo do Erro:** [resumo]\n**Causa Provável:** [causa]". Log: --- ${logText} ---`;
-    const API_ENDPOINT = buildGeminiEndpoint();
-    if (!API_ENDPOINT) { button.disabled = false; button.textContent = "🤖 Analisar Log com IA"; return; }
-    try {
-        const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-        if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-        const data = await response.json();
-        const generatedText = `**Análise do Log via IA:**\n\n${data.candidates[0].content.parts[0].text.trim()}`;
-        addComment(attachingLogToCaseId, 'DEV', generatedText);
-        alert("Análise do log concluída e adicionada como um comentário!");
-        closeModal('log-attach-modal');
-    } catch (error) { alert("Ocorreu um erro ao se comunicar com a IA.");
-    } finally {
-        button.disabled = false;
-        button.textContent = "🤖 Analisar Log com IA";
-    }
-}
-
-async function analyzeAndPrioritizeFailure(caseId) {
-    if (!userSettings.ai.prioritizeFailure) return;
-    const caseData = testCaseData[caseId];
-    if (!caseData) return;
-    const priorityOutput = document.getElementById(`${caseId}-priority-output`);
-    const teamOutput = document.getElementById(`${caseId}-team-output`);
-    priorityOutput.innerHTML = "🤖 Analisando...";
-    teamOutput.innerHTML = "🤖 Analisando...";
-    const dataForAI = { itemTestado: caseData.itemTestado, descricao: caseData.descricao, tipoFalha: caseData.tipoFalha };
-    const prompt = `Como um Gerente de Projetos de TI, analise estes dados de um teste reprovado: ${JSON.stringify(dataForAI)}. Responda APENAS com um objeto JSON com as chaves "prioridade" ('Crítica', 'Alta', 'Média', 'Baixa'), "equipeSugerida" ('Frontend', 'Backend', 'Banco de Dados', 'Infraestrutura') e "justificativa" (string curta).`;
-    const API_ENDPOINT = buildGeminiEndpoint(false);
-    if (!API_ENDPOINT) { priorityOutput.textContent = "Chave de API não configurada"; teamOutput.textContent = "Chave de API não configurada"; return; }
-    try {
-        const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-        if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-        const data = await response.json();
-        const rawText = data.candidates[0].content.parts[0].text;
-        const jsonText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const result = JSON.parse(jsonText);
-        if (result.prioridade && result.equipeSugerida) {
-            updateTestCaseData(caseId, 'priority', result.prioridade);
-            updateTestCaseData(caseId, 'suggestedTeam', result.equipeSugerida);
-            priorityOutput.textContent = result.prioridade;
-            teamOutput.textContent = result.equipeSugerida;
-            const justificationComment = `**Análise de Prioridade (IA):**\nPrioridade: **${result.prioridade}**, Equipe: **${result.equipeSugerida}**.\n**Justificativa:** ${result.justificativa}`;
-            addComment(caseId, 'QA', justificationComment);
-        } else throw new Error("Resposta da IA em formato inesperado.");
-    } catch (error) {
-        priorityOutput.textContent = "Erro na análise";
-        teamOutput.textContent = "Erro na análise";
-    }
-}
-
-// SUBSTITUA A SUA FUNÇÃO 'generateRoadmapSummaryAI' POR ESTA:
-async function generateRoadmapSummaryAI(summaryData) {
-    if (!userSettings.ai.summarizeRoadmap) return;
-    const aiSummaryContainer = document.getElementById('roadmap-ai-summary');
-    aiSummaryContainer.style.display = 'block';
-    aiSummaryContainer.innerHTML = '<h3>Análise da IA</h3><p>🤖 Gerando análise qualitativa...</p>';
-
-    const dataForAI = {
-        contagemStatus: summaryData.resultsCount,
-        tiposDeFalha: summaryData.failureTypeCounts,
-    };
-
-    const prompt = `Como um Gerente de QA experiente, analise o resumo do estado atual de um ciclo de testes: ${JSON.stringify(dataForAI)}. Escreva um resumo executivo de 2 a 4 frases. Foque sua análise nos seguintes pontos:
-- "Em Andamento (DEV)" representa o gargalo atual de desenvolvimento.
-- "Pronto para Re-teste (QA)" representa a carga de trabalho imediata para a equipe de QA.
-- "Falha Nova (Aguardando Ticket)" são os riscos que ainda não foram endereçados.
-Forneça uma recomendação clara baseada nesses números.`;
-
-    const API_ENDPOINT = buildGeminiEndpoint(false);
-    if (!API_ENDPOINT) { aiSummaryContainer.innerHTML = '<h3>Análise da IA</h3><p>Configure sua chave de API para gerar a análise.</p>'; return; }
-    try {
-        const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-        if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-        const data = await response.json();
-        const summaryText = data.candidates[0].content.parts[0].text;
-        aiSummaryContainer.innerHTML = `<h3>Análise da IA</h3><p>${summaryText}</p>`;
-    } catch (error) {
-        aiSummaryContainer.innerHTML = '<h3>Análise da IA</h3><p>Ocorreu um erro ao gerar a análise.</p>';
-    }
-}
-async function handleWordUpload(event) {
-    if (!userSettings.ai.importFromWord) return;
-    const file = event.target.files[0];
-    if (!file) return;
-    const importButton = event.target.nextElementSibling;
-    const originalButtonText = importButton.innerHTML;
-    importButton.disabled = true;
-    importButton.innerHTML = "⏳ Processando...";
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const result = await mammoth.extractRawText({ arrayBuffer: e.target.result });
-            const generatedTestCases = await generateTestCasesFromText(result.value);
-            if (generatedTestCases && generatedTestCases.length > 0) {
-                showTestCaseView();
-                generatedTestCases.forEach(tc => addNewTestCase({ itemTestado: tc.itemTestado, condicaoAprovacao: tc.condicaoAprovacao }));
-                alert(`${generatedTestCases.length} casos de teste foram gerados com sucesso!`);
-            } else alert("A IA não conseguiu gerar casos de teste do documento.");
-        } catch (error) { alert("Ocorreu um erro ao processar o arquivo.");
-        } finally {
-            importButton.disabled = false;
-            importButton.innerHTML = originalButtonText;
-            event.target.value = '';
-        }
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-async function generateTestCasesFromText(scopeText) {
-    const prompt = `Como um QA Sênior, analise o escopo a seguir e crie casos de teste. Para cada um, defina "itemTestado" e "condicaoAprovacao". Responda APENAS com um array de objetos JSON. Escopo: --- ${scopeText} ---`;
-    const API_ENDPOINT = buildGeminiEndpoint();
-    if (!API_ENDPOINT) return null;
-    try {
-        const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-        if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-        const data = await response.json();
-        const rawText = data.candidates[0].content.parts[0].text;
-        const jsonText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonText);
-    } catch (error) { throw error; }
-}
-
-async function generateAIReport(allTestCaseData) {
-    if (!userSettings.ai.generateEmailReport) return null;
-    const API_ENDPOINT = buildGeminiEndpoint();
-    if (!API_ENDPOINT) return null;
-
-    // ALTERAÇÃO: Enriquecemos os dados com o novo status geral dos tickets.
-    const simplifiedData = Object.values(allTestCaseData).map(tc => {
-        let statusGeralTickets = 'Sem Tickets';
-        if (tc.tickets && tc.tickets.length > 0) {
-            const hasOpenTickets = tc.tickets.some(ticketId => ticketData[ticketId]?.status !== 'Fechado');
-            statusGeralTickets = hasOpenTickets ? 'Em Andamento' : 'Resolvido';
-        }
-
-        return {
-            id: tc.displayId,
-            itemTestado: tc.itemTestado,
-            resultadoQA: tc.resultado, // Renomeado para clareza no prompt
-            statusGeralTickets: statusGeralTickets // NOVO CAMPO PARA A IA
-        };
-    });
-
-    if (simplifiedData.length === 0) {
-        alert("Não há dados de teste para a IA analisar.");
-        return null;
-    }
-
-    // ALTERAÇÃO: Prompt totalmente reescrito para usar o novo status e gerar um relatório orientado à ação.
-    const prompt = `Como um Líder de QA, analise estes dados: ${JSON.stringify(simplifiedData)}. O campo 'resultadoQA' é a visão do tester, e 'statusGeralTickets' é o status do desenvolvimento. Gere um relatório de e-mail profissional e acionável. Responda APENAS com um objeto JSON com chaves "assunto" e "corpoEmail". O corpo do email deve ter as seguintes seções, apenas se houver itens para elas:
-1.  **Acompanhamento de Pendências (Tickets em Andamento):** Liste os casos com 'statusGeralTickets' como 'Em Andamento'. Esta é a seção prioritária.
-2.  **Itens Resolvidos (Prontos para Re-teste):** Liste os casos com 'statusGeralTickets' como 'Resolvido'. Indique que estes precisam ser re-testados pela equipe de QA.
-3.  **Novas Falhas Identificadas (Aguardando Triagem):** Liste casos com 'resultadoQA' como 'Reprovado' mas que ainda estão com 'statusGeralTickets' como 'Sem Tickets'. Destaque que precisam da criação de tickets.
-4.  **Itens Aprovados e Estáveis:** Liste os casos com 'resultadoQA' como 'Aprovado' e 'statusGeralTickets' como 'Sem Tickets'.
-5.  **Conclusão e Próximos Passos:** Uma breve conclusão focada nas ações necessárias.`;
-
-    try {
-        const response = await fetch(API_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-        if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-        const data = await response.json();
-        const rawText = data.candidates[0].content.parts[0].text;
-        const jsonText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonText);
-    } catch (error) {
-        alert("Ocorreu um erro ao gerar o relatório com a IA: " + error.message);
-        return null;
-    }
-}
-
-async function analyzeVideoWithAI(event, caseId, evidenceSrc) {
-    if (!userSettings.ai.analyzeMedia) return;
-    event.stopPropagation();
-    const button = event.target;
-    button.disabled = true;
-    button.textContent = "⏳";
-    const API_ENDPOINT = buildGeminiEndpoint();
-    if (!API_ENDPOINT) { button.disabled = false; button.textContent = "🤖 Analisar Vídeo"; return; }
-    try {
-        const base64Data = evidenceSrc.split(',')[1];
-        const prompt = `Analise este vídeo de um teste de software. Descreva as ações do usuário em bullet points. Se houver um erro, destaque-o com "ERRO:".`;
-        const requestBody = { contents: [ { parts: [ { text: prompt }, { inline_data: { mime_type: "video/webm", data: base64Data } } ] } ] };
-        const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        if (!response.ok) { const errorText = await response.text(); throw new Error(`Erro na API: ${response.statusText}. Detalhes: ${errorText}`); }
-        const data = await response.json();
-        if (!data.candidates || data.candidates.length === 0) throw new Error("A API retornou uma resposta vazia (possivelmente filtros de segurança).");
-        const generatedText = `**Análise do Vídeo por IA:**\n\n${data.candidates[0].content.parts[0].text.trim()}`;
-        addComment(caseId, 'QA', generatedText);
-        alert('Análise do vídeo concluída e adicionada como um novo comentário!');
-    } catch (error) {
-        alert(`Ocorreu um erro ao processar o vídeo: ${error.message}`);
-    } finally {
-        button.disabled = false;
-        button.textContent = "🤖 Analisar Vídeo";
-    }
-}
-
-async function analyzeImageWithAI(event, caseId, evidenceSrc, mimeType) {
-    if (!userSettings.ai.analyzeMedia) return;
-    event.stopPropagation();
-    const button = event.target;
-    button.disabled = true;
-    button.textContent = "⏳";
-    const API_ENDPOINT = buildGeminiEndpoint();
-    if (!API_ENDPOINT) { button.disabled = false; button.textContent = "🤖 Analisar Imagem"; return; }
-    try {
-        const base64Data = evidenceSrc.split(',')[1];
-        const prompt = `Analise esta imagem. Extraia todo o texto visível (OCR). Descreva mensagens de erro e resuma o que a tela representa.`;
-        const requestBody = { contents: [ { parts: [ { text: prompt }, { inline_data: { mime_type: mimeType, data: base64Data } } ] } ] };
-        const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
-        if (!response.ok) { const errorText = await response.text(); throw new Error(`Erro na API: ${response.statusText}. Detalhes: ${errorText}`); }
-        const data = await response.json();
-        if (!data.candidates || data.candidates.length === 0) throw new Error("A API retornou uma resposta vazia (possivelmente filtros de segurança).");
-        const generatedText = `**Análise da Imagem por IA:**\n\n${data.candidates[0].content.parts[0].text.trim()}`;
-        addComment(caseId, 'QA', generatedText);
-        alert('Análise da imagem concluída e adicionada como um novo comentário!');
-    } catch (error) {
-        alert(`Ocorreu um erro ao processar a imagem: ${error.message}`);
-    } finally {
-        button.disabled = false;
-        button.textContent = "🤖 Analisar Imagem";
-    }
-}
-
 function updateCommentButtonText(caseId) {
     const card = document.getElementById(caseId);
     if (!card) return;
@@ -3106,56 +2636,6 @@ function handlePastedEvidence(event, caseId) {
             break;
         }
     }
-}
-function openAICorrectionModal(caseId, field) {
-    if (!testCaseData[caseId]) return;
-    aiCorrectionContext = { caseId, field };
-    const originalText = testCaseData[caseId][field];
-    const fieldLabel = field === 'itemTestado' ? 'Nome do Item' : 'Descrição';
-    document.getElementById('ai-correction-title').textContent = `Corrigir "${fieldLabel}" com IA`;
-    document.getElementById('ai-correction-original-text').textContent = originalText;
-    document.getElementById('ai-correction-prompt').value = '';
-    document.getElementById('ai-correction-suggestion').value = '';
-    document.getElementById('ai-correction-modal').style.display = 'flex';
-}
-
-async function runAICorrection() {
-    const originalText = document.getElementById('ai-correction-original-text').textContent;
-    const userPrompt = document.getElementById('ai-correction-prompt').value.trim();
-    const suggestionTextarea = document.getElementById('ai-correction-suggestion');
-    const generateBtn = document.getElementById('run-ai-correction-btn');
-    if (!userPrompt) { alert("Por favor, digite uma instrução para a IA."); return; }
-    generateBtn.disabled = true;
-    generateBtn.textContent = '🧠 Pensando...';
-    suggestionTextarea.value = 'Aguarde, a IA está trabalhando na sua solicitação...';
-    const prompt = `Aja como um assistente de edição de texto. Sua tarefa é reescrever o "Texto Original" com base na "Instrução" fornecida. Responda APENAS com o texto reescrito, sem adicionar nenhuma explicação ou formatação extra.\n\nInstrução: "${userPrompt}"\n\nTexto Original: "${originalText}"`;
-    const API_ENDPOINT = buildGeminiEndpoint();
-    if (!API_ENDPOINT) { generateBtn.disabled = false; generateBtn.textContent = 'Gerar Sugestão'; return; }
-    try {
-        const response = await fetch(API_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-        if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-        const data = await response.json();
-        const generatedText = data.candidates[0].content.parts[0].text.trim();
-        suggestionTextarea.value = generatedText;
-    } catch (error) { suggestionTextarea.value = `Ocorreu um erro ao gerar a sugestão: ${error.message}`;
-    } finally {
-        generateBtn.disabled = false;
-        generateBtn.textContent = 'Gerar Sugestão';
-    }
-}
-
-function applyAICorrection() {
-    const { caseId, field } = aiCorrectionContext;
-    if (!caseId || !field) return;
-    const newText = document.getElementById('ai-correction-suggestion').value;
-    updateTestCaseData(caseId, field, newText);
-    const cardElement = document.getElementById(caseId);
-    if (cardElement) {
-        const inputElement = cardElement.querySelector(`[onchange*="${field}"], [data-field="${field}"]`);
-        if (inputElement) inputElement.value = newText;
-    }
-    closeModal('ai-correction-modal');
-    aiCorrectionContext = { caseId: null, field: null };
 }
 
 function setupVideoCommenter(evidence, caseId) {
@@ -3863,8 +3343,8 @@ function showRetrospective() {
     console.log("Iniciando a Retrospectiva...");
     if (retrospectiveAnimationState.animationFrameId) cancelAnimationFrame(retrospectiveAnimationState.animationFrameId);
     
+    // A linha que estava aqui e causava o erro foi movida para setupRetrospectiveControls()
     retrospectiveAnimationState.isPlaying = false;
-    document.getElementById('retrospective-play-pause-btn').textContent = '▶️';
 
     try {
         if (Object.keys(testCaseData).length === 0) {
@@ -3892,9 +3372,12 @@ function showRetrospective() {
         if (retrospectiveAnimationState.totalDuration <= 0) retrospectiveAnimationState.totalDuration = 1000;
 
         retrospectiveAnimationState.segments = processEventsIntoSegments(events);
+        
+        // As funções de renderização e configuração são chamadas antes de exibir
         renderRetrospectiveTimeline(events, retrospectiveAnimationState.segments, retrospectiveAnimationState.analytics);
         setupRetrospectiveControls();
         
+        // Agora, o modal é exibido sem erros
         document.getElementById('retrospective-modal').style.display = 'flex';
         updateTimelineView(0);
 
@@ -3903,6 +3386,8 @@ function showRetrospective() {
         alert(`Ocorreu um erro inesperado ao gerar a retrospectiva: ${error.message}`);
     }
 }
+
+
 
 
 function renderRetrospectiveTimeline(events, segments, analyticsData) {
@@ -4039,10 +3524,14 @@ function processEventsIntoSegments(events) {
 function setupRetrospectiveControls() {
     const playPauseBtn = document.getElementById('retrospective-play-pause-btn');
     const scrubber = document.getElementById('retrospective-scrubber');
+    
     scrubber.value = 0;
     retrospectiveAnimationState.isPlaying = false;
     retrospectiveAnimationState.elapsedTimeOnPause = 0;
+    
+    // ADICIONADO: A linha foi movida para cá para evitar o erro.
     playPauseBtn.textContent = '▶️';
+
     playPauseBtn.onclick = () => {
         retrospectiveAnimationState.isPlaying = !retrospectiveAnimationState.isPlaying;
         playPauseBtn.textContent = retrospectiveAnimationState.isPlaying ? '⏸️' : '▶️';
@@ -4057,6 +3546,7 @@ function setupRetrospectiveControls() {
             cancelAnimationFrame(retrospectiveAnimationState.animationFrameId);
         }
     };
+
     scrubber.oninput = () => {
         if (retrospectiveAnimationState.isPlaying) playPauseBtn.click();
         const progress = parseFloat(scrubber.value) / parseFloat(scrubber.max);
@@ -4066,6 +3556,7 @@ function setupRetrospectiveControls() {
         updateTimelineView(progress);
     };
 }
+
 
 let lastTimestamp = 0;
 function animateRetrospective() {
@@ -4313,6 +3804,7 @@ function showMacroProjectManagementModal() {
 }
 
 function addMacroProject() {
+    return; // Adicione esta linha
     const nameInput = document.getElementById('new-macro-project-name');
     const macroName = nameInput.value.trim();
     if (!macroName) {
@@ -4389,6 +3881,7 @@ function deleteMacroProject(macroId) {
 }
 
 function deleteRun(macroId, runId) {
+    return; // Adicione esta linha
      if (!confirm("Tem certeza que deseja excluir esta execução permanentemente?")) {
         return;
     }
@@ -4472,26 +3965,55 @@ function showExportOptionsForMacro(macroId) {
     `;
 }
 
-function executeMacroProjectExport(macroId) {
-    const macroProjects = JSON.parse(localStorage.getItem(MACRO_PROJECTS_KEY)) || [];
-    const macroProjectToExport = macroProjects.find(mp => mp.macroId === macroId);
-    if (!macroProjectToExport) {
-        alert("Erro: Macro-Projeto não encontrado para exportação.");
+/**
+ * EXPORTAÇÃO SIMPLIFICADA
+ * Exporta o estado atual da aplicação (casos de teste e tickets) para um arquivo JSON.
+ * Esta função substitui a lógica anterior de macro-projetos.
+ */
+function exportCurrentStateToJSON() {
+    // 1. Verifica se há dados para exportar
+    if (Object.keys(testCaseData).length === 0) {
+        alert("Não há dados na tela para exportar.");
         return;
     }
 
-    const dataToExport = JSON.stringify([macroProjectToExport], null, 2);
-    const blob = new Blob([dataToExport], { type: "application/json" });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `macro-projeto_${macroProjectToExport.macroName.replace(/\s+/g, '_')}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-    closeModal('export-modal');
-}
+    try {
+        // 2. Coleta todas as informações relevantes em um único objeto
+        const currentState = {
+            testCaseCounter: testCaseCounter,
+            ticketCounter: ticketCounter,
+            testCaseData: testCaseData,
+            ticketData: ticketData,
+            // Adiciona um carimbo de data/hora ao backup para referência
+            exportedAt: new Date().toISOString()
+        };
 
+        // 3. Converte o objeto para uma string JSON formatada
+        const dataStr = JSON.stringify(currentState, null, 2);
+
+        // 4. Cria um Blob (arquivo em memória) com os dados
+        const blob = new Blob([dataStr], { type: "application/json" });
+
+        // 5. Gera um nome de arquivo com a data atual
+        const timestamp = new Date().toISOString().slice(0, 10);
+        const fileName = `backup_plano_de_testes_${timestamp}.json`;
+
+        // 6. Cria um link de download e simula o clique para baixar o arquivo
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // 7. Libera a memória do URL do Blob
+        URL.revokeObjectURL(link.href);
+
+    } catch (error) {
+        alert("Ocorreu um erro ao gerar o arquivo de backup.");
+        console.error("Erro em exportCurrentStateToJSON:", error);
+    }
+}
 function executeSelectedRunsExport(macroId) {
     const selectedRunIds = Array.from(document.querySelectorAll('#export-modal-content input[type="checkbox"]:checked'))
                                 .map(cb => cb.dataset.runId);
@@ -4525,71 +4047,98 @@ function executeSelectedRunsExport(macroId) {
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
     closeModal('export-modal');
+}
 
-};
+function suggestPriority(caseId) {
+    const caseData = testCaseData[caseId];
+    if (!caseData) return;
 
-let firebaseApp = null;
-let firebaseDb = null;
+    const priorityOutput = document.getElementById(`${caseId}-priority-output`);
+    const tipoFalha = caseData.tipoFalha;
 
-(async function initializeFirebase() {
-      try {
-        // Imports do Firebase usando importação dinâmica para evitar erro de módulo
-        const [{ initializeApp }, { getFirestore, collection, addDoc, getDocs }] = await Promise.all([
-          import("https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js"),
-          import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js")
-        ]);
+    const priorityMap = {
+        "Erro de performance": "Alta",
+        "Erro de dados": "Crítica",
+        "Erro de preenchimento": "Média",
+        "Erro de usabilidade": "Baixa"
+    };
 
-        // Config do seu projeto
-        const firebaseConfig = {
-          apiKey: "AIzaSyBt16B6FnPwft82OEkPA-dnBwIlNt1RsqU",
-          authDomain: "beyond-test-4c87a.firebaseapp.com",
-          projectId: "beyond-test-4c87a",
-          storageBucket: "beyond-test-4c87a.firebasestorage.app",
-          messagingSenderId: "467835877240",
-          appId: "1:467835877240:web:b35759acb6e604275cba8d",
-          measurementId: "G-MWZNHFL7JW"
-        };
+    const suggestedPriority = priorityMap[tipoFalha] || "Média";
+    
+    priorityOutput.textContent = suggestedPriority;
+    updateTestCaseData(caseId, 'priority', suggestedPriority);
+}
 
-        // Inicializa Firebase apenas uma vez
-        firebaseApp = firebaseApp || initializeApp(firebaseConfig);
-        firebaseDb = firebaseDb || getFirestore(firebaseApp);
-        window.db = firebaseDb;
+function generateTextReport() {
+    const allData = Object.values(testCaseData);
+    let report = `RELATÓRIO DE STATUS DO PROJETO\n`;
+    report += `Data: ${new Date().toLocaleString('pt-BR')}\n`;
+    report += `========================================\n\n`;
 
-        console.log("✅ Firebase inicializado", firebaseApp?.name || "(sem nome)");
+    const summary = getSummaryData();
+    report += `RESUMO GERAL:\n`;
+    report += `- Total de Casos: ${summary.total}\n`;
+    report += `- Aprovados: ${summary.approved}\n`;
+    report += `- Reprovados: ${summary.failed}\n`;
+    report += `- Inválidos: ${summary.invalid}\n`;
+    report += `- Não Executados: ${summary.notRun}\n\n`;
 
-        // 🔍 TESTE
-        async function testarFirebase() {
-          console.log("🔍 Testando conexão com Firebase...");
+    const approved = allData.filter(tc => tc.resultado === 'Aprovado');
+    const failed = allData.filter(tc => tc.resultado === 'Reprovado');
+    const invalid = allData.filter(tc => tc.resultado === 'Inválido');
 
-          if (!firebaseDb) {
-            console.error("❌ Firebase não está inicializado antes do teste.");
-            return;
-          }
+    if (failed.length > 0) {
+        report += `ITENS REPROVADOS:\n`;
+        failed.forEach(tc => {
+            report += `- ID #${tc.displayId}: ${tc.itemTestado} (Tipo de Falha: ${tc.tipoFalha})\n`;
+        });
+        report += `\n`;
+    }
 
-          try {
-            const ref = await addDoc(collection(firebaseDb, "teste_conexao"), {
-              funcionando: true,
-              timestamp: new Date()
-            });
+    if (approved.length > 0) {
+        report += `ITENS APROVADOS:\n`;
+        approved.forEach(tc => {
+            report += `- ID #${tc.displayId}: ${tc.itemTestado}\n`;
+        });
+        report += `\n`;
+    }
+    
+    if (invalid.length > 0) {
+        report += `ITENS INVÁLIDOS:\n`;
+        invalid.forEach(tc => {
+            report += `- ID #${tc.displayId}: ${tc.itemTestado}\n`;
+        });
+        report += `\n`;
+    }
 
-            console.log("🔥 Documento criado! ID:", ref.id);
+    report += `========================================\nFim do Relatório.`;
+    return report;
+}
 
-            const snapshot = await getDocs(collection(firebaseDb, "teste_conexao"));
-            console.log(`📚 Documentos lidos: ${snapshot.size}`);
+function generateRoadmapSummary(summaryData) {
+    const summaryContainer = document.getElementById('roadmap-ai-summary');
+    if (!summaryContainer) return; // Segurança caso o elemento não exista
 
-            return { id: ref.id, count: snapshot.size };
-          } catch (erro) {
-            console.error("❌ Firebase NÃO conectou!", erro);
-            throw erro;
-          }
-        }
+    summaryContainer.style.display = 'block';
+    
+    const { resultsCount } = summaryData;
+    let summaryText = `<p><strong>Análise dos Dados:</strong></p><ul>`;
+    
+    if (resultsCount['Em Andamento (DEV)'] > 0) {
+        summaryText += `<li>Há <strong>${resultsCount['Em Andamento (DEV)']}</strong> caso(s) com tickets em desenvolvimento, representando o esforço atual da equipe de DEV.</li>`;
+    }
+    if (resultsCount['Pronto para Re-teste (QA)'] > 0) {
+        summaryText += `<li>Existem <strong>${resultsCount['Pronto para Re-teste (QA)']}</strong> caso(s) aguardando re-teste, indicando a carga de trabalho imediata para a equipe de QA.</li>`;
+    }
+     if (resultsCount['Falha Nova (Aguardando Ticket)'] > 0) {
+        summaryText += `<li><strong style="color:var(--cor-status-reprovado);">${resultsCount['Falha Nova (Aguardando Ticket)']}</strong> nova(s) falha(s) foram identificadas e precisam de triagem para a criação de tickets.</li>`;
+    }
+    if (Object.values(resultsCount).every(v => v === 0)) {
+         summaryText += `<li>Não há dados significativos para análise no momento.</li>`;
+    }
 
-        // Disponibiliza o teste no console para reuso manual
-        window.testarFirebase = testarFirebase;
-
-        // Executa um teste inicial para validar a conexão
-        await testarFirebase();
-      } catch (erro) {
-        console.error("❌ Erro ao inicializar Firebase ou executar teste:", erro);
-      }
-})();
+    summaryText += `</ul>`;
+    
+    // Altera o título para refletir que não é mais IA
+    summaryContainer.innerHTML = `<h3>Resumo Lógico</h3>${summaryText}`;
+}

@@ -1,0 +1,31 @@
+itemtestado;condicaoaprovacao;descricao;tipoteste
+[Funcional] Upload de Planilha;Arquivo .xlsx carregado com sucesso;Verificar se o sistema aceita upload de arquivo no formato .xlsx;Funcional
+[Funcional] Identificação de Cabeçalho;Cabeçalho detectado corretamente;Validar se o sistema identifica automaticamente a linha de cabeçalho da primeira aba;Funcional
+[Funcional] Ignorar Linhas Vazias;Linhas vazias não aparecem na pré-visualização;Testar se linhas vazias são ignoradas durante a importação;Funcional
+[Funcional] Pré-visualização de Dados;Tabela exibida com totais corretos;Confirmar se os dados são exibidos com totalizadores no rodapé;Funcional
+[Funcional] Congelamento de Cabeçalho;Cabeçalho permanece fixo ao rolar;Verificar se cabeçalho e coluna descrição ficam congelados;Funcional
+[Funcional] Feedback Visual de Erros;Células inválidas destacadas em vermelho;Testar se células com erro são destacadas corretamente;Funcional
+[Funcional] Tooltip de Erro;Mensagem exibida ao passar mouse;Validar se tooltip mostra descrição do erro ao passar mouse;Funcional
+[Funcional] Contador de Erros;Modal abre com lista de IDs;Checar se contador de erros no cabeçalho abre modal com IDs;Funcional
+[Funcional] Atribuição em Lote;Método aplicado a múltiplas tarefas;Testar se é possível aplicar método de pagamento em lote;Funcional
+[Funcional] Integração Final;Integração concluída sem erros;Validar se integração só ocorre após validação completa;Funcional
+[RegraNegocio] Formato do Arquivo;Somente .xlsx aceito;Verificar se sistema rejeita arquivos que não sejam .xlsx;RegraNegocio
+[RegraNegocio] Colunas Obrigatórias;Colunas padrão presentes;Testar se planilha contém colunas ID, Subprojeto, Descrição, Valores;RegraNegocio
+[RegraNegocio] Unicidade de ID/Subprojeto;Sem duplicatas;Validar se combinação ID/Subprojeto é única;RegraNegocio
+[RegraNegocio] Descrição Obrigatória;Campo preenchido;Checar se coluna Descrição não está vazia;RegraNegocio
+[RegraNegocio] Valores Numéricos;Valores > 0;Testar se valores com/sem impostos são numéricos e maiores que zero;RegraNegocio
+[RegraNegocio] Consistência de Valores;Valor sem impostos <= valor com impostos;Validar regra entre valores com e sem impostos;RegraNegocio
+[RegraNegocio] Bloqueio de Integração;Integração não ocorre com erros;Confirmar que integração é bloqueada se houver erros;RegraNegocio
+[RegraNegocio] Backup Antes da Integração;Backup criado com sucesso;Testar se backup é gerado antes da integração;RegraNegocio
+[RegraNegocio] Controle de Revisão;Justificativa obrigatória;Verificar se criação de nova revisão exige justificativa;RegraNegocio
+[RegraNegocio] Controle de Acesso;Somente grupo Contratos acessa;Validar se apenas usuários do grupo Contratos acessam formulário;RegraNegocio
+[Usabilidade] Feedback de Processamento;Mensagem exibida corretamente;Testar se sistema mostra mensagem 'Processando planilha...' durante upload;Usabilidade
+[Usabilidade] Feedback de Conclusão;Mensagem clara exibida;Validar se mensagem 'Importação concluída!' aparece após sucesso;Usabilidade
+[Usabilidade] Ocultação de Botões;Botões aparecem na ordem correta;Checar se botões só aparecem após etapa anterior concluída;Usabilidade
+[Usabilidade] Mensagens de Erro Claras;Erro compreensível;Testar se mensagens de erro são claras e compreensíveis;Usabilidade
+[Usabilidade] Destaque Visual de Erros;Células em vermelho;Confirmar se células inválidas são destacadas visualmente;Usabilidade
+[Usabilidade] Tooltip Explicativo;Tooltip aparece com regra;Validar se tooltip explica regra descumprida;Usabilidade
+[Usabilidade] Modal de Erros;Lista detalhada exibida;Checar se modal mostra IDs das linhas com erro;Usabilidade
+[Usabilidade] Seleção em Lote;Opção Selecionar Todas disponível;Testar se modal permite selecionar todas tarefas;Usabilidade
+[Usabilidade] Clareza de Botões;Ícones e rótulos claros;Validar se botões possuem ícones e rótulos claros;Usabilidade
+[Usabilidade] Fluxo Lógico;Integração bloqueada com erros;Confirmar se fluxo impede integração com erros pendentes;Usabilidade

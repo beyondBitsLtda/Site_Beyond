@@ -1,0 +1,981 @@
+{
+  "testCaseCounter": 31,
+  "ticketCounter": 0,
+  "testCaseData": {
+    "test-case-1": {
+      "id": 1,
+      "displayId": "1",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Funcional] Upload de Planilha",
+      "condicaoAprovacao": "Arquivo .xlsx carregado com sucesso",
+      "descricao": "Verificar se o sistema aceita upload de arquivo no formato .xlsx",
+      "tipoTeste": "Funcional",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.778Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        },
+        {
+          "timestamp": "2025-12-02T19:04:03.529Z",
+          "oldResult": "Selecione um resultado",
+          "newResult": "Aprovado",
+          "author": "Anônimo"
+        },
+        {
+          "timestamp": "2025-12-02T19:04:05.285Z",
+          "oldResult": "Aprovado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "2025-12-03",
+      "responsavel": "Bryan",
+      "prioridadePlanejamento": "N/A",
+      "peso": "3"
+    },
+    "test-case-2": {
+      "id": 2,
+      "displayId": "2",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Funcional] Identificação de Cabeçalho",
+      "condicaoAprovacao": "Cabeçalho detectado corretamente",
+      "descricao": "Validar se o sistema identifica automaticamente a linha de cabeçalho da primeira aba",
+      "tipoTeste": "Funcional",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.778Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "2025-12-03",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-3": {
+      "id": 3,
+      "displayId": "3",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Funcional] Ignorar Linhas Vazias",
+      "condicaoAprovacao": "Linhas vazias não aparecem na pré-visualização",
+      "descricao": "Testar se linhas vazias são ignoradas durante a importação",
+      "tipoTeste": "Funcional",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.779Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "2025-12-03",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-4": {
+      "id": 4,
+      "displayId": "4",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Funcional] Pré-visualização de Dados",
+      "condicaoAprovacao": "Tabela exibida com totais corretos",
+      "descricao": "Confirmar se os dados são exibidos com totalizadores no rodapé",
+      "tipoTeste": "Funcional",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.779Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "2025-12-03",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-5": {
+      "id": 5,
+      "displayId": "5",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Funcional] Congelamento de Cabeçalho",
+      "condicaoAprovacao": "Cabeçalho permanece fixo ao rolar",
+      "descricao": "Verificar se cabeçalho e coluna descrição ficam congelados",
+      "tipoTeste": "Funcional",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.779Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "2025-12-03",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-6": {
+      "id": 6,
+      "displayId": "6",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Funcional] Feedback Visual de Erros",
+      "condicaoAprovacao": "Células inválidas destacadas em vermelho",
+      "descricao": "Testar se células com erro são destacadas corretamente",
+      "tipoTeste": "Funcional",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.779Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "2025-12-03",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-7": {
+      "id": 7,
+      "displayId": "7",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Funcional] Tooltip de Erro",
+      "condicaoAprovacao": "Mensagem exibida ao passar mouse",
+      "descricao": "Validar se tooltip mostra descrição do erro ao passar mouse",
+      "tipoTeste": "Funcional",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.779Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "2025-12-03",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-8": {
+      "id": 8,
+      "displayId": "8",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Funcional] Contador de Erros",
+      "condicaoAprovacao": "Modal abre com lista de IDs",
+      "descricao": "Checar se contador de erros no cabeçalho abre modal com IDs",
+      "tipoTeste": "Funcional",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.780Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "2025-12-03",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-9": {
+      "id": 9,
+      "displayId": "9",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Funcional] Atribuição em Lote",
+      "condicaoAprovacao": "Método aplicado a múltiplas tarefas",
+      "descricao": "Testar se é possível aplicar método de pagamento em lote",
+      "tipoTeste": "Funcional",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.780Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "2025-12-03",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-10": {
+      "id": 10,
+      "displayId": "10",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Funcional] Integração Final",
+      "condicaoAprovacao": "Integração concluída sem erros",
+      "descricao": "Validar se integração só ocorre após validação completa",
+      "tipoTeste": "Funcional",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.780Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "2025-12-03",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-11": {
+      "id": 11,
+      "displayId": "11",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[RegraNegocio] Formato do Arquivo",
+      "condicaoAprovacao": "Somente .xlsx aceito",
+      "descricao": "Verificar se sistema rejeita arquivos que não sejam .xlsx",
+      "tipoTeste": "RegraNegocio",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.780Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-12": {
+      "id": 12,
+      "displayId": "12",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[RegraNegocio] Colunas Obrigatórias",
+      "condicaoAprovacao": "Colunas padrão presentes",
+      "descricao": "Testar se planilha contém colunas ID, Subprojeto, Descrição, Valores",
+      "tipoTeste": "RegraNegocio",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.781Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-13": {
+      "id": 13,
+      "displayId": "13",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[RegraNegocio] Unicidade de ID/Subprojeto",
+      "condicaoAprovacao": "Sem duplicatas",
+      "descricao": "Validar se combinação ID/Subprojeto é única",
+      "tipoTeste": "RegraNegocio",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.781Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-14": {
+      "id": 14,
+      "displayId": "14",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[RegraNegocio] Descrição Obrigatória",
+      "condicaoAprovacao": "Campo preenchido",
+      "descricao": "Checar se coluna Descrição não está vazia",
+      "tipoTeste": "RegraNegocio",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.781Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-15": {
+      "id": 15,
+      "displayId": "15",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[RegraNegocio] Valores Numéricos",
+      "condicaoAprovacao": "Valores > 0",
+      "descricao": "Testar se valores com/sem impostos são numéricos e maiores que zero",
+      "tipoTeste": "RegraNegocio",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.781Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-16": {
+      "id": 16,
+      "displayId": "16",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[RegraNegocio] Consistência de Valores",
+      "condicaoAprovacao": "Valor sem impostos <= valor com impostos",
+      "descricao": "Validar regra entre valores com e sem impostos",
+      "tipoTeste": "RegraNegocio",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.782Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-17": {
+      "id": 17,
+      "displayId": "17",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[RegraNegocio] Bloqueio de Integração",
+      "condicaoAprovacao": "Integração não ocorre com erros",
+      "descricao": "Confirmar que integração é bloqueada se houver erros",
+      "tipoTeste": "RegraNegocio",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.782Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-18": {
+      "id": 18,
+      "displayId": "18",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[RegraNegocio] Backup Antes da Integração",
+      "condicaoAprovacao": "Backup criado com sucesso",
+      "descricao": "Testar se backup é gerado antes da integração",
+      "tipoTeste": "RegraNegocio",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.782Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-19": {
+      "id": 19,
+      "displayId": "19",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[RegraNegocio] Controle de Revisão",
+      "condicaoAprovacao": "Justificativa obrigatória",
+      "descricao": "Verificar se criação de nova revisão exige justificativa",
+      "tipoTeste": "RegraNegocio",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.782Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-20": {
+      "id": 20,
+      "displayId": "20",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[RegraNegocio] Controle de Acesso",
+      "condicaoAprovacao": "Somente grupo Contratos acessa",
+      "descricao": "Validar se apenas usuários do grupo Contratos acessam formulário",
+      "tipoTeste": "RegraNegocio",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.783Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-21": {
+      "id": 21,
+      "displayId": "21",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Usabilidade] Feedback de Processamento",
+      "condicaoAprovacao": "Mensagem exibida corretamente",
+      "descricao": "Testar se sistema mostra mensagem 'Processando planilha...' durante upload",
+      "tipoTeste": "Usabilidade",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.783Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-22": {
+      "id": 22,
+      "displayId": "22",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Usabilidade] Feedback de Conclusão",
+      "condicaoAprovacao": "Mensagem clara exibida",
+      "descricao": "Validar se mensagem 'Importação concluída!' aparece após sucesso",
+      "tipoTeste": "Usabilidade",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.783Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-23": {
+      "id": 23,
+      "displayId": "23",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Usabilidade] Ocultação de Botões",
+      "condicaoAprovacao": "Botões aparecem na ordem correta",
+      "descricao": "Checar se botões só aparecem após etapa anterior concluída",
+      "tipoTeste": "Usabilidade",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.783Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-24": {
+      "id": 24,
+      "displayId": "24",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Usabilidade] Mensagens de Erro Claras",
+      "condicaoAprovacao": "Erro compreensível",
+      "descricao": "Testar se mensagens de erro são claras e compreensíveis",
+      "tipoTeste": "Usabilidade",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.784Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-25": {
+      "id": 25,
+      "displayId": "25",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Usabilidade] Destaque Visual de Erros",
+      "condicaoAprovacao": "Células em vermelho",
+      "descricao": "Confirmar se células inválidas são destacadas visualmente",
+      "tipoTeste": "Usabilidade",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.784Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-26": {
+      "id": 26,
+      "displayId": "26",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Usabilidade] Tooltip Explicativo",
+      "condicaoAprovacao": "Tooltip aparece com regra",
+      "descricao": "Validar se tooltip explica regra descumprida",
+      "tipoTeste": "Usabilidade",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.784Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-27": {
+      "id": 27,
+      "displayId": "27",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Usabilidade] Modal de Erros",
+      "condicaoAprovacao": "Lista detalhada exibida",
+      "descricao": "Checar se modal mostra IDs das linhas com erro",
+      "tipoTeste": "Usabilidade",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.784Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-28": {
+      "id": 28,
+      "displayId": "28",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Usabilidade] Seleção em Lote",
+      "condicaoAprovacao": "Opção Selecionar Todas disponível",
+      "descricao": "Testar se modal permite selecionar todas tarefas",
+      "tipoTeste": "Usabilidade",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.785Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-29": {
+      "id": 29,
+      "displayId": "29",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Usabilidade] Clareza de Botões",
+      "condicaoAprovacao": "Ícones e rótulos claros",
+      "descricao": "Validar se botões possuem ícones e rótulos claros",
+      "tipoTeste": "Usabilidade",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.785Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-30": {
+      "id": 30,
+      "displayId": "30",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Usabilidade] Fluxo Lógico",
+      "condicaoAprovacao": "Integração bloqueada com erros",
+      "descricao": "Confirmar se fluxo impede integração com erros pendentes",
+      "tipoTeste": "Usabilidade",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:01:46.785Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    },
+    "test-case-31": {
+      "id": 31,
+      "displayId": "31",
+      "parentId": null,
+      "isReTest": false,
+      "reTestCount": 0,
+      "itemTestado": "[Integração] Integração: Cenários 0 e 1 com Metadados e Formulários Fluxo de Caixa e Pedido de Compra",
+      "condicaoAprovacao": "Integração concluída com sucesso, dados consistentes nos cenários 0 e 1, metadados preservados e formulários de fluxo de caixa e pedido de compras atualizados corretamente.",
+      "descricao": "Preparar duas planilhas válidas contendo dados para cenários 0 e 1, incluindo colunas obrigatórias (ID, Subprojeto, Descrição, Valor Com Impostos, Valor Sem Impostos).\nRealizar upload das planilhas no formulário Fluig.\nValidar a pré-visualização:\n\nConferir se os dados aparecem corretamente.\nGarantir ausência de erros de validação.\n\n\nExecutar a integração clicando em “Integrar Planilha”.\nConfirmar no RM:\n\nCenário 0 atualizado com substituição completa das tarefas conforme planilha.\nCenário 1 atualizado com lógica de atualização (tarefas existentes atualizadas, novas criadas, ausentes zeradas).\n\n\nVerificar se os metadados (ex.: CODPRJ, justificativa de revisão) foram preservados.\nValidar se os formulários de fluxo de caixa e pedido de compras refletem os dados importados corretamente.",
+      "tipoTeste": "Selecione um tipo",
+      "resultado": "Selecione um resultado",
+      "tipoFalha": "N/A",
+      "resolutionStatus": "Selecione um status",
+      "evidences": [],
+      "devComments": [],
+      "priority": null,
+      "tags": [],
+      "executionHistory": [
+        {
+          "timestamp": "2025-12-02T19:33:59.873Z",
+          "oldResult": "Criado",
+          "newResult": "Selecione um resultado",
+          "author": "Anônimo"
+        }
+      ],
+      "tickets": [],
+      "dataEntrega": "",
+      "responsavel": "",
+      "prioridadePlanejamento": "N/A",
+      "peso": "N/A"
+    }
+  },
+  "ticketData": {},
+  "exportedAt": "2025-12-02T19:35:50.642Z"
+}
