@@ -1166,7 +1166,7 @@ function filterFailedTests() {
     document.querySelectorAll('.test-case-card').forEach(card => {
         const caseData = testCaseData[card.id];
         if (!caseData) return;
-        card.style.display = isFilteringFailed && caseData.resultado !== 'Reprovado' ? 'none' : '';
+        card.style.display = isFilteringFailed && !isCaseFailed(caseData) ? 'none' : '';
     });
     button.classList.toggle('active-filter', isFilteringFailed);
     if (isFilteringFailed) {
@@ -1633,8 +1633,47 @@ function importAndDisplayProject(event) {
 
 function getSummaryData() {
     const allCases = Object.values(testCaseData);
-    const summary = { total: allCases.length, approved: allCases.filter(tc => tc.resultado === 'Aprovado').length, failed: allCases.filter(tc => tc.resultado === 'Reprovado').length, invalid: allCases.filter(tc => tc.resultado === 'Inválido').length };
-    summary.notRun = summary.total - (summary.approved + summary.failed + summary.invalid);
+    const summary = {
+        total: allCases.length,
+        approved: 0,
+        failed: 0,
+        invalid: 0,
+        notRun: 0,
+        inDev: 0,
+        readyForQa: 0,
+        awaitingTicket: 0,
+        openTickets: Object.values(ticketData).filter(t => t.status !== 'Fechado').length
+    };
+
+    allCases.forEach(testCase => {
+        const workflowStatus = getTestCaseWorkflowStatus(testCase);
+
+        switch (workflowStatus) {
+            case 'Aprovado e Concluído':
+                summary.approved++;
+                break;
+            case 'Em Andamento (DEV)':
+                summary.failed++;
+                summary.inDev++;
+                break;
+            case 'Pronto para Re-teste (QA)':
+                summary.failed++;
+                summary.readyForQa++;
+                break;
+            case 'Falha Nova (Aguardando Ticket)':
+                summary.failed++;
+                summary.awaitingTicket++;
+                break;
+            case 'Inválido':
+                summary.invalid++;
+                break;
+            case 'Pendente':
+            default:
+                summary.notRun++;
+                break;
+        }
+    });
+
     return summary;
 }
 
@@ -1644,6 +1683,8 @@ function updateSummary() {
     document.getElementById('total-approved').textContent = summary.approved;
     document.getElementById('total-failed').textContent = summary.failed;
     document.getElementById('total-invalid').textContent = summary.invalid;
+    const openTicketsEl = document.getElementById('total-open-tickets');
+    if (openTicketsEl) openTicketsEl.textContent = summary.openTickets;
 }
 
 // SUBSTITUA SUA FUNÇÃO generateTicket POR ESTA
@@ -2139,6 +2180,8 @@ function generateTestRoadmap() {
         'Pendente': []
     };
 
+    const openTicketCount = Object.values(ticketData).filter(t => t.status !== 'Fechado').length;
+
     allTestCases.forEach(testCase => {
         if (!testCase.isReTest && (testCase.reTestCount || 0) > maxRetests) {
             maxRetests = testCase.reTestCount;
@@ -2157,7 +2200,7 @@ function generateTestRoadmap() {
         }
     });
     
-    roadmapAggregatedData = { 
+    roadmapAggregatedData = {
         classifiedData,
         resultsCount: {
             'Em Andamento (DEV)': classifiedData['Em Andamento (DEV)'].length,
@@ -2168,9 +2211,16 @@ function generateTestRoadmap() {
             'Inválido': classifiedData['Inválido'].length,
             'Pendente': classifiedData['Pendente'].length
         },
-        failureTypeCounts, 
-        mostRetestedCase, 
-        maxRetests 
+        totalsByStatus: {
+            aprovado: classifiedData['Aprovado e Concluído'].length,
+            reprovado: classifiedData['Em Andamento (DEV)'].length + classifiedData['Pronto para Re-teste (QA)'].length + classifiedData['Falha Nova (Aguardando Ticket)'].length,
+            invalido: classifiedData['Inválido'].length,
+            pendente: classifiedData['Pendente'].length,
+            openTickets: openTicketCount
+        },
+        failureTypeCounts,
+        mostRetestedCase,
+        maxRetests
     };
     
     // O restante da função permanece igual
@@ -2231,12 +2281,13 @@ function renderRoadmapTextualDetails(classifiedData) {
 }
 
 function copyRoadmapText() {
-    const { resultsCount, failureTypeCounts, groupedByTypes, mostRetestedCase, maxRetests } = roadmapAggregatedData;
+    const { resultsCount, failureTypeCounts, groupedByTypes, mostRetestedCase, maxRetests, totalsByStatus } = roadmapAggregatedData;
     if (!resultsCount) { alert("Dados do roadmap não encontrados. Gere o roadmap primeiro."); return; }
     let textToCopy = '🗺️ Detalhes dos Testes\n\n';
     if (mostRetestedCase && maxRetests > 0) textToCopy += `🔄 Caso de Teste com Mais Re-testes\nO caso de teste ID #${mostRetestedCase.displayId} (${mostRetestedCase.itemTestado || 'Item não informado'}) teve ${maxRetests} re-testes.\n\n`;
     const total = Object.values(resultsCount).reduce((a, b) => a + b, 0);
-    textToCopy += `📊 Resumo dos Resultados\nTotal: ${total} | Aprovados: ${resultsCount['Aprovado']} | Reprovados: ${resultsCount['Reprovado']} | Inválidos: ${resultsCount['Inválido']} | Pendentes: ${resultsCount['Pendente']}\n\n`;
+    const failedTotal = totalsByStatus ? totalsByStatus.reprovado : 0;
+    textToCopy += `📊 Resumo dos Resultados\nTotal: ${total} | Aprovados: ${totalsByStatus?.aprovado ?? 0} | Reprovados (inclui casos com ticket): ${failedTotal} | Inválidos: ${totalsByStatus?.invalido ?? 0} | Pendentes: ${totalsByStatus?.pendente ?? 0} | Tickets abertos: ${totalsByStatus?.openTickets ?? 0}\n\n`;
     const failedTypes = Object.entries(failureTypeCounts).filter(([, count]) => count > 0);
     if (failedTypes.length > 0) {
         textToCopy += '📉 Resumo dos Tipos de Falha\n';
@@ -3142,7 +3193,7 @@ function getTestCaseWorkflowStatus(testCase) {
     if (testCase.tickets && testCase.tickets.length > 0) {
         const totalTickets = testCase.tickets.length;
         const closedTickets = testCase.tickets.filter(id => ticketData[id]?.status === 'Fechado').length;
-        
+
         if (closedTickets < totalTickets) {
             return 'Em Andamento (DEV)';
         } else { // Todos os tickets fechados
@@ -3165,6 +3216,11 @@ function getTestCaseWorkflowStatus(testCase) {
         default:
             return 'Pendente'; // "Selecione um resultado" e sem tickets
     }
+}
+
+function isCaseFailed(testCase) {
+    const workflowStatus = getTestCaseWorkflowStatus(testCase);
+    return ['Em Andamento (DEV)', 'Pronto para Re-teste (QA)', 'Falha Nova (Aguardando Ticket)'].includes(workflowStatus);
 }
 
 // NOVA FUNÇÃO para o modal de detalhes (estilo Trello)
@@ -4078,38 +4134,60 @@ function generateTextReport() {
     const summary = getSummaryData();
     report += `RESUMO GERAL:\n`;
     report += `- Total de Casos: ${summary.total}\n`;
-    report += `- Aprovados: ${summary.approved}\n`;
-    report += `- Reprovados: ${summary.failed}\n`;
+    report += `- Aprovados e Concluídos: ${summary.approved}\n`;
+    report += `- Com Tickets em Desenvolvimento: ${summary.inDev}\n`;
+    report += `- Aguardando Re-teste (QA): ${summary.readyForQa}\n`;
+    report += `- Falhas Novas (Aguardando Ticket): ${summary.awaitingTicket}\n`;
+    report += `- Tickets Abertos (totais): ${summary.openTickets}\n`;
     report += `- Inválidos: ${summary.invalid}\n`;
     report += `- Não Executados: ${summary.notRun}\n\n`;
 
-    const approved = allData.filter(tc => tc.resultado === 'Aprovado');
-    const failed = allData.filter(tc => tc.resultado === 'Reprovado');
-    const invalid = allData.filter(tc => tc.resultado === 'Inválido');
+    const byWorkflow = {
+        approved: [],
+        inDev: [],
+        readyForQa: [],
+        awaitingTicket: [],
+        invalid: [],
+        pending: []
+    };
 
-    if (failed.length > 0) {
-        report += `ITENS REPROVADOS:\n`;
-        failed.forEach(tc => {
-            report += `- ID #${tc.displayId}: ${tc.itemTestado} (Tipo de Falha: ${tc.tipoFalha})\n`;
-        });
-        report += `\n`;
-    }
+    allData.forEach(tc => {
+        const status = getTestCaseWorkflowStatus(tc);
+        switch (status) {
+            case 'Aprovado e Concluído':
+                byWorkflow.approved.push(tc);
+                break;
+            case 'Em Andamento (DEV)':
+                byWorkflow.inDev.push(tc);
+                break;
+            case 'Pronto para Re-teste (QA)':
+                byWorkflow.readyForQa.push(tc);
+                break;
+            case 'Falha Nova (Aguardando Ticket)':
+                byWorkflow.awaitingTicket.push(tc);
+                break;
+            case 'Inválido':
+                byWorkflow.invalid.push(tc);
+                break;
+            default:
+                byWorkflow.pending.push(tc);
+                break;
+        }
+    });
 
-    if (approved.length > 0) {
-        report += `ITENS APROVADOS:\n`;
-        approved.forEach(tc => {
-            report += `- ID #${tc.displayId}: ${tc.itemTestado}\n`;
-        });
+    const appendSection = (title, list, formatter) => {
+        if (list.length === 0) return;
+        report += `${title}:\n`;
+        list.forEach(tc => { report += formatter(tc); });
         report += `\n`;
-    }
-    
-    if (invalid.length > 0) {
-        report += `ITENS INVÁLIDOS:\n`;
-        invalid.forEach(tc => {
-            report += `- ID #${tc.displayId}: ${tc.itemTestado}\n`;
-        });
-        report += `\n`;
-    }
+    };
+
+    appendSection('TICKETS EM DESENVOLVIMENTO', byWorkflow.inDev, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado} (Tickets abertos: ${(tc.tickets || []).length})\n`);
+    appendSection('AGUARDANDO RE-TESTE (QA)', byWorkflow.readyForQa, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado} (Tickets fechados: ${(tc.tickets || []).length})\n`);
+    appendSection('FALHAS NOVAS (AGUARDANDO TICKET)', byWorkflow.awaitingTicket, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado}\n`);
+    appendSection('ITENS APROVADOS', byWorkflow.approved, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado}\n`);
+    appendSection('ITENS INVÁLIDOS', byWorkflow.invalid, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado}\n`);
+    appendSection('NÃO EXECUTADOS / PENDENTES', byWorkflow.pending, (tc) => `- Caso #${tc.displayId}: ${tc.itemTestado}\n`);
 
     report += `========================================\nFim do Relatório.`;
     return report;
@@ -4121,7 +4199,7 @@ function generateRoadmapSummary(summaryData) {
 
     summaryContainer.style.display = 'block';
     
-    const { resultsCount } = summaryData;
+    const { resultsCount, totalsByStatus } = summaryData;
     let summaryText = `<p><strong>Análise dos Dados:</strong></p><ul>`;
     
     if (resultsCount['Em Andamento (DEV)'] > 0) {
@@ -4132,6 +4210,9 @@ function generateRoadmapSummary(summaryData) {
     }
      if (resultsCount['Falha Nova (Aguardando Ticket)'] > 0) {
         summaryText += `<li><strong style="color:var(--cor-status-reprovado);">${resultsCount['Falha Nova (Aguardando Ticket)']}</strong> nova(s) falha(s) foram identificadas e precisam de triagem para a criação de tickets.</li>`;
+    }
+    if (totalsByStatus?.openTickets > 0) {
+        summaryText += `<li>Há <strong>${totalsByStatus.openTickets}</strong> ticket(s) abertos impactando o status geral e mantendo os casos como reprovados até a resolução.</li>`;
     }
     if (Object.values(resultsCount).every(v => v === 0)) {
          summaryText += `<li>Não há dados significativos para análise no momento.</li>`;
