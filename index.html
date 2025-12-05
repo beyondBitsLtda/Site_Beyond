@@ -20,10 +20,7 @@
     <div class="container">
        
         <div class="header">
-             <img src="logo.png" alt="Logo da Empresa" class="header-logo">
-           
             <div class="header-text">
-                
                 <h1>Controle de Plano de Testes</h1>
                 <p>Gerenciamento de Casos de Teste e Tickets</p>
             </div>
@@ -37,17 +34,17 @@
                 <hr class="sidebar-divider">
                 
                 <h3>Relatórios e Reports</h3>
-                <button id="manage-tickets-btn" class="btn" style="background-color: #ff9800;" onclick="showTicketManagementView()">🎫 Gerenciar Tickets</button>
+                <button id="manage-tickets-btn" class="btn btn-accent" onclick="showTicketManagementView()">🎫 Gerenciar Tickets</button>
                 <button class="btn btn-email" onclick="exportForEmail()">📧 Exportar Relatório</button>
                 <button class="btn btn-roadmap" onclick="generateTestRoadmap()">🗺️ Gerar Roadmap</button>
-                <button id="retrospective-btn" class="btn" style="background-color: #4B0082;">▶️ Iniciar Retrospectiva</button>
-                <button id="analytics-btn" class="btn" style="background-color: #0dcaf0;">🔬 Análise de Riscos</button>
+                <button id="retrospective-btn" class="btn btn-iris">▶️ Iniciar Retrospectiva</button>
+                <button id="analytics-btn" class="btn btn-cyan">🔬 Análise de Riscos</button>
 
                 <hr class="sidebar-divider">
 
                 <h3>Visualização e Configurações</h3>
                 <button id="view-toggle-btn" class="btn btn-import">    Planejamento      </button>
-                <button class="btn" style="background-color: #6f42c1;" onclick="showControlPanel()">⚙️ Painel de Controle</button>
+                <button class="btn btn-neutral" onclick="showControlPanel()">⚙️ Painel de Controle</button>
 
                 <hr class="sidebar-divider">
 
@@ -88,7 +85,7 @@
                     <div class="ticket-management-header">
                         <h2>🎫 Gerenciamento de Tickets</h2>
                         <p>Acompanhe, atribua e resolva os problemas gerados a partir dos casos de teste.</p>
-                        <button class="btn" style="background-color: #6c757d; margin-top: 10px;" onclick="showTestCaseView()">⬅️ Voltar para Casos de Teste</button>
+                        <button class="btn btn-neutral" style="margin-top: 10px;" onclick="showTestCaseView()">⬅️ Voltar para Casos de Teste</button>
                     </div>
                     <div class="ticket-filters">
                         <select id="ticket-filter-status" class="form-select">
@@ -126,7 +123,7 @@
         </div>
         
         <div class="fixed-action-buttons">
-            <button class="btn btn-action-discrete" onclick="openFilterModal()" title="Painel de Filtros" style="background-color: #0d6efd;">
+            <button class="btn btn-action-discrete" onclick="openFilterModal()" title="Painel de Filtros">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: white;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
             </button>
             <button class="btn btn-action-discrete btn-warning" id="filter-failed-button" onclick="filterFailedTests()" title="Mostrar Apenas Reprovados">⚠️</button>
