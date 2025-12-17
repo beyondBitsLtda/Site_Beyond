@@ -181,6 +181,9 @@ body {
   border-radius: 30px;
   overflow: hidden;
   filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.35));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .neon-orb {
@@ -192,38 +195,16 @@ body {
               #0f0b2a;
   filter: blur(8px);
   opacity: 0.95;
+  z-index: 1;
 }
 
-.robo-frame {
-  position: absolute;
-  inset: 10% 12% 16% 12%;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
-  border-radius: 26px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 63, 172, 0.25);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-}
-
-.robo-frame::before {
-  content: "";
-  position: absolute;
-  inset: 12%;
-  border-radius: 20px;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 63, 172, 0.28), transparent 45%),
-              radial-gradient(circle at 70% 70%, rgba(91, 123, 255, 0.32), transparent 48%);
-  filter: blur(14px);
-  opacity: 0.9;
-}
-
-.robo-frame img {
+.hero-illustration {
   position: relative;
-  width: 92%;
+  z-index: 2;
+  width: 88%;
   height: auto;
-  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 28px rgba(255, 63, 172, 0.35));
-  animation: float 6s ease-in-out infinite;
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.45));
+  border-radius: 16px;
 }
 
 .hero-label {
@@ -240,6 +221,7 @@ body {
   font-weight: 700;
   color: var(--text);
   box-shadow: 0 0 0 1px rgba(126, 255, 245, 0.2);
+  z-index: 3;
 }
 
 @keyframes float {
