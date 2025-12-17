@@ -43,9 +43,9 @@ body {
 
 .hero {
   position: relative;
-  padding: 48px clamp(24px, 4vw, 80px) 80px;
+  padding: 48px clamp(24px, 4vw, 80px) 120px;
   overflow: hidden;
-  min-height: 90vh;
+  min-height: 100vh;
 }
 
 .nav {
@@ -172,9 +172,9 @@ body {
 .hero-visual {
   position: absolute;
   right: clamp(16px, 5vw, 120px);
-  top: 90px;
-  width: clamp(520px, 62vw, 1100px);
-  aspect-ratio: 1;
+  top: 40px;
+  width: clamp(640px, 70vw, 1200px);
+  aspect-ratio: 4 / 3;
   border-radius: 32px;
   display: flex;
   align-items: center;
@@ -460,6 +460,7 @@ body {
     max-width: 420px;
     margin: 40px auto 0;
     left: 0;
+    top: 0;
   }
 
   .quote {
