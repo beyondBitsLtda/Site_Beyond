@@ -45,6 +45,7 @@ body {
   position: relative;
   padding: 48px clamp(24px, 4vw, 80px) 80px;
   overflow: hidden;
+  min-height: 90vh;
 }
 
 .nav {
@@ -172,7 +173,7 @@ body {
   position: absolute;
   right: clamp(16px, 5vw, 120px);
   top: 90px;
-  width: clamp(360px, 46vw, 720px);
+  width: clamp(520px, 62vw, 1100px);
   aspect-ratio: 1;
   border-radius: 32px;
   display: flex;
