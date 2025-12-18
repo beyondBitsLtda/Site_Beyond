@@ -517,6 +517,7 @@ body {
     max-width: 640px;
     margin: 0 0 0 auto;
   }
+}
 
   .hero-visual::before {
     inset: -18%;
@@ -554,6 +555,18 @@ body {
   .pillar,
   .contact-card {
     padding: 20px;
+  }
+
+  .hero {
+    padding-top: 28px;
+  }
+
+  .hero-content {
+    margin-top: 20px;
+  }
+
+  .hero-visual {
+    width: min(560px, 100%);
   }
 }
 
