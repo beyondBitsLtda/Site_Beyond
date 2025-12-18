@@ -49,7 +49,8 @@ body {
   align-items: flex-start;
   padding: 32px clamp(20px, 4vw, 56px) 72px;
   overflow: hidden;
-  min-height: auto;
+  min-height: 100vh; /* fallback para iOS antigos */
+  min-height: 100svh; /* evita saltos de vh em mobile */
 }
 
 .nav {
@@ -98,6 +99,7 @@ body {
   color: var(--text);
   text-decoration: none;
   padding: 12px 18px;
+  min-height: 48px; /* alvo de toque */
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -113,7 +115,7 @@ body {
 
 .hero-content {
   margin-top: 12px;
-  max-width: 640px;
+  max-width: min(640px, 100%);
   position: relative;
   z-index: 1;
 }
@@ -152,6 +154,7 @@ body {
 
 .btn {
   padding: 12px 18px;
+  min-height: 48px; /* alvo de toque */
   border-radius: 14px;
   font-weight: 700;
   text-decoration: none;
@@ -196,7 +199,7 @@ body {
   position: absolute;
   inset: -24%;
   z-index: -1;
-  background:
+  background: /* brilho contido */
     radial-gradient(circle at 30% 40%, rgba(255, 63, 172, 0.55), transparent 80%),
     radial-gradient(circle at 70% 60%, rgba(91, 123, 255, 0.45), transparent 85%),
     radial-gradient(circle at 50% 50%, rgba(126, 255, 245, 0.35), transparent 70%);
@@ -232,7 +235,7 @@ body {
 }
 
 .section {
-  padding: 80px clamp(24px, 4vw, 80px);
+  padding: 80px clamp(20px, 4vw, 80px);
   position: relative;
   z-index: 1;
 }
@@ -248,7 +251,7 @@ body {
 
 .cards .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
 }
 
@@ -291,6 +294,7 @@ body {
   grid-template-columns: 1.2fr 1fr;
   align-items: center;
   gap: 24px;
+  width: 100%;
 }
 
 .quote-content blockquote {
@@ -306,11 +310,13 @@ body {
 
 .retro {
   justify-self: end;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .retro-screen {
-  width: 100%;
-  max-width: 340px;
+  width: min(100%, 340px);
   aspect-ratio: 1/1.05;
   border-radius: 18px;
   background: linear-gradient(135deg, rgba(255, 63, 172, 0.2), rgba(91, 123, 255, 0.3)), #0a0c15;
@@ -351,7 +357,7 @@ body {
 
 .triangle {
   position: relative;
-  width: 220px;
+  width: min(220px, 100%);
   margin: 40px auto 20px;
   aspect-ratio: 1;
 }
@@ -385,7 +391,7 @@ body {
 
 .pillars {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 14px;
   margin-top: 28px;
 }
@@ -400,7 +406,7 @@ body {
 
 .cases .case-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
 }
 
@@ -499,7 +505,7 @@ body {
     gap: clamp(32px, 4vw, 72px);
     align-items: center;
     padding: 48px clamp(24px, 4vw, 80px) 120px;
-    min-height: 110vh;
+    min-height: 110vh; /* mantém impacto no desktop */
   }
 
   .hero-content {
@@ -511,6 +517,7 @@ body {
     max-width: 640px;
     margin: 0 0 0 auto;
   }
+}
 
   .hero-visual::before {
     inset: -18%;
@@ -525,6 +532,29 @@ body {
 
   .retro {
     justify-self: start;
+    justify-content: flex-start;
+  }
+
+  .hero {
+    padding-top: 28px;
+  }
+
+  .hero-content {
+    margin-top: 20px;
+  }
+
+  .hero-visual {
+    width: min(560px, 100%);
+  }
+
+  .section {
+    padding: 68px clamp(18px, 4vw, 48px);
+  }
+
+  .card,
+  .pillar,
+  .contact-card {
+    padding: 20px;
   }
 
   .hero {
@@ -549,5 +579,94 @@ body {
   .nav {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .hero {
+    gap: 24px;
+    padding: 28px clamp(16px, 5vw, 32px) 60px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.1rem, 7vw, 2.6rem);
+    line-height: 1.1;
+  }
+
+  .hero .lede {
+    font-size: 0.98rem;
+  }
+
+  .hero-actions .btn,
+  .cta {
+    width: 100%; /* CTA em coluna no mobile */
+  }
+
+  .section {
+    padding: 60px clamp(16px, 6vw, 32px);
+  }
+
+  .cards .card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .pillars {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  }
+
+  .cases .case-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .contact-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 22px;
+  }
+
+  .contact-card .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .hero {
+    padding: 24px 14px 52px;
+  }
+
+  .hero h1 {
+    font-size: 1.9rem;
+  }
+
+  .hero-actions {
+    max-width: 100%;
+  }
+
+  .section {
+    padding: 52px 14px;
+  }
+
+  .cards .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cases .case-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* foco visível */
+.btn:focus-visible,
+.cta:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* respeita redução de movimento */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
   }
 }
