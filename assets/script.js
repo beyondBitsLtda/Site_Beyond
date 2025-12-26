@@ -4,6 +4,7 @@ const menuToggle = document.querySelector(".menu-toggle");
 const revealables = document.querySelectorAll(".reveal");
 const form = document.getElementById("contactForm");
 const feedback = document.getElementById("formFeedback");
+const FORM_ENDPOINT = "https://formsubmit.co/ajax/beyondbits@beyond.dev.br";
 
 navLinks.forEach((link) => {
   link.addEventListener("click", (event) => {
@@ -33,15 +34,22 @@ const observer = new IntersectionObserver(
 
 revealables.forEach((el) => observer.observe(el));
 
-function buildMailtoURL(name, email, message) {
-  const subject = encodeURIComponent("Contato - Beyond Bits");
-  const body = encodeURIComponent(
-    `Nome: ${name}\nE-mail: ${email}\n\nMensagem:\n${message}`
-  );
-  return `mailto:beyondbits@beyond.dev.br?subject=${subject}&body=${body}`;
+async function submitContactForm(payload) {
+  const response = await fetch(FORM_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Falha ao enviar, tente novamente.");
+  }
 }
 
-form?.addEventListener("submit", (event) => {
+form?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const name = form.name.value.trim();
   const email = form.email.value.trim();
@@ -53,9 +61,16 @@ form?.addEventListener("submit", (event) => {
     return;
   }
 
-  const mailto = buildMailtoURL(name, email, message);
-  window.location.href = mailto;
-  feedback.textContent = "Abrimos seu app de e-mail com a mensagem pronta.";
+  feedback.textContent = "Enviando...";
   feedback.style.color = "#18a1ff";
-  form.reset();
+
+  try {
+    await submitContactForm({ name, email, message });
+    feedback.textContent = "Mensagem enviada com sucesso!";
+    feedback.style.color = "#4ade80";
+    form.reset();
+  } catch (error) {
+    feedback.textContent = "Não foi possível enviar. Tente novamente em instantes.";
+    feedback.style.color = "#ff5ea8";
+  }
 });
