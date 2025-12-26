@@ -38,7 +38,7 @@ function buildMailtoURL(name, email, message) {
   const body = encodeURIComponent(
     `Nome: ${name}\nE-mail: ${email}\n\nMensagem:\n${message}`
   );
-  return `mailto:contato@beyondbits.com?subject=${subject}&body=${body}`;
+  return `mailto:beyondbits@beyond.dev.br?subject=${subject}&body=${body}`;
 }
 
 form?.addEventListener("submit", (event) => {
