@@ -1028,5 +1028,68 @@ a {
     transform: translateX(-45%) rotate(5deg);
   }
 }
+/* =========================================
+   PATCH MOBILE — Antes/Depois (corrige sobreposição)
+   Cole no FINAL do styles.css
+   ========================================= */
+
+@media (max-width: 900px) {
+  .before-after__grid {
+    grid-template-columns: 1fr;
+    gap: 22px; /* mais respiro entre visual e texto */
+  }
+
+  /* garante que o visual fique como um “bloco” separado */
+  .before-after__visual {
+    min-height: auto;
+    margin-bottom: 10px;
+  }
+
+  /* reduz o palco e centraliza */
+  .before-after__stack {
+    width: min(420px, 100%);
+    height: 480px;              /* menor que antes */
+    margin: 0 auto;
+  }
+
+  /* phones menores no mobile */
+  .phone-mock {
+    width: min(240px, 72vw);
+  }
+
+  /* reposiciona para NÃO cair em cima do texto */
+  .phone-mock--after {
+    left: 50%;
+    right: auto;
+    top: 18px;
+    transform: translateX(-48%) rotate(5deg);
+  }
+
+  .phone-mock--before {
+    left: 50%;
+    top: 235px;
+    transform: translateX(-52%) rotate(-5deg);
+  }
+
+  /* evita que o texto fique “colado” ou sob o visual */
+  .before-after__content {
+    padding-top: 4px;
+  }
+}
+
+/* ajuste fino extra para telas bem pequenas */
+@media (max-width: 600px) {
+  .before-after__stack {
+    height: 520px; /* dá espaço pro phone de baixo sem encostar no texto */
+  }
+
+  .phone-mock {
+    width: min(230px, 78vw);
+  }
+
+  .phone-mock--before {
+    top: 265px; /* desce um pouco mais */
+  }
+}
 
 
