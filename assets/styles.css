@@ -58,6 +58,27 @@ a {
   mix-blend-mode: screen;
 }
 
+.flares {
+  position: fixed;
+  inset: -20%;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(168, 85, 247, 0.35), transparent 35%),
+    radial-gradient(circle at 80% 20%, rgba(24, 161, 255, 0.25), transparent 40%),
+    radial-gradient(circle at 50% 70%, rgba(255, 94, 168, 0.28), transparent 45%);
+  filter: blur(55px);
+  opacity: 0.45;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: flareDrift 12s ease-in-out infinite alternate;
+  z-index: 0;
+}
+
+@keyframes flareDrift {
+  to {
+    transform: translate3d(12px, -8px, 0) scale(1.04);
+  }
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -81,7 +102,7 @@ a {
 }
 
 .brand-mark {
-  height: 28px;
+  height: 34px;
   width: auto;
 }
 
@@ -99,7 +120,7 @@ a {
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 38px;
+  gap: 18px;
 }
 
 .main-nav a {
