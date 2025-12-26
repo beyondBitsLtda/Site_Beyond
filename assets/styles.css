@@ -99,7 +99,7 @@ a {
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 38px;
 }
 
 .main-nav a {
