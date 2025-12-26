@@ -13,7 +13,7 @@
   <div class="noise"></div>
   <header class="site-header">
     <a class="brand" href="#inicio">
-      <img src="assets/logo_beyond.png" alt="Logo Beyond Bits" class="brand-mark">
+      <img src="assets/logo.png" alt="Logo Beyond Bits" class="brand-mark">
       <div class="logo">Beyond <span>Bits</span></div>
     </a>
     <nav class="main-nav">
@@ -23,7 +23,15 @@
       <a href="#cases">Cases</a>
       <a href="#contato" class="cta">Contato</a>
       <div class="contact-links">
-        <a aria-label="WhatsApp Beyond Bits" href="https://wa.me/553190852734" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        <a
+          href="#"
+          class="whatsapp-link"
+          data-whatsapp-key="header"
+          data-message="Olá! Gostaria de falar com a equipe da Beyond Bits."
+          aria-label="Falar com a Beyond Bits no WhatsApp"
+        >
+          WhatsApp
+        </a>
         <a aria-label="LinkedIn Beyond Bits" href="https://www.linkedin.com/company/beyond-bits-ltda/?viewAsMember=true" target="_blank" rel="noopener noreferrer">LinkedIn</a>
         <a aria-label="Instagram Beyond Bits" href="https://www.instagram.com/beyondbitsltda/" target="_blank" rel="noopener noreferrer">Instagram</a>
       </div>
@@ -149,10 +157,16 @@
         <div class="contact-info reveal">
           <p>Conte sua ideia e receba uma proposta personalizada. Preferiu um toque rápido? Chame no canal que fizer sentido.</p>
           <div class="contact-actions">
-            <a class="social" href="https://wa.me/00000000000" target="_blank" rel="noreferrer">WhatsApp</a>
-            <a class="social" href="https://www.instagram.com" target="_blank" rel="noreferrer">Instagram</a>
+            <a
+              class="social whatsapp-link"
+              href="#"
+              data-whatsapp-key="contact"
+              data-message="Olá! Quero falar sobre um novo projeto com a Beyond Bits."
+              aria-label="Falar com a Beyond Bits no WhatsApp"
+            >WhatsApp</a>
+            <a class="social" href="https://www.instagram.com/beyondbitsltda/" target="_blank" rel="noopener noreferrer" aria-label="Instagram Beyond Bits">Instagram</a>
             <a class="social" href="mailto:contato@beyondbits.com" target="_blank" rel="noreferrer">E-mail</a>
-            <a class="social" href="https://www.linkedin.com" target="_blank" rel="noreferrer">LinkedIn</a>
+            <a class="social" href="https://www.linkedin.com/company/beyond-bits-ltda/?viewAsMember=true" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn Beyond Bits">LinkedIn</a>
           </div>
         </div>
         <form class="contact-form reveal" id="contactForm">
@@ -176,13 +190,20 @@
     <div class="logo">Beyond <span>Bits</span></div>
     <p>Design, tecnologia e criatividade para marcas visionárias.</p>
     <div class="footer-links">
-      <a href="https://www.instagram.com" target="_blank" rel="noreferrer">Instagram</a>
-      <a href="https://www.linkedin.com" target="_blank" rel="noreferrer">LinkedIn</a>
-      <a href="https://wa.me/00000000000" target="_blank" rel="noreferrer">WhatsApp</a>
+      <a href="https://www.instagram.com/beyondbitsltda/" target="_blank" rel="noopener noreferrer" aria-label="Instagram Beyond Bits">Instagram</a>
+      <a href="https://www.linkedin.com/company/beyond-bits-ltda/?viewAsMember=true" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn Beyond Bits">LinkedIn</a>
+      <a
+        href="#"
+        class="whatsapp-link"
+        data-whatsapp-key="footer"
+        data-message="Olá! Gostaria de falar com a Beyond Bits."
+        aria-label="Falar com a Beyond Bits no WhatsApp"
+      >WhatsApp</a>
       <a href="mailto:contato@beyondbits.com" target="_blank" rel="noreferrer">E-mail</a>
     </div>
   </footer>
 
+  <script src="assets/whatsapp.js"></script>
   <script src="assets/script.js"></script>
 </body>
 </html>
