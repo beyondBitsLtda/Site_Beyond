@@ -1,7 +1,7 @@
-const PLAIN_WHATSAPP_PHONE = "553190852734";
+const PLAIN_WHATSAPP_PHONE = "5531990822734";
 const contactConfig = {
   whatsapp: {
-    phone: "NTUzMTkwODUyNzM0", // base64 for 553190852734
+    phone: "NTUzMTk5MDgyMjczNA==", // 5531990822734
   },
 };
 
