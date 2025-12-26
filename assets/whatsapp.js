@@ -1,6 +1,6 @@
 const contactConfig = {
   whatsapp: {
-    phone: "NTUzMTkwODUyNzM0", // base64 for 553190852734
+    phone: "NTUzMTk5MDgyMjczNA==", // base64 de 5531990822734
   },
 };
 
