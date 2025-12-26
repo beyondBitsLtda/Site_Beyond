@@ -1,6 +1,6 @@
 const contactConfig = {
   whatsapp: {
-    phone: "NTUzMTk5MDgyMjczNA==", // base64 de 5531990822734
+    phone: "NTUzMTk5MDgyMjczNA==", // 5531990822734
   },
 };
 
@@ -14,7 +14,12 @@ function decodeBase64(value) {
 
 document.addEventListener("DOMContentLoaded", () => {
   const whatsappLinks = document.querySelectorAll(".whatsapp-link");
-  const phone = decodeBase64(contactConfig?.whatsapp?.phone || "");
+
+  const decoded = decodeBase64(contactConfig?.whatsapp?.phone || "");
+  const phone = (decoded || "").replace(/\D/g, "").trim(); // <- remove tudo que não é dígito
+
+  console.log("[WhatsApp] decoded:", decoded);
+  console.log("[WhatsApp] phone final:", phone);
 
   whatsappLinks.forEach((link) => {
     const key = link.dataset.whatsappKey;
@@ -24,9 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const url = new URL(`https://wa.me/${phone}`);
 
-    if (message) {
-      url.searchParams.set("text", message);
-    }
+    if (message) url.searchParams.set("text", message);
 
     link.href = url.toString();
     link.rel = link.rel || "noopener noreferrer";
