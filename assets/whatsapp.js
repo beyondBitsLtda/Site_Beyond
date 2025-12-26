@@ -1,6 +1,6 @@
 const contactConfig = {
   whatsapp: {
-    phone: "NTUzMTk5MDgyMjczNA==", // 5531990822734
+    phone: "NTUzMTkwODUyNzM0", // base64 for 553190852734
   },
 };
 
@@ -12,27 +12,32 @@ function decodeBase64(value) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function hydrateWhatsAppLinks() {
   const whatsappLinks = document.querySelectorAll(".whatsapp-link");
+  const phone = decodeBase64(contactConfig?.whatsapp?.phone || "");
 
-  const decoded = decodeBase64(contactConfig?.whatsapp?.phone || "");
-  const phone = (decoded || "").replace(/\D/g, "").trim(); // <- remove tudo que não é dígito
-
-  console.log("[WhatsApp] decoded:", decoded);
-  console.log("[WhatsApp] phone final:", phone);
+  if (!phone) return;
 
   whatsappLinks.forEach((link) => {
     const key = link.dataset.whatsappKey;
     const message = link.dataset.message || "";
 
-    if (!phone || !key) return;
+    if (!key) return;
 
     const url = new URL(`https://wa.me/${phone}`);
 
-    if (message) url.searchParams.set("text", message);
+    if (message) {
+      url.searchParams.set("text", message);
+    }
 
     link.href = url.toString();
     link.rel = link.rel || "noopener noreferrer";
     link.target = link.target || "_blank";
   });
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", hydrateWhatsAppLinks);
+} else {
+  hydrateWhatsAppLinks();
+}
