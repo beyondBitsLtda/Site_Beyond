@@ -452,6 +452,33 @@ a {
   color: var(--accent-1);
 }
 
+.price-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  border-radius: 12px;
+  background: linear-gradient(120deg, rgba(124, 58, 237, 0.25), rgba(24, 161, 255, 0.18));
+  color: #f6f5fb;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.price-badge::before {
+  content: "•";
+  color: var(--accent-1);
+  font-size: 1.1rem;
+}
+
+.price-badge.neutral {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e6e6f0;
+}
+
 .chip {
   display: inline-flex;
   padding: 8px 12px;
