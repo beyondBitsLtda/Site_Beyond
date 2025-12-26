@@ -1091,5 +1091,81 @@ a {
     top: 265px; /* desce um pouco mais */
   }
 }
+/* =========================================
+   FIX DEFINITIVO MOBILE — SEM VAZAMENTO
+   No mobile os phones deixam de ser absolute e viram layout normal
+   ========================================= */
+
+.before-after {
+  overflow: hidden; /* corta qualquer coisa que tente sair */
+}
+
+/* garante que o grid não “estoure” */
+.before-after__grid,
+.before-after__visual,
+.before-after__stack {
+  max-width: 100%;
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+  .before-after__grid {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  /* O palco vira um container normal (sem altura fixa) */
+  .before-after__visual {
+    min-height: auto;
+  }
+
+  .before-after__stack {
+    height: auto !important;     /* remove altura fixa */
+    width: 100%;
+    margin: 0 auto;
+    display: flex;               /* empilha */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    position: relative;
+  }
+
+  /* CRÍTICO: no mobile os phones NÃO são absolute */
+  .phone-mock {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+
+    width: min(280px, 86vw);     /* responsivo real */
+    margin: 0 auto;
+    transform: none;             /* base */
+    animation: none;             /* remove flutuação no mobile (evita “pulo”) */
+  }
+
+  /* Mantém um leve “efeito 3D” sem desconfigurar */
+  .phone-mock--after {
+    transform: rotate(4deg);
+  }
+
+  .phone-mock--before {
+    transform: rotate(-4deg);
+    opacity: 0.98;
+  }
+
+  /* Texto centralizado em telas menores (opcional, mas ajuda) */
+  .before-after__content {
+    text-align: left;
+  }
+}
+
+/* TELAS MUITO PEQUENAS */
+@media (max-width: 480px) {
+  .phone-mock {
+    width: min(260px, 90vw);
+  }
+}
 
 
