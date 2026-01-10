@@ -411,6 +411,11 @@ a {
   gap: 18px;
 }
 
+.services-note {
+  margin-top: 18px;
+  max-width: 760px;
+}
+
 .service-card {
   padding: 22px;
   border-radius: 18px;
@@ -1167,5 +1172,4 @@ a {
     width: min(260px, 90vw);
   }
 }
-
 
