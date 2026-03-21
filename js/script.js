@@ -19,22 +19,15 @@ let isDark = document.body.classList.contains('dark-mode');
 let sphereReady = false;
 
 const IMAGES = {
-  light: { open: 'assets/1.webp', closed: 'assets/2.webp', openFb: 'assets/1.png', closedFb: 'assets/2.png' },
-  dark:  { open: 'assets/3.webp', closed: 'assets/4.webp', openFb: 'assets/3.png', closedFb: 'assets/4.png' }
+  light: { open: 'assets/1.webp', closed: 'assets/2.webp' },
+  dark:  { open: 'assets/3.webp', closed: 'assets/4.webp' }
 };
 
-// Referências aos <source> WebP dentro dos <picture>
-const src1 = document.getElementById('src1-webp');
-const src2 = document.getElementById('src2-webp');
-
-// Garante que as imgs têm o src correto do tema inicial
+// Garante que as imgs têm o src correto do tema inicial (sem piscar)
 (function syncInitialImages() {
   const theme = isDark ? 'dark' : 'light';
-  if (src1) src1.srcset = IMAGES[theme].open;
-  if (src2) src2.srcset = IMAGES[theme].closed;
-  // PNG fallback
-  if (img1 && !img1.src.includes(IMAGES[theme].openFb))   img1.src = IMAGES[theme].openFb;
-  if (img2 && !img2.src.includes(IMAGES[theme].closedFb)) img2.src = IMAGES[theme].closedFb;
+  if (img1 && !img1.src.endsWith(IMAGES[theme].open.split('/').pop()))   img1.src = IMAGES[theme].open;
+  if (img2 && !img2.src.endsWith(IMAGES[theme].closed.split('/').pop())) img2.src = IMAGES[theme].closed;
 })();
 
 function enableDark(animate) {
@@ -59,10 +52,8 @@ function swapImages(animate) {
     img1.style.opacity    = '0';
     img2.style.opacity    = '0';
     setTimeout(() => {
-      if (src1) src1.srcset = IMAGES[theme].open;
-      if (src2) src2.srcset = IMAGES[theme].closed;
-      img1.src = IMAGES[theme].openFb;
-      img2.src = IMAGES[theme].closedFb;
+      img1.src = IMAGES[theme].open;
+      img2.src = IMAGES[theme].closed;
       let loaded = 0;
       const reveal = () => { loaded++; if (loaded >= 2) img1.style.opacity = '1'; };
       img1.onload = reveal; img2.onload = reveal;
@@ -71,10 +62,8 @@ function swapImages(animate) {
       if (loaded >= 2) img1.style.opacity = '1';
     }, 500);
   } else {
-    if (src1) src1.srcset = IMAGES[theme].open;
-    if (src2) src2.srcset = IMAGES[theme].closed;
-    img1.src = IMAGES[theme].openFb;
-    img2.src = IMAGES[theme].closedFb;
+    img1.src = IMAGES[theme].open;
+    img2.src = IMAGES[theme].closed;
   }
 }
 themeToggle.addEventListener('click', () => isDark ? enableLight(true) : enableDark(true));
