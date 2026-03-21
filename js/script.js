@@ -7,11 +7,15 @@ window.addEventListener('scroll', () => {
 
 /* ══════════════════════════════════════════
    DARK MODE
+   isDark já foi aplicado via inline script no HTML (window.__bbDark)
+   para evitar flash. Aqui apenas sincronizamos o estado JS.
 ══════════════════════════════════════════ */
 const img1 = document.getElementById('img1');
 const img2 = document.getElementById('img2');
 const themeToggle = document.getElementById('themeToggle');
-let isDark = false;
+
+// Sincroniza com o que o inline script já aplicou
+let isDark = document.body.classList.contains('dark-mode');
 let sphereReady = false;
 
 const IMAGES = {
@@ -19,12 +23,17 @@ const IMAGES = {
   dark:  { open: 'assets/3.png', closed: 'assets/4.png' }
 };
 
-function initTheme() {
-  const saved = localStorage.getItem('bb-theme');
-  if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    enableDark(false);
+// Garante que as imgs têm o src correto do tema inicial
+(function syncInitialImages() {
+  const theme = isDark ? 'dark' : 'light';
+  if (img1.src.indexOf(IMAGES[theme].open) === -1) {
+    img1.src = IMAGES[theme].open;
   }
-}
+  if (img2.src.indexOf(IMAGES[theme].closed) === -1) {
+    img2.src = IMAGES[theme].closed;
+  }
+})();
+
 function enableDark(animate) {
   isDark = true;
   document.body.classList.add('dark-mode');
@@ -44,8 +53,8 @@ function swapImages(animate) {
   if (animate) {
     img1.style.transition = 'opacity 0.5s ease';
     img2.style.transition = 'opacity 0.5s ease';
-    img1.style.opacity = '0';
-    img2.style.opacity = '0';
+    img1.style.opacity    = '0';
+    img2.style.opacity    = '0';
     setTimeout(() => {
       img1.src = IMAGES[theme].open;
       img2.src = IMAGES[theme].closed;
@@ -62,12 +71,11 @@ function swapImages(animate) {
   }
 }
 themeToggle.addEventListener('click', () => isDark ? enableLight(true) : enableDark(true));
-initTheme();
 
 /* ══════════════════════════════════════════
    BLINK
 ══════════════════════════════════════════ */
-const BLINK_MS = 280;
+const BLINK_MS    = 280;
 const DARK_HOLD_MS = 400;
 function blink() {
   img2.style.transition = `opacity ${BLINK_MS * 0.4}ms cubic-bezier(0.4,0,0.2,1)`;
@@ -87,28 +95,32 @@ setTimeout(blink, 3500);
    PIXEL ASSEMBLY — "BEYOND BITS"
 ══════════════════════════════════════════ */
 const pixelCanvas = document.getElementById('pixelCanvas');
-const heroTitle = document.getElementById('heroTitle');
-const pCtx = pixelCanvas.getContext('2d');
+const heroTitle   = document.getElementById('heroTitle');
+const pCtx        = pixelCanvas.getContext('2d');
 const PIXEL_SIZE = 3, SAMPLE_STEP = 3, ANIM_DURATION = 1800, ANIM_DELAY = 600, SCATTER_RANGE = 1.8;
 function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
 function getTextColor() { return isDark ? '#e8e8e6' : '#0a0a0a'; }
-function getFontSize() { return Math.min(Math.max(110, window.innerWidth * 0.18), 260); }
+// Mobile-friendly: menor mínimo para telas pequenas
+function getFontSize() {
+  const min = window.innerWidth <= 600 ? 56 : 110;
+  return Math.min(Math.max(min, window.innerWidth * 0.18), 260);
+}
 
 function runPixelAnimation() {
   const fs = getFontSize(), lh = fs * 0.88;
   const cW = Math.ceil(fs * 5.5), cH = Math.ceil(lh * 2.15);
   const dpr = window.devicePixelRatio || 1;
-  pixelCanvas.width = cW * dpr; pixelCanvas.height = cH * dpr;
-  pixelCanvas.style.width = cW + 'px'; pixelCanvas.style.height = cH + 'px';
+  pixelCanvas.width  = cW * dpr; pixelCanvas.height = cH * dpr;
+  pixelCanvas.style.width  = cW + 'px'; pixelCanvas.style.height = cH + 'px';
   pCtx.scale(dpr, dpr);
 
-  const off = document.createElement('canvas');
-  off.width = cW; off.height = cH;
+  const off  = document.createElement('canvas');
+  off.width  = cW; off.height = cH;
   const oCtx = off.getContext('2d');
-  oCtx.font = `400 ${fs}px 'Bebas Neue', cursive`;
-  oCtx.fillStyle = '#000'; oCtx.textBaseline = 'top';
+  oCtx.font        = `400 ${fs}px 'Bebas Neue', cursive`;
+  oCtx.fillStyle   = '#000'; oCtx.textBaseline = 'top';
   oCtx.fillText('BEYOND', 0, 0);
-  oCtx.fillText('BITS', 0, lh);
+  oCtx.fillText('BITS',   0, lh);
 
   const imgData = oCtx.getImageData(0, 0, cW, cH).data;
   const targets = [];
@@ -117,8 +129,8 @@ function runPixelAnimation() {
       if (imgData[(y * cW + x) * 4 + 3] > 80) targets.push({ x, y });
 
   const particles = targets.map(t => {
-    const a = Math.random() * Math.PI * 2;
-    const d = (0.5 + Math.random()) * Math.max(cW, cH) * SCATTER_RANGE * 0.5;
+    const a  = Math.random() * Math.PI * 2;
+    const d  = (0.5 + Math.random()) * Math.max(cW, cH) * SCATTER_RANGE * 0.5;
     const dc = Math.sqrt(Math.pow(t.x - cW/2, 2) + Math.pow(t.y - cH/2, 2));
     const md = Math.sqrt(cW*cW + cH*cH) / 2;
     return {
@@ -137,16 +149,17 @@ function runPixelAnimation() {
     const col = getTextColor();
     for (const pt of particles) {
       const ap = Math.max(0, Math.min(1, (p - pt.delay) / (1 - pt.delay)));
-      const e = easeOutQuart(ap);
+      const e  = easeOutQuart(ap);
       pt.cx = pt.sx + (pt.tx - pt.sx) * e;
       pt.cy = pt.sy + (pt.ty - pt.sy) * e;
       pCtx.globalAlpha = Math.min(1, ap * 1.8);
-      pCtx.fillStyle = col;
+      pCtx.fillStyle   = col;
       pCtx.fillRect(Math.round(pt.cx), Math.round(pt.cy), PIXEL_SIZE, PIXEL_SIZE);
     }
     pCtx.globalAlpha = 1;
-    if (p < 1) requestAnimationFrame(anim);
-    else if (!done) {
+    if (p < 1) {
+      requestAnimationFrame(anim);
+    } else if (!done) {
       done = true;
       setTimeout(() => {
         heroTitle.classList.add('revealed');
@@ -186,109 +199,49 @@ const SLIDE_DATA = [
     eyebrow: 'nossas soluções',
     titleLines: ['CRIADO', 'PARA VENDER'],
     cards: [
-      {
-        n:'01', icon:'radar',
-        title:'Software Sob Medida',
-        desc:'Sistemas construídos pro seu negócio exato. Sem limitação de template, sem gambiarra de plugin. Só o que você precisa, funcionando.',
-        statNum:'100%', statLabel:'personalizado'
-      },
-      {
-        n:'02', icon:'grid',
-        title:'Sites & Sistemas Web',
-        desc:'Performance, SEO e design que prende. Não é só bonito: é uma máquina de capturar e converter clientes reais — todo dia.',
-        statNum:'3×', statLabel:'mais leads'
-      },
-      {
-        n:'03', icon:'hex',
-        title:'Design de Marca',
-        desc:'Do logo à identidade completa — posts, apresentações, tudo com coerência visual que vende antes mesmo de você falar.',
-        statNum:'∞', statLabel:'impacto'
-      },
+      { n:'01', icon:'radar',  title:'Software Sob Medida',    desc:'Sistemas construídos pro seu negócio exato. Sem limitação de template, sem gambiarra de plugin. Só o que você precisa, funcionando.',              statNum:'100%',  statLabel:'personalizado' },
+      { n:'02', icon:'grid',   title:'Sites & Sistemas Web',   desc:'Performance, SEO e design que prende. Não é só bonito: é uma máquina de capturar e converter clientes reais — todo dia.',                         statNum:'3×',    statLabel:'mais leads' },
+      { n:'03', icon:'hex',    title:'Design de Marca',        desc:'Do logo à identidade completa — posts, apresentações, tudo com coerência visual que vende antes mesmo de você falar.',                             statNum:'∞',     statLabel:'impacto' },
     ]
   },
   {
     eyebrow: 'resultados reais',
     titleLines: ['PROVA', 'QUE FUNCIONA'],
     cards: [
-      {
-        n:'01', icon:'star',
-        title:'50+ Projetos Entregues',
-        desc:'Startups, PMEs e profissionais liberais — cada entrega com cliente satisfeito. Nosso portfólio é a nossa maior prova social.',
-        statNum:'50+', statLabel:'projetos'
-      },
-      {
-        n:'02', icon:'loop',
-        title:'Clientes que Voltam',
-        desc:'Mais de 80% dos nossos clientes voltam para novos projetos. Relacionamento não acaba na entrega — começa nela.',
-        statNum:'80%', statLabel:'retenção'
-      },
-      {
-        n:'03', icon:'check',
-        title:'Zero Retrabalho',
-        desc:'Código limpo, documentado e escalável. Sua empresa cresce e o sistema acompanha — sem precisar refazer tudo mais tarde.',
-        statNum:'0', statLabel:'lock-in'
-      },
+      { n:'01', icon:'star',   title:'50+ Projetos Entregues', desc:'Startups, PMEs e profissionais liberais — cada entrega com cliente satisfeito. Nosso portfólio é a nossa maior prova social.',                     statNum:'50+',   statLabel:'projetos' },
+      { n:'02', icon:'loop',   title:'Clientes que Voltam',    desc:'Mais de 80% dos nossos clientes voltam para novos projetos. Relacionamento não acaba na entrega — começa nela.',                                   statNum:'80%',   statLabel:'retenção' },
+      { n:'03', icon:'check',  title:'Zero Retrabalho',        desc:'Código limpo, documentado e escalável. Sua empresa cresce e o sistema acompanha — sem precisar refazer tudo mais tarde.',                          statNum:'0',     statLabel:'lock-in' },
     ]
   },
   {
     eyebrow: 'nosso diferencial',
     titleLines: ['POR QUE', 'BEYOND?'],
     cards: [
-      {
-        n:'01', icon:'bolt',
-        title:'Criatividade como Arma',
-        desc:'Enquanto outros entregam o óbvio, a gente pensa diferente. Sua marca vai parecer maior do que é — e isso converte muito mais.',
-        statNum:'#1', statLabel:'diferencial'
-      },
-      {
-        n:'02', icon:'layers',
-        title:'Estratégia + Execução',
-        desc:'Não somos só executores. Questionamos, sugerimos e entregamos o que vai realmente funcionar para o seu mercado e seus objetivos.',
-        statNum:'full', statLabel:'stack'
-      },
-      {
-        n:'03', icon:'link',
-        title:'Parceria Real',
-        desc:'Você fala direto com quem desenvolve. Sem intermediários, sem caixa preta. Comunicação clara do briefing à entrega final.',
-        statNum:'1:1', statLabel:'acesso direto'
-      },
+      { n:'01', icon:'bolt',   title:'Criatividade como Arma', desc:'Enquanto outros entregam o óbvio, a gente pensa diferente. Sua marca vai parecer maior do que é — e isso converte muito mais.',                   statNum:'#1',    statLabel:'diferencial' },
+      { n:'02', icon:'layers', title:'Estratégia + Execução',  desc:'Não somos só executores. Questionamos, sugerimos e entregamos o que vai realmente funcionar para o seu mercado e seus objetivos.',                statNum:'full',  statLabel:'stack' },
+      { n:'03', icon:'link',   title:'Parceria Real',          desc:'Você fala direto com quem desenvolve. Sem intermediários, sem caixa preta. Comunicação clara do briefing à entrega final.',                       statNum:'1:1',   statLabel:'acesso direto' },
     ]
   },
   {
     eyebrow: 'comece agora',
     titleLines: ['SEU PROJETO', 'COMEÇA AQUI'],
     cards: [
-      {
-        n:'01', icon:'gift',
-        title:'Briefing Gratuito',
-        desc:'Antes de qualquer proposta, a gente entende de verdade o que você precisa. Sem custo, sem compromisso, sem enrolação.',
-        statNum:'free', statLabel:'sem custo'
-      },
-      {
-        n:'02', icon:'clock',
-        title:'Resposta em 24h',
-        desc:'Nada de esperar semanas. Você recebe uma proposta detalhada e personalizada em até 24 horas úteis — garantido.',
-        statNum:'<24h', statLabel:'orçamento'
-      },
-      {
-        n:'03', icon:'shield',
-        title:'Vagas Limitadas',
-        desc:'Trabalhamos com poucos clientes por mês para garantir qualidade e atenção total. Reserve sua vaga antes que feche.',
-        statNum:'≤5', statLabel:'clientes/mês'
-      },
+      { n:'01', icon:'gift',   title:'Briefing Gratuito',      desc:'Antes de qualquer proposta, a gente entende de verdade o que você precisa. Sem custo, sem compromisso, sem enrolação.',                           statNum:'free',  statLabel:'sem custo' },
+      { n:'02', icon:'clock',  title:'Resposta em 24h',        desc:'Nada de esperar semanas. Você recebe uma proposta detalhada e personalizada em até 24 horas úteis — garantido.',                                   statNum:'<24h', statLabel:'orçamento' },
+      { n:'03', icon:'shield', title:'Vagas Limitadas',        desc:'Trabalhamos com poucos clientes por mês para garantir qualidade e atenção total. Reserve sua vaga antes que feche.',                              statNum:'≤5',    statLabel:'clientes/mês' },
     ]
   },
 ];
 
-/* ── Slider state (module-level so buttons + sphere can access) ── */
-let currentSlide   = 0;
-let isAnimating    = false;
-let slideRotAccum  = 0;   // accumulated sphere Y rotation for slide trigger
-let prevSphereY    = 0;   // sphere Y on last frame
-let lastSlideChange = 0;  // timestamp of last slide change
+/* ── Slider state ── */
+let currentSlide    = 0;
+let isAnimating     = false;
+let slideRotAccum   = 0;
+let prevSphereY     = 0;
+let lastSlideChange = 0;
 
-const SLIDE_THRESHOLD = 1.5;  // radians of sphere rotation to trigger a slide
-const SLIDE_COOLDOWN  = 900;  // ms between slide changes
+const SLIDE_THRESHOLD = 1.5;
+const SLIDE_COOLDOWN  = 900;
 
 function renderSlide(index, dir) {
   if (isAnimating) return;
@@ -300,10 +253,8 @@ function renderSlide(index, dir) {
   const cardEls = document.querySelectorAll('.card-3d');
   const dots    = document.querySelectorAll('.slider-dot');
 
-  /* Update dots */
   dots.forEach((d, i) => d.classList.toggle('active', i === index));
 
-  /* ── Fade OUT ── */
   const outX = dir > 0 ? '-44px' : '44px';
   fc.style.transition     = 'opacity 0.3s ease, transform 0.3s ease';
   fc.style.opacity        = '0';
@@ -313,7 +264,6 @@ function renderSlide(index, dir) {
   header.style.transform  = 'translateY(-10px)';
 
   setTimeout(() => {
-    /* ── Update content ── */
     document.querySelector('.benefits-eyebrow').innerHTML =
       `<span class="line-accent"></span> ${data.eyebrow}`;
     document.querySelector('.benefits-title').innerHTML =
@@ -321,22 +271,20 @@ function renderSlide(index, dir) {
 
     cardEls.forEach((card, i) => {
       const c = data.cards[i];
-      card.querySelector('.card-index').textContent        = c.n;
-      card.querySelector('.card-icon svg').innerHTML       = ICONS[c.icon];
-      card.querySelector('.card-title').textContent        = c.title;
-      card.querySelector('.card-desc').textContent         = c.desc;
-      card.querySelector('.card-stat-num').textContent     = c.statNum;
-      card.querySelector('.card-stat-label').textContent   = c.statLabel;
+      card.querySelector('.card-index').textContent      = c.n;
+      card.querySelector('.card-icon svg').innerHTML     = ICONS[c.icon];
+      card.querySelector('.card-title').textContent      = c.title;
+      card.querySelector('.card-desc').textContent       = c.desc;
+      card.querySelector('.card-stat-num').textContent   = c.statNum;
+      card.querySelector('.card-stat-label').textContent = c.statLabel;
     });
 
-    /* ── Set entry start position (opposite side) ── */
     const inX = dir > 0 ? '44px' : '-44px';
     fc.style.transition     = 'none';
     fc.style.transform      = `translateX(${inX})`;
     header.style.transition = 'none';
     header.style.transform  = 'translateY(10px)';
 
-    /* ── Fade IN (double rAF ensures paint happened) ── */
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         fc.style.transition     = 'opacity 0.52s cubic-bezier(0.16,1,0.3,1), transform 0.52s cubic-bezier(0.16,1,0.3,1)';
@@ -360,10 +308,16 @@ function goToSlide(n, dir) {
 }
 
 /* ══════════════════════════════════════════════════════
-   ★ THREE.JS — ESFERA 3D INTERATIVA + CARD CONTROL ★
+   ★ THREE.JS — ESFERA 3D INTERATIVA
+   Não inicializa em telas pequenas (≤ 600px) para
+   poupar CPU/GPU e evitar travamentos no mobile.
 ══════════════════════════════════════════════════════ */
 
+const IS_MOBILE = window.innerWidth <= 600;
+
 function initSphere() {
+  if (IS_MOBILE) return; // esfera desativada no mobile
+
   const container = document.getElementById('sphereWrapper');
   const canvas    = document.getElementById('sphereCanvas');
   if (!container || !canvas || typeof THREE === 'undefined') return;
@@ -371,7 +325,6 @@ function initSphere() {
   const W = 420, H = 420;
   const dpr = Math.min(window.devicePixelRatio, 2);
 
-  // ── Scene ──
   const scene  = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
   camera.position.z = 5;
@@ -381,179 +334,129 @@ function initSphere() {
   renderer.setPixelRatio(dpr);
   renderer.setClearColor(0x000000, 0);
 
-  // ── Colors ──
   const COPPER_L = 0xb87333;
   const COPPER_D = 0xd4944a;
   function copperHex() { return isDark ? COPPER_D : COPPER_L; }
   function fgHex()     { return isDark ? 0xe8e8e6 : 0x0a0a0a; }
 
-  // ── Icosahedron wireframe (outer cage) ──
+  // Icosahedron wireframe
   const icoGeo = new THREE.IcosahedronGeometry(1.6, 1);
-  const icoMat = new THREE.MeshBasicMaterial({
-    color: copperHex(), wireframe: true, transparent: true, opacity: 0.15
-  });
+  const icoMat = new THREE.MeshBasicMaterial({ color: copperHex(), wireframe: true, transparent: true, opacity: 0.15 });
   const icoMesh = new THREE.Mesh(icoGeo, icoMat);
   scene.add(icoMesh);
 
-  // ── Inner sphere (glowing core) ──
+  // Inner sphere
   const coreGeo = new THREE.SphereGeometry(1.05, 32, 32);
-  const coreMat = new THREE.MeshPhongMaterial({
-    color: copperHex(), emissive: copperHex(), emissiveIntensity: 0.15,
-    transparent: true, opacity: 0.08, shininess: 100,
-  });
+  const coreMat = new THREE.MeshPhongMaterial({ color: copperHex(), emissive: copperHex(), emissiveIntensity: 0.15, transparent: true, opacity: 0.08, shininess: 100 });
   const coreMesh = new THREE.Mesh(coreGeo, coreMat);
   scene.add(coreMesh);
 
-  // ── Second wireframe (inner, denser) ──
+  // Second wireframe
   const innerWireGeo = new THREE.IcosahedronGeometry(1.1, 2);
-  const innerWireMat = new THREE.MeshBasicMaterial({
-    color: fgHex(), wireframe: true, transparent: true, opacity: 0.04
-  });
-  const innerWire = new THREE.Mesh(innerWireGeo, innerWireMat);
+  const innerWireMat = new THREE.MeshBasicMaterial({ color: fgHex(), wireframe: true, transparent: true, opacity: 0.04 });
+  const innerWire    = new THREE.Mesh(innerWireGeo, innerWireMat);
   scene.add(innerWire);
 
-  // ── Particle nodes on icosahedron vertices ──
-  const nodePositions  = icoGeo.attributes.position;
-  const nodeGroup      = new THREE.Group();
-  const nodeDots       = [];
-  const usedPositions  = new Set();
-
+  // Particle nodes
+  const nodePositions = icoGeo.attributes.position;
+  const nodeGroup     = new THREE.Group();
+  const nodeDots      = [];
+  const usedPositions = new Set();
   for (let i = 0; i < nodePositions.count; i++) {
-    const x = nodePositions.getX(i);
-    const y = nodePositions.getY(i);
-    const z = nodePositions.getZ(i);
+    const x = nodePositions.getX(i), y = nodePositions.getY(i), z = nodePositions.getZ(i);
     const key = `${x.toFixed(2)},${y.toFixed(2)},${z.toFixed(2)}`;
     if (usedPositions.has(key)) continue;
     usedPositions.add(key);
-
     const dotGeo = new THREE.SphereGeometry(0.035, 8, 8);
     const dotMat = new THREE.MeshBasicMaterial({ color: copperHex() });
     const dot    = new THREE.Mesh(dotGeo, dotMat);
     dot.position.set(x, y, z);
     nodeGroup.add(dot);
-    nodeDots.push({ mesh: dot, base: new THREE.Vector3(x, y, z), mat: dotMat });
+    nodeDots.push({ mesh: dot, mat: dotMat });
   }
   scene.add(nodeGroup);
 
-  // ── Floating orbital particles ──
+  // Orbital particles
   const orbitalCount = 60;
   const orbitalGeo   = new THREE.BufferGeometry();
   const orbPositions = new Float32Array(orbitalCount * 3);
   const orbData      = [];
-
   for (let i = 0; i < orbitalCount; i++) {
     const theta = Math.random() * Math.PI * 2;
     const phi   = Math.acos(2 * Math.random() - 1);
     const r     = 1.8 + Math.random() * 0.6;
-    orbPositions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
-    orbPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-    orbPositions[i * 3 + 2] = r * Math.cos(phi);
+    orbPositions[i*3] = r*Math.sin(phi)*Math.cos(theta);
+    orbPositions[i*3+1] = r*Math.sin(phi)*Math.sin(theta);
+    orbPositions[i*3+2] = r*Math.cos(phi);
     orbData.push({ r, theta, phi, speed: 0.1 + Math.random() * 0.3 });
   }
-
   orbitalGeo.setAttribute('position', new THREE.BufferAttribute(orbPositions, 3));
-  const orbMat = new THREE.PointsMaterial({
-    color: copperHex(), size: 0.025, transparent: true, opacity: 0.5, sizeAttenuation: true
-  });
+  const orbMat = new THREE.PointsMaterial({ color: copperHex(), size: 0.025, transparent: true, opacity: 0.5, sizeAttenuation: true });
   const orbitalPoints = new THREE.Points(orbitalGeo, orbMat);
   scene.add(orbitalPoints);
 
-  // ── Ring accents ──
+  // Rings
   const ringGeo = new THREE.RingGeometry(1.75, 1.78, 64);
-  const ringMat = new THREE.MeshBasicMaterial({
-    color: copperHex(), transparent: true, opacity: 0.1, side: THREE.DoubleSide
-  });
+  const ringMat = new THREE.MeshBasicMaterial({ color: copperHex(), transparent: true, opacity: 0.1, side: THREE.DoubleSide });
   const ring = new THREE.Mesh(ringGeo, ringMat);
   ring.rotation.x = Math.PI / 2;
   scene.add(ring);
-
   const ring2 = new THREE.Mesh(ringGeo.clone(), ringMat.clone());
   ring2.rotation.x = Math.PI * 0.35;
   ring2.rotation.z = Math.PI * 0.25;
   ring2.material.opacity = 0.06;
   scene.add(ring2);
 
-  // ── Lights ──
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-  scene.add(ambientLight);
-  const pointLight = new THREE.PointLight(copperHex(), 1.5, 15);
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+  const pointLight  = new THREE.PointLight(copperHex(), 1.5, 15);
   pointLight.position.set(3, 3, 5);
   scene.add(pointLight);
   const pointLight2 = new THREE.PointLight(copperHex(), 0.5, 10);
   pointLight2.position.set(-3, -2, 3);
   scene.add(pointLight2);
 
-  // ── Theme update ──
+  // Theme update
   window.updateSphereColors = function() {
-    const c = copperHex();
-    const f = fgHex();
-    icoMat.color.setHex(c);
-    coreMat.color.setHex(c);
-    coreMat.emissive.setHex(c);
-    innerWireMat.color.setHex(f);
-    orbMat.color.setHex(c);
-    ringMat.color.setHex(c);
-    ring2.material.color.setHex(c);
-    pointLight.color.setHex(c);
-    pointLight2.color.setHex(c);
+    const c = copperHex(), f = fgHex();
+    icoMat.color.setHex(c); coreMat.color.setHex(c); coreMat.emissive.setHex(c);
+    innerWireMat.color.setHex(f); orbMat.color.setHex(c);
+    ringMat.color.setHex(c); ring2.material.color.setHex(c);
+    pointLight.color.setHex(c); pointLight2.color.setHex(c);
     nodeDots.forEach(n => n.mat.color.setHex(c));
   };
 
-  // ══════════════════════════════
-  //  MOUSE / TOUCH DRAG
-  // ══════════════════════════════
+  // Drag
   let dragging   = false;
   let prevMouse  = { x: 0, y: 0 };
   const sphereRot     = { x: 0, y: 0 };
   const sphereVel     = { x: 0, y: 0 };
   const cardInfluence = { x: 0, y: 0 };
-
   const hint = container.querySelector('.sphere-hint');
 
-  container.addEventListener('mousedown', (e) => {
-    dragging = true;
-    prevMouse.x = e.clientX;
-    prevMouse.y = e.clientY;
-    if (hint) hint.classList.add('hidden');
-  });
+  container.addEventListener('mousedown', (e) => { dragging = true; prevMouse.x = e.clientX; prevMouse.y = e.clientY; if (hint) hint.classList.add('hidden'); });
   window.addEventListener('mousemove', (e) => {
     if (!dragging) return;
-    const dx = e.clientX - prevMouse.x;
-    const dy = e.clientY - prevMouse.y;
-    sphereVel.x = dy * 0.008;
-    sphereVel.y = dx * 0.008;
-    sphereRot.x += sphereVel.x;
-    sphereRot.y += sphereVel.y;
-    prevMouse.x = e.clientX;
-    prevMouse.y = e.clientY;
+    const dx = e.clientX - prevMouse.x, dy = e.clientY - prevMouse.y;
+    sphereVel.x = dy * 0.008; sphereVel.y = dx * 0.008;
+    sphereRot.x += sphereVel.x; sphereRot.y += sphereVel.y;
+    prevMouse.x = e.clientX; prevMouse.y = e.clientY;
   });
   window.addEventListener('mouseup', () => { dragging = false; });
 
-  container.addEventListener('touchstart', (e) => {
-    dragging = true;
-    prevMouse.x = e.touches[0].clientX;
-    prevMouse.y = e.touches[0].clientY;
-    if (hint) hint.classList.add('hidden');
-  }, { passive: true });
+  container.addEventListener('touchstart', (e) => { dragging = true; prevMouse.x = e.touches[0].clientX; prevMouse.y = e.touches[0].clientY; if (hint) hint.classList.add('hidden'); }, { passive: true });
   window.addEventListener('touchmove', (e) => {
     if (!dragging) return;
-    const dx = e.touches[0].clientX - prevMouse.x;
-    const dy = e.touches[0].clientY - prevMouse.y;
-    sphereVel.x = dy * 0.008;
-    sphereVel.y = dx * 0.008;
-    sphereRot.x += sphereVel.x;
-    sphereRot.y += sphereVel.y;
-    prevMouse.x = e.touches[0].clientX;
-    prevMouse.y = e.touches[0].clientY;
+    const dx = e.touches[0].clientX - prevMouse.x, dy = e.touches[0].clientY - prevMouse.y;
+    sphereVel.x = dy * 0.008; sphereVel.y = dx * 0.008;
+    sphereRot.x += sphereVel.x; sphereRot.y += sphereVel.y;
+    prevMouse.x = e.touches[0].clientX; prevMouse.y = e.touches[0].clientY;
   }, { passive: true });
   window.addEventListener('touchend', () => { dragging = false; });
 
-  // ══════════════════════════════
-  //  CARD HOVER TILT
-  // ══════════════════════════════
+  // Card hover tilt
   const cards          = document.querySelectorAll('.card-3d');
   const cardBaseOffsets = [-1, 0, 1];
-
   cards.forEach(card => {
     const inner = card.querySelector('.card-3d-inner');
     if (!inner) return;
@@ -561,22 +464,15 @@ function initSphere() {
       const r  = card.getBoundingClientRect();
       const rx = ((e.clientY - r.top  - r.height/2) / (r.height/2)) * -8;
       const ry = ((e.clientX - r.left - r.width /2) / (r.width /2)) *  8;
-      inner.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.03,1.03,1.03)`;
-      const gx = ((e.clientX - r.left) / r.width)  * 100;
-      const gy = ((e.clientY - r.top)  / r.height) * 100;
+      inner.style.transform  = `rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.03,1.03,1.03)`;
       inner.style.background = isDark
-        ? `radial-gradient(circle at ${gx}% ${gy}%, rgba(212,148,74,0.07), rgba(28,28,32,0.7) 60%)`
-        : `radial-gradient(circle at ${gx}% ${gy}%, rgba(255,255,255,0.15), rgba(232,232,230,0.6) 60%)`;
+        ? `radial-gradient(circle at ${((e.clientX-r.left)/r.width)*100}% ${((e.clientY-r.top)/r.height)*100}%, rgba(212,148,74,0.07), rgba(28,28,32,0.7) 60%)`
+        : `radial-gradient(circle at ${((e.clientX-r.left)/r.width)*100}% ${((e.clientY-r.top)/r.height)*100}%, rgba(255,255,255,0.15), rgba(232,232,230,0.6) 60%)`;
     });
-    card.addEventListener('mouseleave', () => {
-      inner.style.transform  = '';
-      inner.style.background = '';
-    });
+    card.addEventListener('mouseleave', () => { inner.style.transform = ''; inner.style.background = ''; });
   });
 
-  // ══════════════════════════════
-  //  RENDER LOOP
-  // ══════════════════════════════
+  // Render loop
   const clock = new THREE.Clock();
   sphereReady = true;
 
@@ -584,104 +480,69 @@ function initSphere() {
     requestAnimationFrame(animate);
     const t = clock.getElapsedTime();
 
-    // ── Momentum decay ──
-    if (!dragging) {
-      sphereVel.x *= 0.95;
-      sphereVel.y *= 0.95;
-      sphereRot.x += sphereVel.x;
-      sphereRot.y += sphereVel.y;
-    }
+    if (!dragging) { sphereVel.x *= 0.95; sphereVel.y *= 0.95; sphereRot.x += sphereVel.x; sphereRot.y += sphereVel.y; }
 
-    // ── Idle auto-rotation ──
-    const idleX = Math.sin(t * 0.2) * 0.003;
     const isIdle = !dragging && Math.abs(sphereVel.x) < 0.001 && Math.abs(sphereVel.y) < 0.001;
-    if (isIdle) {
-      sphereRot.x += idleX;
-      sphereRot.y += 0.003;
-    }
+    if (isIdle) { sphereRot.x += Math.sin(t * 0.2) * 0.003; sphereRot.y += 0.003; }
 
-    // ── Apply to meshes ──
     const targetQuat = new THREE.Quaternion();
-    const euler      = new THREE.Euler(sphereRot.x, sphereRot.y, 0, 'XYZ');
-    targetQuat.setFromEuler(euler);
+    targetQuat.setFromEuler(new THREE.Euler(sphereRot.x, sphereRot.y, 0, 'XYZ'));
 
     icoMesh.quaternion.copy(targetQuat);
     coreMesh.quaternion.copy(targetQuat);
     innerWire.quaternion.slerp(targetQuat, 0.6);
     nodeGroup.quaternion.copy(targetQuat);
-
     ring.rotation.z  = t * 0.15;
     ring2.rotation.y = t * 0.1;
 
-    // ── Orbital particles ──
     const orbPos = orbitalPoints.geometry.attributes.position;
     for (let i = 0; i < orbitalCount; i++) {
-      const d = orbData[i];
-      d.theta += d.speed * 0.008;
-      orbPos.setXYZ(i,
-        d.r * Math.sin(d.phi) * Math.cos(d.theta),
-        d.r * Math.sin(d.phi) * Math.sin(d.theta),
-        d.r * Math.cos(d.phi)
-      );
+      const d = orbData[i]; d.theta += d.speed * 0.008;
+      orbPos.setXYZ(i, d.r*Math.sin(d.phi)*Math.cos(d.theta), d.r*Math.sin(d.phi)*Math.sin(d.theta), d.r*Math.cos(d.phi));
     }
     orbPos.needsUpdate = true;
     orbitalPoints.quaternion.slerp(targetQuat, 0.3);
 
-    // ── Node pulsing ──
     nodeDots.forEach((n, i) => {
       const pulse = 0.7 + Math.sin(t * 2 + i * 0.5) * 0.3;
       n.mat.opacity = pulse;
       n.mesh.scale.setScalar(0.8 + Math.sin(t * 1.5 + i) * 0.3);
     });
 
-    // ── Core glow pulse ──
     coreMat.emissiveIntensity = 0.1 + Math.sin(t * 1.2) * 0.08;
     coreMat.opacity           = 0.06 + Math.sin(t * 0.8) * 0.03;
 
-    // ══ CARD MANIPULATION from sphere ══
+    // Card manipulation
     const lerpSpeed = 0.06;
     cardInfluence.x += (sphereRot.x - cardInfluence.x) * lerpSpeed;
     cardInfluence.y += (sphereRot.y - cardInfluence.y) * lerpSpeed;
-
-    const maxTilt = 18, maxShift = 30, maxSpread = 40, maxLift = 20;
     const infX = Math.sin(cardInfluence.x * 0.5);
     const infY = Math.sin(cardInfluence.y * 0.5);
-
     cards.forEach((card, i) => {
       const idleFloat = Math.sin(t * 1.2 + i * 1.8) * 8;
-      const tiltX     = infX * maxTilt * 0.4;
-      const tiltY     = infY * maxTilt * cardBaseOffsets[i] * 0.6;
-      const shiftY    = infX * maxShift + idleFloat;
-      const spreadX   = infY * maxSpread * cardBaseOffsets[i];
-      const liftZ     = Math.abs(infY) * maxLift * (i === 1 ? 1.2 : 0.8);
       card.style.transform =
-        `translateX(${spreadX}px) translateY(${shiftY - liftZ}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+        `translateX(${infY*40*cardBaseOffsets[i]}px) ` +
+        `translateY(${infX*30 + idleFloat - Math.abs(infY)*20*(i===1?1.2:0.8)}px) ` +
+        `rotateX(${infX*18*0.4}deg) rotateY(${infY*18*cardBaseOffsets[i]*0.6}deg)`;
     });
 
-    // ══ SLIDE NAVIGATION via sphere Y rotation ══
-    // Only accumulate when the user is actively dragging or coasting (not idle auto-rotation)
+    // Slide via sphere drag
     const deltaY = sphereRot.y - prevSphereY;
     prevSphereY  = sphereRot.y;
-
     if (!isIdle) {
       slideRotAccum += deltaY;
-      // Decay accumulator gradually so small wobbles don't accumulate
       if (!dragging) slideRotAccum *= 0.97;
-
       if (Math.abs(slideRotAccum) > SLIDE_THRESHOLD && Date.now() - lastSlideChange > SLIDE_COOLDOWN) {
-        const dir       = slideRotAccum > 0 ? 1 : -1;
-        slideRotAccum   = 0;
-        lastSlideChange = Date.now();
+        const dir = slideRotAccum > 0 ? 1 : -1;
+        slideRotAccum = 0; lastSlideChange = Date.now();
         goToSlide(currentSlide + dir, dir);
       }
     } else {
-      // Slowly decay during idle so accumulated drift doesn't fire unexpectedly
       slideRotAccum *= 0.92;
     }
 
     renderer.render(scene, camera);
   }
-
   animate();
 }
 
@@ -711,28 +572,15 @@ document.querySelectorAll('.stat-item, .benefits-section').forEach((el, i) => {
   io.observe(el);
 });
 
-/* ══ SLIDER BUTTON EVENT LISTENERS ══ */
+/* ── Slider buttons ── */
 const prevBtn = document.getElementById('slidePrev');
 const nextBtn = document.getElementById('slideNext');
-
-if (prevBtn) {
-  prevBtn.addEventListener('click', () => {
-    slideRotAccum = 0; // reset so sphere drag doesn't double-fire
-    goToSlide(currentSlide - 1, -1);
-  });
-}
-if (nextBtn) {
-  nextBtn.addEventListener('click', () => {
-    slideRotAccum = 0;
-    goToSlide(currentSlide + 1, 1);
-  });
-}
-
+if (prevBtn) prevBtn.addEventListener('click', () => { slideRotAccum = 0; goToSlide(currentSlide - 1, -1); });
+if (nextBtn) nextBtn.addEventListener('click', () => { slideRotAccum = 0; goToSlide(currentSlide + 1, 1); });
 document.querySelectorAll('.slider-dot').forEach(dot => {
   dot.addEventListener('click', () => {
     const target = parseInt(dot.dataset.slide);
-    const dir    = target > currentSlide ? 1 : -1;
     slideRotAccum = 0;
-    goToSlide(target, dir);
+    goToSlide(target, target > currentSlide ? 1 : -1);
   });
 });

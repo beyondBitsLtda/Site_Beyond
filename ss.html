@@ -19,255 +19,104 @@
 <meta name="twitter:title" content="Beyond Bits | Software, Sites e Design">
 <meta name="twitter:description" content="Software personalizado, sites e sistemas web com o diferencial da criatividade.">
 <meta name="twitter:image" content="https://beyond.dev.br/assets/1.png">
-
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"ProfessionalService","name":"Beyond Bits","url":"https://beyond.dev.br","description":"Desenvolvimento de software personalizado, sites, sistemas web e design de marca.","areaServed":"BR","serviceType":["Desenvolvimento de Software","Criação de Sites","Sistemas Web","Design de Marca"]}
 </script>
-
-<!-- ══ IMAGE PRELOAD — carregamento instantâneo ══ -->
-<!-- Detecta preferência de tema antes do HTML parsear para precarregar a imagem correta -->
-<script>
-(function(){
-  var saved = localStorage.getItem('bb-theme');
-  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  window.__bbDark = saved === 'dark' || (!saved && prefersDark);
-})();
-</script>
-<link id="preload-img1" rel="preload" as="image" fetchpriority="high"
-      href="assets/1.png">
-<link id="preload-img2" rel="preload" as="image" fetchpriority="high"
-      href="assets/2.png">
-<script>
-// Troca os preloads para as imagens dark se necessário
-(function(){
-  if (window.__bbDark) {
-    document.getElementById('preload-img1').href = 'assets/3.png';
-    document.getElementById('preload-img2').href = 'assets/4.png';
-  }
-})();
-</script>
-
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
-
 <style>
 /* ══ WHATSAPP FLOAT ══ */
-.whatsapp-float{position:fixed;bottom:24px;right:24px;z-index:9000;display:flex;align-items:center;gap:12px;text-decoration:none;opacity:0;transform:translateY(20px) scale(0.9);animation:waBounceIn 0.6s cubic-bezier(0.16,1,0.3,1) 2.5s forwards}
+.whatsapp-float{position:fixed;bottom:32px;right:32px;z-index:9000;display:flex;align-items:center;gap:12px;text-decoration:none;opacity:0;transform:translateY(20px) scale(0.9);animation:waBounceIn 0.6s cubic-bezier(0.16,1,0.3,1) 2.5s forwards}
 @keyframes waBounceIn{to{opacity:1;transform:translateY(0) scale(1)}}
 .whatsapp-float-label{background:var(--black);color:var(--bg);font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;padding:8px 14px;border-radius:6px;white-space:nowrap;opacity:0;transform:translateX(8px);transition:opacity 0.3s ease,transform 0.3s ease;pointer-events:none}
 .whatsapp-float:hover .whatsapp-float-label{opacity:1;transform:translateX(0)}
-.whatsapp-float-btn{width:52px;height:52px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(37,211,102,0.35);transition:transform 0.3s ease,box-shadow 0.3s ease;flex-shrink:0;position:relative}
+.whatsapp-float-btn{width:56px;height:56px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(37,211,102,0.35);transition:transform 0.3s ease,box-shadow 0.3s ease;flex-shrink:0;position:relative}
 .whatsapp-float:hover .whatsapp-float-btn{transform:scale(1.1);box-shadow:0 8px 32px rgba(37,211,102,0.5)}
-.whatsapp-float-btn svg{width:26px;height:26px;fill:#fff}
-.whatsapp-float-btn::after{content:'';position:absolute;width:52px;height:52px;border-radius:50%;border:2px solid #25D366;animation:waPulse 2.5s ease-out infinite}
+.whatsapp-float-btn svg{width:28px;height:28px;fill:#fff}
+.whatsapp-float-btn::after{content:'';position:absolute;width:56px;height:56px;border-radius:50%;border:2px solid #25D366;animation:waPulse 2.5s ease-out infinite}
 @keyframes waPulse{0%{transform:scale(1);opacity:0.6}100%{transform:scale(1.7);opacity:0}}
 
-/* ══ SLIDER ══ */
+/* ══ SLIDER NAV ══ */
 .floating-cards,.benefits-header{will-change:opacity,transform}
 
-.cards-stage{position:relative;width:100%;display:flex;justify-content:center}
-
-.slider-arrow-side{
-  position:absolute; top:50%; transform:translateY(-50%);
-  z-index:30; width:44px; height:44px; border-radius:50%;
-  border:1px solid rgba(10,10,10,0.18); background:var(--bg);
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  transition:border-color 0.3s,background 0.3s,transform 0.3s,opacity 0.4s;
-  opacity:0; pointer-events:none;
-  box-shadow:0 2px 12px rgba(0,0,0,0.08);
+/* Side arrows — centered on the cards row */
+.cards-stage {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
-.benefits-section.visible .slider-arrow-side{opacity:1;pointer-events:auto}
-.slider-arrow-side:hover{border-color:var(--copper);background:rgba(184,115,51,0.06);transform:translateY(-50%) scale(1.1)}
-.slider-arrow-side svg{width:16px;height:16px;color:var(--black);transition:color 0.6s ease;display:block}
-#slidePrev{left:0}
-#slideNext{right:0}
-body.dark-mode .slider-arrow-side{border-color:rgba(232,232,230,0.18);background:rgba(14,14,16,0.9);box-shadow:0 2px 12px rgba(0,0,0,0.3)}
-body.dark-mode .slider-arrow-side:hover{background:rgba(212,148,74,0.1)}
-
-.slider-nav{display:flex;align-items:center;justify-content:center;padding:16px 0 40px;position:relative;z-index:20;width:100%}
-.slider-dots{display:flex;gap:9px;align-items:center}
-.slider-dot{width:7px;height:7px;border-radius:50%;background:rgba(10,10,10,0.18);cursor:pointer;border:none;padding:0;transition:background 0.35s ease,transform 0.35s ease}
-.slider-dot.active{background:var(--copper);transform:scale(1.5)}
-body.dark-mode .slider-dot{background:rgba(232,232,230,0.2)}
-body.dark-mode .slider-dot.active{background:var(--copper)}
-
-.slider-drag-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:0.5rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(10,10,10,0.22);white-space:nowrap;pointer-events:none;transition:color 0.6s ease}
-body.dark-mode .slider-drag-hint{color:rgba(232,232,230,0.18)}
-
-a.btn-primary{display:inline-flex;align-items:center;text-decoration:none}
-
-/* ══════════════════════════════════
-   RESPONSIVE — MOBILE & TABLET
-══════════════════════════════════ */
-
-/* ── Tablet (≤ 900px) ── */
-@media (max-width: 900px) {
-  nav { padding: 20px 24px; }
-
-  .nav-links { display: none; }
-
-  .hero-title .line:nth-child(1),
-  .hero-title .line:nth-child(2) {
-    font-size: clamp(64px, 17vw, 160px);
-  }
-
-  .hero-content { padding-left: 6vw; padding-right: 6vw; }
-
-  .hero-sub { max-width: 280px; }
-
-  .data-tags {
-    right: 2vw;
-    gap: 12px;
-  }
-  .data-tag { font-size: 0.5rem; padding: 4px 8px; }
-
-  .stats-section {
-    grid-template-columns: repeat(2, 1fr);
-    padding: 60px 7vw;
-    gap: 40px;
-  }
-
-  .floating-cards { gap: 16px; }
-  .card-3d { width: 220px; }
-  .card-3d-inner { padding: 24px 20px 20px; }
-
-  .sphere-wrapper { width: 320px; height: 320px; }
-
-  footer {
-    flex-direction: column;
-    gap: 24px;
-    text-align: center;
-    padding: 40px 7vw;
-  }
+.slider-arrow-side {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(10,10,10,0.18);
+  background: var(--bg);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.3s, background 0.3s, transform 0.3s, opacity 0.4s;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
-
-/* ── Mobile (≤ 600px) ── */
-@media (max-width: 600px) {
-  /* NAV */
-  nav { padding: 16px 20px; }
-  .nav-logo { font-size: 1.1rem; }
-
-  /* HERO */
-  .hero-title .line:nth-child(1),
-  .hero-title .line:nth-child(2) {
-    font-size: clamp(56px, 20vw, 110px);
-  }
-  .hero-content {
-    padding-left: 20px;
-    padding-right: 20px;
-    justify-content: flex-end;
-    padding-bottom: 120px;
-  }
-  /* No mobile o gradiente cobre mais tela para texto legível */
-  .hero-gradient {
-    background: linear-gradient(
-      180deg,
-      rgba(232,232,230,0.0)  0%,
-      rgba(232,232,230,0.0)  20%,
-      rgba(232,232,230,0.92) 55%,
-      var(--bg) 100%
-    );
-  }
-  body.dark-mode .hero-gradient {
-    background: linear-gradient(
-      180deg,
-      rgba(14,14,16,0.0)  0%,
-      rgba(14,14,16,0.0)  20%,
-      rgba(14,14,16,0.92) 55%,
-      #0e0e10 100%
-    );
-  }
-  /* Imagem fica centralizada no rosto do robô */
-  .hero-img { object-position: 68% 20%; }
-
-  .hero-eyebrow { font-size: 0.58rem; letter-spacing: 0.2em; }
-  .hero-sub { max-width: 100%; }
-  .hero-sub p { font-size: 0.88rem; }
-  .hero-cta { flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 24px; }
-  .btn-primary, .btn-ghost { padding: 12px 24px; font-size: 0.65rem; width: 100%; text-align: center; justify-content: center; }
-
-  /* Esconde data-tags no mobile (ocupam espaço demais) */
-  .data-tags { display: none; }
-
-  /* Circuit SVG — mais leve */
-  .circuit-svg { opacity: 0.08; }
-
-  /* Scroll hint */
-  .scroll-hint { bottom: 24px; }
-
-  /* MARQUEE */
-  .marquee-item { font-size: 1rem; padding: 0 24px; }
-
-  /* STATS — 2 colunas */
-  .stats-section {
-    grid-template-columns: repeat(2, 1fr);
-    padding: 48px 20px;
-    gap: 28px;
-  }
-  .stat-num { font-size: 2.6rem; }
-  .stat-label { font-size: 0.58rem; }
-
-  /* BENEFITS HEADER */
-  .benefits-section { padding: 64px 0 0; }
-  .benefits-header { padding: 0 20px 40px; }
-  .benefits-title { font-size: clamp(40px, 12vw, 80px); }
-
-  /* HAND STAGE */
-  .hand-stage { min-height: unset; padding: 0 0; }
-
-  /* CARDS — mobile: mostra só 1 card (o centro) */
-  .cards-stage { padding: 0 56px; } /* espaço para as setas nas laterais */
-  .floating-cards {
-    gap: 0;
-    width: 100%;
-    overflow: hidden;
-    perspective: none;
-  }
-  /* Esconde card 1 e 3, mostra só o central */
-  .card-3d:not(.card-3d--center) { display: none; }
-  .card-3d--center {
-    margin-top: 0;
-    width: 100%;
-  }
-  .card-3d-inner { padding: 28px 24px 24px; }
-
-  /* Setas nas laterais do card */
-  #slidePrev { left: 4px; }
-  #slideNext { right: 4px; }
-  .slider-arrow-side { width: 40px; height: 40px; }
-
-  /* Esfera — esconde no mobile (ocupa espaço; slider já funciona via setas) */
-  .sphere-wrapper { display: none; }
-  .cards-reflection { display: none; }
-
-  .slider-drag-hint { display: none; }
-  .slider-nav { padding: 12px 0 32px; }
-
-  /* FOOTER */
-  footer {
-    flex-direction: column;
-    gap: 20px;
-    text-align: center;
-    padding: 32px 20px;
-  }
-  .footer-logo { font-size: 1rem; }
-  .footer-text { font-size: 0.55rem; }
+.benefits-section.visible .slider-arrow-side {
+  opacity: 1;
+  pointer-events: auto;
 }
-
-/* ── Mobile muito pequeno (≤ 380px) ── */
-@media (max-width: 380px) {
-  .hero-title .line:nth-child(1),
-  .hero-title .line:nth-child(2) {
-    font-size: clamp(48px, 22vw, 90px);
-  }
-  .stats-section { gap: 20px; padding: 40px 16px; }
+.slider-arrow-side:hover {
+  border-color: var(--copper);
+  background: rgba(184,115,51,0.06);
+  transform: translateY(-50%) scale(1.1);
 }
+.slider-arrow-side svg {
+  width: 18px; height: 18px;
+  color: var(--black);
+  transition: color 0.6s ease;
+  display: block;
+}
+#slidePrev { left: 0; }
+#slideNext { right: 0; }
+
+body.dark-mode .slider-arrow-side {
+  border-color: rgba(232,232,230,0.18);
+  background: rgba(14,14,16,0.9);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+body.dark-mode .slider-arrow-side:hover { background: rgba(212,148,74,0.1); }
+
+/* Dots row — centered at bottom */
+.slider-nav {
+  display: flex; align-items: center; justify-content: center;
+  padding: 4px 0 44px;
+  position: relative; z-index: 20; width: 100%;
+}
+.slider-dots { display: flex; gap: 9px; align-items: center; }
+.slider-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(10,10,10,0.18);
+  cursor: pointer; border: none; padding: 0;
+  transition: background 0.35s ease, transform 0.35s ease;
+}
+.slider-dot.active { background: var(--copper); transform: scale(1.5); }
+body.dark-mode .slider-dot { background: rgba(232,232,230,0.2); }
+body.dark-mode .slider-dot.active { background: var(--copper); }
+
+.slider-drag-hint {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 0.5rem;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(10,10,10,0.22); white-space: nowrap;
+  pointer-events: none; transition: color 0.6s ease;
+}
+body.dark-mode .slider-drag-hint { color: rgba(232,232,230,0.18); }
+
+a.btn-primary { display: inline-flex; align-items: center; text-decoration: none; }
 </style>
 </head>
 <body>
-
-<!-- Aplica dark mode antes do paint para evitar flash -->
-<script>if(window.__bbDark){document.body.classList.add('dark-mode');}</script>
 
 <div class="progress-bar" id="progressBar"></div>
 
@@ -283,7 +132,7 @@ a.btn-primary{display:inline-flex;align-items:center;text-decoration:none}
 </a>
 
 <nav>
-  <div class="nav-logo">Beyond Bits</div>
+  <div class="nav-logo"></div>
   <div class="nav-right">
     <ul class="nav-links">
       <li><a href="#solucoes">Serviços</a></li>
@@ -308,22 +157,15 @@ a.btn-primary{display:inline-flex;align-items:center;text-decoration:none}
 
 <!-- ══ HERO ══ -->
 <section class="hero" id="inicio">
-  <!-- fetchpriority="high" garante carregamento instantâneo -->
-  <img id="img1" class="hero-img" src="assets/1.png"
-       alt="Beyond Bits — tecnologia e criatividade"
-       fetchpriority="high" loading="eager" decoding="sync"/>
-  <img id="img2" class="hero-img" src="assets/2.png"
-       alt="" fetchpriority="high" loading="eager" decoding="async"/>
-
+  <img id="img1" class="hero-img" src="assets/1.png" alt="Beyond Bits — tecnologia e criatividade"/>
+  <img id="img2" class="hero-img" src="assets/2.png" alt=""/>
   <div class="hero-gradient"></div>
-
   <svg class="circuit-svg" viewBox="0 0 1400 700" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path class="circuit-path" d="M 80 200 H 220 V 340 H 360 V 280 H 480"/>
     <path class="circuit-path" d="M 80 500 H 200 V 420 H 340 V 540 H 520"/>
     <circle class="circuit-dot" cx="220" cy="200" r="4"/>
     <circle class="circuit-dot" cx="360" cy="340" r="4"/>
   </svg>
-
   <div class="hero-content">
     <div class="hero-eyebrow">software · design · criatividade</div>
     <div class="title-wrapper">
@@ -344,13 +186,11 @@ a.btn-primary{display:inline-flex;align-items:center;text-decoration:none}
       <button class="btn-ghost" onclick="document.getElementById('solucoes').scrollIntoView({behavior:'smooth'})">Ver Soluções</button>
     </div>
   </div>
-
   <div class="data-tags">
     <div class="data-tag"><span class="dot-pulse"></span> SOFTWARE_SOB_MEDIDA</div>
     <div class="data-tag"><span class="dot-pulse"></span> ENTREGA: ÁGIL</div>
     <div class="data-tag"><span class="dot-pulse"></span> beyond.dev.br</div>
   </div>
-
   <div class="scroll-hint">
     <span class="scroll-hint-text">scroll</span>
     <div class="scroll-arrow"></div>
@@ -391,81 +231,84 @@ a.btn-primary{display:inline-flex;align-items:center;text-decoration:none}
 
     <div class="hand-stage">
 
+      <!-- cards-stage: arrows are positioned relative to this, centering on the cards -->
       <div class="cards-stage">
 
-        <button class="slider-arrow-side" id="slidePrev" aria-label="Slide anterior">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <polyline points="15,18 9,12 15,6"/>
-          </svg>
-        </button>
-        <button class="slider-arrow-side" id="slideNext" aria-label="Próximo slide">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <polyline points="9,18 15,12 9,6"/>
-          </svg>
-        </button>
+      <div class="floating-cards" id="floatingCards">
 
-        <div class="floating-cards" id="floatingCards">
-
-          <div class="card-3d" data-float-delay="0" data-tilt>
-            <div class="card-3d-inner">
-              <div class="card-glow"></div>
-              <div class="card-index">01</div>
-              <div class="card-icon">
-                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
-                  <circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="4"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/><line x1="16" y1="26" x2="16" y2="30"/>
-                  <line x1="2" y1="16" x2="6" y2="16"/><line x1="26" y1="16" x2="30" y2="16"/>
-                </svg>
-              </div>
-              <h3 class="card-title">Software Sob Medida</h3>
-              <p class="card-desc">Sistemas construídos pro seu negócio exato. Sem limitação de template, sem gambiarra de plugin. Só o que você precisa, funcionando.</p>
-              <div class="card-stat">
-                <span class="card-stat-num">100%</span>
-                <span class="card-stat-label">personalizado</span>
-              </div>
+        <div class="card-3d" data-float-delay="0" data-tilt>
+          <div class="card-3d-inner">
+            <div class="card-glow"></div>
+            <div class="card-index">01</div>
+            <div class="card-icon">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
+                <circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="4"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="16" y1="26" x2="16" y2="30"/>
+                <line x1="2" y1="16" x2="6" y2="16"/><line x1="26" y1="16" x2="30" y2="16"/>
+              </svg>
+            </div>
+            <h3 class="card-title">Software Sob Medida</h3>
+            <p class="card-desc">Sistemas construídos pro seu negócio exato. Sem limitação de template, sem gambiarra de plugin. Só o que você precisa, funcionando.</p>
+            <div class="card-stat">
+              <span class="card-stat-num">100%</span>
+              <span class="card-stat-label">personalizado</span>
             </div>
           </div>
+        </div>
 
-          <div class="card-3d card-3d--center" data-float-delay="0.4" data-tilt>
-            <div class="card-3d-inner">
-              <div class="card-glow"></div>
-              <div class="card-index">02</div>
-              <div class="card-icon">
-                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
-                  <rect x="4" y="4" width="24" height="24" rx="3"/>
-                  <path d="M4 12h24M12 4v24"/>
-                  <circle cx="22" cy="22" r="3"/>
-                </svg>
-              </div>
-              <h3 class="card-title">Sites & Sistemas Web</h3>
-              <p class="card-desc">Performance, SEO e design que prende. Não é só bonito: é uma máquina de capturar e converter clientes reais — todo dia.</p>
-              <div class="card-stat">
-                <span class="card-stat-num">3×</span>
-                <span class="card-stat-label">mais leads</span>
-              </div>
+        <div class="card-3d card-3d--center" data-float-delay="0.4" data-tilt>
+          <div class="card-3d-inner">
+            <div class="card-glow"></div>
+            <div class="card-index">02</div>
+            <div class="card-icon">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
+                <rect x="4" y="4" width="24" height="24" rx="3"/>
+                <path d="M4 12h24M12 4v24"/>
+                <circle cx="22" cy="22" r="3"/>
+              </svg>
+            </div>
+            <h3 class="card-title">Sites & Sistemas Web</h3>
+            <p class="card-desc">Performance, SEO e design que prende. Não é só bonito: é uma máquina de capturar e converter clientes reais — todo dia.</p>
+            <div class="card-stat">
+              <span class="card-stat-num">3×</span>
+              <span class="card-stat-label">mais leads</span>
             </div>
           </div>
+        </div>
 
-          <div class="card-3d" data-float-delay="0.8" data-tilt>
-            <div class="card-3d-inner">
-              <div class="card-glow"></div>
-              <div class="card-index">03</div>
-              <div class="card-icon">
-                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
-                  <path d="M16 4L28 12V24L16 28L4 24V12L16 4Z"/>
-                  <path d="M16 4V28M4 12L28 12M4 24L28 24"/>
-                </svg>
-              </div>
-              <h3 class="card-title">Design de Marca</h3>
-              <p class="card-desc">Do logo à identidade completa — posts, apresentações, tudo com coerência visual que vende antes mesmo de você falar.</p>
-              <div class="card-stat">
-                <span class="card-stat-num">∞</span>
-                <span class="card-stat-label">impacto</span>
-              </div>
+        <div class="card-3d" data-float-delay="0.8" data-tilt>
+          <div class="card-3d-inner">
+            <div class="card-glow"></div>
+            <div class="card-index">03</div>
+            <div class="card-icon">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
+                <path d="M16 4L28 12V24L16 28L4 24V12L16 4Z"/>
+                <path d="M16 4V28M4 12L28 12M4 24L28 24"/>
+              </svg>
+            </div>
+            <h3 class="card-title">Design de Marca</h3>
+            <p class="card-desc">Do logo à identidade completa — posts, apresentações, tudo com coerência visual que vende antes mesmo de você falar.</p>
+            <div class="card-stat">
+              <span class="card-stat-num">∞</span>
+              <span class="card-stat-label">impacto</span>
             </div>
           </div>
+        </div>
 
-        </div><!-- /floating-cards -->
+      </div><!-- /floating-cards -->
+
+      <!-- Side arrows live here, centered on the cards only -->
+      <button class="slider-arrow-side" id="slidePrev" aria-label="Slide anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <polyline points="15,18 9,12 15,6"/>
+        </svg>
+      </button>
+      <button class="slider-arrow-side" id="slideNext" aria-label="Próximo slide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <polyline points="9,18 15,12 9,6"/>
+        </svg>
+      </button>
+
       </div><!-- /cards-stage -->
 
       <div class="cards-reflection"></div>
@@ -478,6 +321,7 @@ a.btn-primary{display:inline-flex;align-items:center;text-decoration:none}
         </div>
       </div>
 
+      <!-- Dots row at bottom -->
       <div class="slider-nav">
         <div class="slider-dots" role="tablist" aria-label="Navegar entre slides">
           <button class="slider-dot active" data-slide="0" role="tab" aria-label="Slide 1"></button>
