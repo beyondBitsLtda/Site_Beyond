@@ -1,265 +1,359 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Beyond Bits — Design, Tecnologia e Criatividade</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beyond Bits | Software Personalizado, Sites e Sistemas Web em Minas Gerais</title>
+<meta name="description" content="Desenvolvemos software personalizado, sites de alta performance e sistemas web que geram resultados reais — com o diferencial da criatividade. Design de marca, identidade visual e conteúdo para redes sociais.">
+<meta name="keywords" content="software personalizado, desenvolvimento de sites, sistemas web, design de marca, identidade visual, agência digital, criação de sites MG, desenvolvimento de software Minas Gerais, beyond bits">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://beyond.dev.br/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://beyond.dev.br/">
+<meta property="og:title" content="Beyond Bits | Software, Sites e Design com Criatividade">
+<meta property="og:description" content="Transformamos ideias em produtos digitais que convertem. Software sob medida, sites, sistemas web e design de marca com o diferencial criativo que sua empresa merece.">
+<meta property="og:image" content="https://beyond.dev.br/assets/1.png">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Beyond Bits">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Beyond Bits | Software, Sites e Design">
+<meta name="twitter:description" content="Software personalizado, sites e sistemas web com o diferencial da criatividade.">
+<meta name="twitter:image" content="https://beyond.dev.br/assets/1.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"ProfessionalService","name":"Beyond Bits","url":"https://beyond.dev.br","description":"Desenvolvimento de software personalizado, sites, sistemas web e design de marca.","areaServed":"BR","serviceType":["Desenvolvimento de Software","Criação de Sites","Sistemas Web","Design de Marca"]}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+/* ══ WHATSAPP FLOAT ══ */
+.whatsapp-float{position:fixed;bottom:32px;right:32px;z-index:9000;display:flex;align-items:center;gap:12px;text-decoration:none;opacity:0;transform:translateY(20px) scale(0.9);animation:waBounceIn 0.6s cubic-bezier(0.16,1,0.3,1) 2.5s forwards}
+@keyframes waBounceIn{to{opacity:1;transform:translateY(0) scale(1)}}
+.whatsapp-float-label{background:var(--black);color:var(--bg);font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;padding:8px 14px;border-radius:6px;white-space:nowrap;opacity:0;transform:translateX(8px);transition:opacity 0.3s ease,transform 0.3s ease;pointer-events:none}
+.whatsapp-float:hover .whatsapp-float-label{opacity:1;transform:translateX(0)}
+.whatsapp-float-btn{width:56px;height:56px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(37,211,102,0.35);transition:transform 0.3s ease,box-shadow 0.3s ease;flex-shrink:0;position:relative}
+.whatsapp-float:hover .whatsapp-float-btn{transform:scale(1.1);box-shadow:0 8px 32px rgba(37,211,102,0.5)}
+.whatsapp-float-btn svg{width:28px;height:28px;fill:#fff}
+.whatsapp-float-btn::after{content:'';position:absolute;width:56px;height:56px;border-radius:50%;border:2px solid #25D366;animation:waPulse 2.5s ease-out infinite}
+@keyframes waPulse{0%{transform:scale(1);opacity:0.6}100%{transform:scale(1.7);opacity:0}}
+
+/* ══ SLIDER NAV ══ */
+.floating-cards,.benefits-header{will-change:opacity,transform}
+
+/* Side arrows — centered on the cards row */
+.cards-stage {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.slider-arrow-side {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(10,10,10,0.18);
+  background: var(--bg);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.3s, background 0.3s, transform 0.3s, opacity 0.4s;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.benefits-section.visible .slider-arrow-side {
+  opacity: 1;
+  pointer-events: auto;
+}
+.slider-arrow-side:hover {
+  border-color: var(--copper);
+  background: rgba(184,115,51,0.06);
+  transform: translateY(-50%) scale(1.1);
+}
+.slider-arrow-side svg {
+  width: 18px; height: 18px;
+  color: var(--black);
+  transition: color 0.6s ease;
+  display: block;
+}
+#slidePrev { left: 0; }
+#slideNext { right: 0; }
+
+body.dark-mode .slider-arrow-side {
+  border-color: rgba(232,232,230,0.18);
+  background: rgba(14,14,16,0.9);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+body.dark-mode .slider-arrow-side:hover { background: rgba(212,148,74,0.1); }
+
+/* Dots row — centered at bottom */
+.slider-nav {
+  display: flex; align-items: center; justify-content: center;
+  padding: 4px 0 44px;
+  position: relative; z-index: 20; width: 100%;
+}
+.slider-dots { display: flex; gap: 9px; align-items: center; }
+.slider-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(10,10,10,0.18);
+  cursor: pointer; border: none; padding: 0;
+  transition: background 0.35s ease, transform 0.35s ease;
+}
+.slider-dot.active { background: var(--copper); transform: scale(1.5); }
+body.dark-mode .slider-dot { background: rgba(232,232,230,0.2); }
+body.dark-mode .slider-dot.active { background: var(--copper); }
+
+.slider-drag-hint {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 0.5rem;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(10,10,10,0.22); white-space: nowrap;
+  pointer-events: none; transition: color 0.6s ease;
+}
+body.dark-mode .slider-drag-hint { color: rgba(232,232,230,0.18); }
+
+a.btn-primary { display: inline-flex; align-items: center; text-decoration: none; }
+</style>
 </head>
 <body>
-  <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyAHMJAGZOzjaj67iOL3VgIs-myXwFBnM-Q",
-    authDomain: "site-beyond.firebaseapp.com",
-    projectId: "site-beyond",
-    storageBucket: "site-beyond.firebasestorage.app",
-    messagingSenderId: "721036704002",
-    appId: "1:721036704002:web:d4ac2dda851f6fca7bea1b",
-    measurementId: "G-B3MJQ5KVPZ"
-  };
+<div class="progress-bar" id="progressBar"></div>
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
-  <div class="noise"></div>
-  <div class="flares"></div>
-  <header class="site-header">
-    <a class="brand" href="#inicio">
-      <img src="assets/logo_beyond.png" alt="Logo Beyond Bits" class="brand-mark">
-      <div class="logo">Beyond <span>Bits</span></div>
-    </a>
-    <nav class="main-nav">
-      <a href="#inicio">Início</a>
-      <a href="#sobre">Sobre</a>
-      <a href="#servicos">Serviços</a>
-      <a href="#cases">Cases</a>
-      <a href="#contato" class="cta">Contato</a>
-    </nav>
-    <button class="menu-toggle" aria-label="Abrir menu">
-      <span></span><span></span><span></span>
+<!-- ══ WHATSAPP FLOAT ══ -->
+<a class="whatsapp-link whatsapp-float"
+   data-whatsapp-key="float"
+   data-message="Olá! Vim pelo site Beyond Bits e quero conversar sobre meu projeto. 🚀"
+   aria-label="Fale conosco pelo WhatsApp">
+  <span class="whatsapp-float-label">Fale Conosco Agora</span>
+  <span class="whatsapp-float-btn">
+    <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.822.737 5.469 2.027 7.771L0 32l8.459-2.003A15.93 15.93 0 0016 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.333a13.28 13.28 0 01-6.793-1.859l-.487-.289-5.019 1.188 1.21-4.883-.317-.502A13.288 13.288 0 012.667 16C2.667 8.636 8.636 2.667 16 2.667S29.333 8.636 29.333 16 23.364 29.333 16 29.333zm7.274-9.896c-.397-.199-2.352-1.16-2.717-1.293-.364-.133-.629-.199-.894.199-.265.397-1.027 1.293-1.259 1.559-.232.265-.464.298-.861.1-.397-.199-1.676-.618-3.193-1.97-1.18-1.052-1.977-2.351-2.21-2.748-.232-.397-.025-.612.175-.809.179-.179.397-.464.596-.696.199-.232.265-.397.397-.662.133-.265.067-.497-.033-.696-.1-.199-.894-2.152-1.225-2.947-.322-.775-.649-.669-.894-.682l-.762-.013c-.265 0-.696.1-1.061.497-.364.397-1.391 1.359-1.391 3.312s1.424 3.843 1.623 4.108c.199.265 2.804 4.28 6.793 6.003 4.011 1.733 4.011 1.155 4.738 1.082.728-.074 2.352-.961 2.683-1.89.332-.929.332-1.725.232-1.89-.098-.165-.364-.265-.761-.464z"/></svg>
+  </span>
+</a>
+
+<nav>
+  <div class="nav-logo"></div>
+  <div class="nav-right">
+    <ul class="nav-links">
+      <li><a href="#solucoes">Serviços</a></li>
+      <li><a href="#resultados">Resultados</a></li>
+      <li><a href="#solucoes">Soluções</a></li>
+      <li><a href="#contato">Contato</a></li>
+    </ul>
+    <button class="theme-toggle" id="themeToggle" aria-label="Alternar modo escuro">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
     </button>
-  </header>
-
-  <main id="inicio">
-    <section class="hero">
-      <div class="orb orb-left"></div>
-      <div class="orb orb-right"></div>
-      <div class="grid"></div>
-      <div class="hero-content">
-        <p class="eyebrow">Design · Tecnologia · Criatividade</p>
-        <h1>Transformamos ideias em experiências digitais que conectam marcas e pessoas.</h1>
-        <p class="subtitle">
-          Criamos identidades fortes, produtos digitais de alta performance e narrativas que brilham em qualquer tela.
-        </p>
-        <div class="hero-actions">
-          <a class="btn primary" href="#contato">Fale com a Beyond Bits</a>
-          <a class="btn ghost" href="#servicos">Conheça os serviços</a>
-        </div>
-        <div class="hero-meta">
-          <div>
-            <span class="meta-label">Foco</span>
-            <span class="meta-value">Design tecnológico + Tecnologia com propósito</span>
-          </div>
-          <div>
-            <span class="meta-label">Expertise</span>
-            <span class="meta-value">Branding · Web · Sistemas sob medida</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="sobre" class="section about">
-      <div class="section-header">
-        <p class="tag">Sobre nós</p>
-        <h2>Somos a Beyond Bits — criativa, autêntica e obcecada por qualidade.</h2>
-      </div>
-      <p class="about-text">
-        Acreditamos em parcerias verdadeiras, conversas francas e resultados que falam por si. Combinamos estratégia, estética e tecnologia para construir marcas e produtos que conquistam corações e mentes. Cada projeto é uma criação exclusiva, pensada para destacar sua autenticidade.
-      </p>
-      <div class="pillars">
-        <div class="pillar-card reveal">
-          <span>01</span>
-          <h3>Criatividade sem clichê</h3>
-          <p>Visuals ousados, alinhados ao propósito da marca e à experiência do usuário.</p>
-        </div>
-        <div class="pillar-card reveal">
-          <span>02</span>
-          <h3>Qualidade obsessiva</h3>
-          <p>Do primeiro pixel ao último teste, entregamos excelência com velocidade.</p>
-        </div>
-        <div class="pillar-card reveal">
-          <span>03</span>
-          <h3>Parceria real</h3>
-          <p>Processo colaborativo, transparente e focado em resultados mensuráveis.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="servicos" class="section services">
-      <div class="section-header">
-        <p class="tag">Serviços</p>
-        <h2>Criação digital de ponta, pensada para destacar sua marca.</h2>
-      </div>
-      <div class="services-grid">
-        <article class="service-card reveal">
-          <div class="icon">✦</div>
-          <h3>Criação de Sites</h3>
-          <p>Landing pages estratégicas para validação e presença digital inicial, com performance, SEO e experiência fluida.</p>
-          <span class="price-badge">Landing page start a partir de R$ 800</span>
-          <span class="chip">Web Start</span>
-        </article>
-        <article class="service-card reveal">
-          <div class="icon">⌘</div>
-          <h3>Branding e Design de Marcas</h3>
-          <p>Identidade visual essencial para marcas em fase inicial ou reposicionamento, com coerência para crescer em todos os canais.</p>
-          <span class="price-badge">Branding essencial a partir de R$ 500</span>
-          <span class="chip">Brand Essentials</span>
-        </article>
-        <article class="service-card reveal">
-          <div class="icon">∞</div>
-          <h3>Sistemas Personalizados</h3>
-          <p>Dashboards, portais e produtos digitais sob medida para automatizar rotinas e escalar operações com segurança.</p>
-          <span class="price-badge neutral">Projetos sob demanda • fale com a gente</span>
-          <span class="chip">Custom Systems</span>
-        </article>
-      </div>
-    </section>
-
-    <section id="cases" class="section cases">
-      <div class="section-header">
-        <p class="tag">Cases de sucesso</p>
-        <h2>Estratégia + criatividade que geram resultados reais.</h2>
-      </div>
-      <div class="cases-grid">
-        <a class="case-card reveal" href="https://www.instagram.com/versatte_sports?igsh=MXJ6cjNuamNpbmtqYw==" target="_blank" rel="noopener noreferrer" aria-label="Abrir case Versatte Sports no Instagram">
-          <div class="case-visual versatte"></div>
-          <div class="case-content">
-            <h3>Versatte Sports</h3>
-            <p>Criamos a cara e identidade da marca, além do design de posts no Instagram, elevando alcance e engajamento com narrativa esportiva.</p>
-            <span class="chip">Brand & Social</span>
-          </div>
-        </a>
-        <a class="case-card reveal" href="https://coredb.com.br/" target="_blank" rel="noopener noreferrer" aria-label="Abrir site do case CoreDB">
-          <div class="case-visual coredb"></div>
-          <div class="case-content">
-            <h3>CoreDB</h3>
-            <p>Desenvolvimento de site focado em conversão, com performance elevada e linguagem técnica simplificada para decision makers.</p>
-            <span class="chip">Web Experience</span>
-          </div>
-        </a>
-      </div>
-    </section>
-    
-  <section id="antes-depois" class="section before-after reveal">
-  <div class="section-header">
-    <p class="tag">Antes e depois</p>
-    <h2>Antes e Depois: a transformação que gera resultado.</h2>
   </div>
+</nav>
 
-  <div class="before-after__grid">
-    <div class="before-after__visual">
-      <div class="before-after__stack">
-        <div class="phone-mock phone-mock--before">
-          <span class="phone-tag">Antes</span>
-          <div class="phone-mock__screen">
-            <img src="assets/versatte-antes.jpeg" alt="Instagram Versatte antes">
-          </div>
-        </div>
-
-        <div class="phone-mock phone-mock--after">
-          <span class="phone-tag">Depois</span>
-          <div class="phone-mock__screen">
-            <img src="assets/versatte-depois.jpeg" alt="Instagram Versatte depois">
-          </div>
-        </div>
-      </div>
+<!-- ══ HERO ══ -->
+<section class="hero" id="inicio">
+  <img id="img1" class="hero-img" src="assets/1.png" alt="Beyond Bits — tecnologia e criatividade"/>
+  <img id="img2" class="hero-img" src="assets/2.png" alt=""/>
+  <div class="hero-gradient"></div>
+  <svg class="circuit-svg" viewBox="0 0 1400 700" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path class="circuit-path" d="M 80 200 H 220 V 340 H 360 V 280 H 480"/>
+    <path class="circuit-path" d="M 80 500 H 200 V 420 H 340 V 540 H 520"/>
+    <circle class="circuit-dot" cx="220" cy="200" r="4"/>
+    <circle class="circuit-dot" cx="360" cy="340" r="4"/>
+  </svg>
+  <div class="hero-content">
+    <div class="hero-eyebrow">software · design · criatividade</div>
+    <div class="title-wrapper">
+      <canvas id="pixelCanvas"></canvas>
+      <h1 class="hero-title" id="heroTitle">
+        <span class="line"><span>BEYOND</span></span>
+        <span class="line"><span>BITS</span></span>
+      </h1>
     </div>
-
-    <div class="before-after__content">
-      <h3>Repaginamos a Versatte para parecer grande — e converter como grande.</h3>
-      <p>
-        A Beyond fortaleceu a presença digital da Versatte com um feed mais limpo, coerente e estratégico.
-        O resultado é uma identidade mais profissional, com mais clareza e impacto em cada post.
-      </p>
-      <div class="before-after__highlights">
-        <span class="chip">Identidade consistente</span>
-        <span class="chip">Mais credibilidade</span>
-        <span class="chip">Conteúdo que vende</span>
-      </div>
+    <div class="hero-sub">
+      <p>Transformamos ideias em produtos digitais que geram resultados reais — com o diferencial criativo que faz a sua marca ser lembrada.</p>
     </div>
+    <div class="hero-cta">
+      <a class="whatsapp-link btn-primary"
+         data-whatsapp-key="hero"
+         data-message="Olá! Vim pelo site Beyond Bits e quero conversar sobre meu projeto. 🚀"
+         role="button"><span>Quero Meu Projeto</span></a>
+      <button class="btn-ghost" onclick="document.getElementById('solucoes').scrollIntoView({behavior:'smooth'})">Ver Soluções</button>
+    </div>
+  </div>
+  <div class="data-tags">
+    <div class="data-tag"><span class="dot-pulse"></span> SOFTWARE_SOB_MEDIDA</div>
+    <div class="data-tag"><span class="dot-pulse"></span> ENTREGA: ÁGIL</div>
+    <div class="data-tag"><span class="dot-pulse"></span> beyond.dev.br</div>
+  </div>
+  <div class="scroll-hint">
+    <span class="scroll-hint-text">scroll</span>
+    <div class="scroll-arrow"></div>
   </div>
 </section>
 
+<!-- ══ BELOW HERO ══ -->
+<div class="below-hero">
+  <div class="marquee-section">
+    <div class="marquee-track" aria-hidden="true">
+      <div class="marquee-item">SOFTWARE PERSONALIZADO <span class="dot"></span></div>
+      <div class="marquee-item">SITES QUE CONVERTEM <span class="dot"></span></div>
+      <div class="marquee-item">SISTEMAS WEB <span class="dot"></span></div>
+      <div class="marquee-item">DESIGN DE MARCA <span class="dot"></span></div>
+      <div class="marquee-item">IDENTIDADE VISUAL <span class="dot"></span></div>
+      <div class="marquee-item">SOFTWARE PERSONALIZADO <span class="dot"></span></div>
+      <div class="marquee-item">SITES QUE CONVERTEM <span class="dot"></span></div>
+      <div class="marquee-item">SISTEMAS WEB <span class="dot"></span></div>
+      <div class="marquee-item">DESIGN DE MARCA <span class="dot"></span></div>
+      <div class="marquee-item">IDENTIDADE VISUAL <span class="dot"></span></div>
+    </div>
+  </div>
 
+  <section class="stats-section" id="resultados" aria-label="Nossos números">
+    <div class="stat-item"><div class="stat-num">50<sup>+</sup></div><div class="stat-label">Projetos entregues</div></div>
+    <div class="stat-item"><div class="stat-num">100<sup>%</sup></div><div class="stat-label">Código personalizado</div></div>
+    <div class="stat-item"><div class="stat-num">3<sup>×</sup></div><div class="stat-label">Média de crescimento em leads</div></div>
+    <div class="stat-item"><div class="stat-num">∞</div><div class="stat-label">Possibilidades criativas</div></div>
+  </section>
 
-    <section id="contato" class="section contact">
-      <div class="section-header">
-        <p class="tag">Contato</p>
-        <h2>Pronto para criar algo memorável? Vamos conversar.</h2>
-      </div>
-      <div class="contact-grid">
-        <div class="contact-info reveal">
-          <p>Conte sua ideia e receba uma proposta personalizada. Preferiu um toque rápido? Chame no canal que fizer sentido.</p>
-          <div class="contact-actions">
-            <a
-              class="social whatsapp-link"
-              href="#"
-              data-whatsapp-key="contact"
-              data-message="Olá! Quero falar sobre um novo projeto com a Beyond Bits."
-              aria-label="Falar com a Beyond Bits no WhatsApp"
-            >WhatsApp</a>
-            <a class="social" href="https://www.instagram.com/beyondbitsltda/" target="_blank" rel="noopener noreferrer" aria-label="Instagram Beyond Bits">Instagram</a>
-            <a class="social" href="mailto:beyondbits@beyond.dev.br" target="_blank" rel="noreferrer">E-mail</a>
-            <a class="social" href="https://www.linkedin.com/company/beyond-bits-ltda/?viewAsMember=true" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn Beyond Bits">LinkedIn</a>
+  <!-- ══ BENEFITS SLIDER ══ -->
+  <section class="benefits-section" id="solucoes" aria-labelledby="benefitsTitle">
+
+    <div class="benefits-header">
+      <div class="benefits-eyebrow"><span class="line-accent"></span> nossas soluções</div>
+      <h2 class="benefits-title" id="benefitsTitle">CRIADO<br>PARA VENDER</h2>
+    </div>
+
+    <div class="hand-stage">
+
+      <!-- cards-stage: arrows are positioned relative to this, centering on the cards -->
+      <div class="cards-stage">
+
+      <div class="floating-cards" id="floatingCards">
+
+        <div class="card-3d" data-float-delay="0" data-tilt>
+          <div class="card-3d-inner">
+            <div class="card-glow"></div>
+            <div class="card-index">01</div>
+            <div class="card-icon">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
+                <circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="4"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="16" y1="26" x2="16" y2="30"/>
+                <line x1="2" y1="16" x2="6" y2="16"/><line x1="26" y1="16" x2="30" y2="16"/>
+              </svg>
+            </div>
+            <h3 class="card-title">Software Sob Medida</h3>
+            <p class="card-desc">Sistemas construídos pro seu negócio exato. Sem limitação de template, sem gambiarra de plugin. Só o que você precisa, funcionando.</p>
+            <div class="card-stat">
+              <span class="card-stat-num">100%</span>
+              <span class="card-stat-label">personalizado</span>
+            </div>
           </div>
         </div>
-        <form class="contact-form reveal" id="contactForm">
-          <label for="name">Nome</label>
-          <input type="text" id="name" name="name" placeholder="Seu nome" required>
 
-          <label for="email">E-mail</label>
-          <input type="email" id="email" name="email" placeholder="seu@email.com" required>
+        <div class="card-3d card-3d--center" data-float-delay="0.4" data-tilt>
+          <div class="card-3d-inner">
+            <div class="card-glow"></div>
+            <div class="card-index">02</div>
+            <div class="card-icon">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
+                <rect x="4" y="4" width="24" height="24" rx="3"/>
+                <path d="M4 12h24M12 4v24"/>
+                <circle cx="22" cy="22" r="3"/>
+              </svg>
+            </div>
+            <h3 class="card-title">Sites & Sistemas Web</h3>
+            <p class="card-desc">Performance, SEO e design que prende. Não é só bonito: é uma máquina de capturar e converter clientes reais — todo dia.</p>
+            <div class="card-stat">
+              <span class="card-stat-num">3×</span>
+              <span class="card-stat-label">mais leads</span>
+            </div>
+          </div>
+        </div>
 
-          <label for="message">Mensagem</label>
-          <textarea id="message" name="message" rows="4" placeholder="Fale sobre o seu projeto" required></textarea>
+        <div class="card-3d" data-float-delay="0.8" data-tilt>
+          <div class="card-3d-inner">
+            <div class="card-glow"></div>
+            <div class="card-index">03</div>
+            <div class="card-icon">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
+                <path d="M16 4L28 12V24L16 28L4 24V12L16 4Z"/>
+                <path d="M16 4V28M4 12L28 12M4 24L28 24"/>
+              </svg>
+            </div>
+            <h3 class="card-title">Design de Marca</h3>
+            <p class="card-desc">Do logo à identidade completa — posts, apresentações, tudo com coerência visual que vende antes mesmo de você falar.</p>
+            <div class="card-stat">
+              <span class="card-stat-num">∞</span>
+              <span class="card-stat-label">impacto</span>
+            </div>
+          </div>
+        </div>
 
-          <button type="submit" class="btn primary full">Enviar mensagem</button>
-          <p class="form-feedback" id="formFeedback" role="status" aria-live="polite"></p>
-        </form>
+      </div><!-- /floating-cards -->
+
+      <!-- Side arrows live here, centered on the cards only -->
+      <button class="slider-arrow-side" id="slidePrev" aria-label="Slide anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <polyline points="15,18 9,12 15,6"/>
+        </svg>
+      </button>
+      <button class="slider-arrow-side" id="slideNext" aria-label="Próximo slide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <polyline points="9,18 15,12 9,6"/>
+        </svg>
+      </button>
+
+      </div><!-- /cards-stage -->
+
+      <div class="cards-reflection"></div>
+
+      <div class="sphere-wrapper" id="sphereWrapper">
+        <canvas id="sphereCanvas"></canvas>
+        <div class="sphere-hint">
+          <span class="sphere-hint-icon">↻</span>
+          arraste para navegar
+        </div>
       </div>
-    </section>
-  </main>
 
-  <footer class="site-footer">
-    <div class="logo">Beyond <span>Bits</span></div>
-    <p>Design, tecnologia e criatividade para marcas visionárias.</p>
-    <div class="footer-links">
-      <a href="https://www.instagram.com/beyondbitsltda/" target="_blank" rel="noopener noreferrer" aria-label="Instagram Beyond Bits">Instagram</a>
-      <a href="https://www.linkedin.com/company/beyond-bits-ltda/?viewAsMember=true" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn Beyond Bits">LinkedIn</a>
-      <a
-        href="#"
-        class="whatsapp-link"
-        data-whatsapp-key="footer"
-        data-message="Olá! Gostaria de falar com a Beyond Bits."
-        aria-label="Falar com a Beyond Bits no WhatsApp"
-      >WhatsApp</a>
-      <a href="mailto:beyondbits@beyond.dev.br" target="_blank" rel="noreferrer">E-mail</a>
+      <!-- Dots row at bottom -->
+      <div class="slider-nav">
+        <div class="slider-dots" role="tablist" aria-label="Navegar entre slides">
+          <button class="slider-dot active" data-slide="0" role="tab" aria-label="Slide 1"></button>
+          <button class="slider-dot" data-slide="1" role="tab" aria-label="Slide 2"></button>
+          <button class="slider-dot" data-slide="2" role="tab" aria-label="Slide 3"></button>
+          <button class="slider-dot" data-slide="3" role="tab" aria-label="Slide 4"></button>
+        </div>
+        <span class="slider-drag-hint">↻ arraste a esfera para navegar</span>
+      </div>
+
+    </div><!-- /hand-stage -->
+  </section>
+
+  <footer id="contato">
+    <div class="footer-logo">Beyond Bits</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <a class="whatsapp-link"
+         data-whatsapp-key="footer"
+         data-message="Olá! Vim pelo site Beyond Bits e quero um orçamento. 💡"
+         style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:#25D366;text-decoration:none;display:flex;align-items:center;gap:8px;opacity:0.9;transition:opacity 0.3s"
+         onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'">
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="#25D366"><path d="M16 0C7.163 0 0 7.163 0 16c0 2.822.737 5.469 2.027 7.771L0 32l8.459-2.003A15.93 15.93 0 0016 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.333a13.28 13.28 0 01-6.793-1.859l-.487-.289-5.019 1.188 1.21-4.883-.317-.502A13.288 13.288 0 012.667 16C2.667 8.636 8.636 2.667 16 2.667S29.333 8.636 29.333 16 23.364 29.333 16 29.333zm7.274-9.896c-.397-.199-2.352-1.16-2.717-1.293-.364-.133-.629-.199-.894.199-.265.397-1.027 1.293-1.259 1.559-.232.265-.464.298-.861.1-.397-.199-1.676-.618-3.193-1.97-1.18-1.052-1.977-2.351-2.21-2.748-.232-.397-.025-.612.175-.809.179-.179.397-.464.596-.696.199-.232.265-.397.397-.662.133-.265.067-.497-.033-.696-.1-.199-.894-2.152-1.225-2.947-.322-.775-.649-.669-.894-.682l-.762-.013c-.265 0-.696.1-1.061.497-.364.397-1.391 1.359-1.391 3.312s1.424 3.843 1.623 4.108c.199.265 2.804 4.28 6.793 6.003 4.011 1.733 4.011 1.155 4.738 1.082.728-.074 2.352-.961 2.683-1.89.332-.929.332-1.725.232-1.89-.098-.165-.364-.265-.761-.464z"/></svg>
+        Solicitar Orçamento via WhatsApp
+      </a>
+      <div class="footer-text">beyond.dev.br — software · design · criatividade</div>
     </div>
+    <div class="footer-text">© 2026 Beyond Bits</div>
   </footer>
+</div>
 
-  <script src="assets/whatsapp.js"></script>
-  <script src="assets/script.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/script.js"></script>
+<script src="js/whatsapp.js"></script>
 </body>
 </html>
