@@ -19,19 +19,22 @@ let isDark = document.body.classList.contains('dark-mode');
 let sphereReady = false;
 
 const IMAGES = {
-  light: { open: 'assets/1.png', closed: 'assets/2.png' },
-  dark:  { open: 'assets/3.png', closed: 'assets/4.png' }
+  light: { open: 'assets/1.webp', closed: 'assets/2.webp', openFb: 'assets/1.png', closedFb: 'assets/2.png' },
+  dark:  { open: 'assets/3.webp', closed: 'assets/4.webp', openFb: 'assets/3.png', closedFb: 'assets/4.png' }
 };
+
+// Referências aos <source> WebP dentro dos <picture>
+const src1 = document.getElementById('src1-webp');
+const src2 = document.getElementById('src2-webp');
 
 // Garante que as imgs têm o src correto do tema inicial
 (function syncInitialImages() {
   const theme = isDark ? 'dark' : 'light';
-  if (img1.src.indexOf(IMAGES[theme].open) === -1) {
-    img1.src = IMAGES[theme].open;
-  }
-  if (img2.src.indexOf(IMAGES[theme].closed) === -1) {
-    img2.src = IMAGES[theme].closed;
-  }
+  if (src1) src1.srcset = IMAGES[theme].open;
+  if (src2) src2.srcset = IMAGES[theme].closed;
+  // PNG fallback
+  if (img1 && !img1.src.includes(IMAGES[theme].openFb))   img1.src = IMAGES[theme].openFb;
+  if (img2 && !img2.src.includes(IMAGES[theme].closedFb)) img2.src = IMAGES[theme].closedFb;
 })();
 
 function enableDark(animate) {
@@ -56,8 +59,10 @@ function swapImages(animate) {
     img1.style.opacity    = '0';
     img2.style.opacity    = '0';
     setTimeout(() => {
-      img1.src = IMAGES[theme].open;
-      img2.src = IMAGES[theme].closed;
+      if (src1) src1.srcset = IMAGES[theme].open;
+      if (src2) src2.srcset = IMAGES[theme].closed;
+      img1.src = IMAGES[theme].openFb;
+      img2.src = IMAGES[theme].closedFb;
       let loaded = 0;
       const reveal = () => { loaded++; if (loaded >= 2) img1.style.opacity = '1'; };
       img1.onload = reveal; img2.onload = reveal;
@@ -66,8 +71,10 @@ function swapImages(animate) {
       if (loaded >= 2) img1.style.opacity = '1';
     }, 500);
   } else {
-    img1.src = IMAGES[theme].open;
-    img2.src = IMAGES[theme].closed;
+    if (src1) src1.srcset = IMAGES[theme].open;
+    if (src2) src2.srcset = IMAGES[theme].closed;
+    img1.src = IMAGES[theme].openFb;
+    img2.src = IMAGES[theme].closedFb;
   }
 }
 themeToggle.addEventListener('click', () => isDark ? enableLight(true) : enableDark(true));
