@@ -18,9 +18,12 @@ const themeToggle = document.getElementById('themeToggle');
 let isDark = document.body.classList.contains('dark-mode');
 let sphereReady = false;
 
+// Serve versão mobile (900px) em telas ≤ 768px, desktop (1920px) nas demais
+const _isMobile = window.innerWidth <= 768;
+const _sfx = _isMobile ? 'mobile' : 'desktop';
 const IMAGES = {
-  light: { open: 'assets/1.webp', closed: 'assets/2.webp' },
-  dark:  { open: 'assets/3.webp', closed: 'assets/4.webp' }
+  light: { open: `assets/1-${_sfx}.webp`, closed: `assets/2-${_sfx}.webp` },
+  dark:  { open: `assets/3-${_sfx}.webp`, closed: `assets/4-${_sfx}.webp` }
 };
 
 /* ══════════════════════════════════════════
@@ -30,8 +33,8 @@ const IMAGES = {
 ══════════════════════════════════════════ */
 function loadHD(imgEl, hdSrc, onReady) {
   if (!imgEl || !hdSrc) return;
-
-  function applyLoaded() {
+  const preloader = new Image();
+  preloader.onload = function () {
     imgEl.src = hdSrc;
     imgEl.removeAttribute('data-src-hd');
     // Força reflow antes de remover blur para a transição CSS disparar
@@ -42,18 +45,8 @@ function loadHD(imgEl, hdSrc, onReady) {
         if (onReady) onReady();
       });
     });
-  }
-
-  const preloader = new Image();
-  preloader.onload = applyLoaded;
-  // Fallback: se onload não disparar (iOS Safari com cache), força após timeout
-  preloader.onerror = applyLoaded;
+  };
   preloader.src = hdSrc;
-
-  // Se já está em cache, complete=true e onload pode não disparar — aplica imediatamente
-  if (preloader.complete) {
-    applyLoaded();
-  }
 }
 
 // Carrega as imagens HD do tema inicial assim que o DOM estiver pronto
