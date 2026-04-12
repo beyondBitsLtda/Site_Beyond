@@ -301,6 +301,8 @@ function goToSlide(n, dir) {
   if (next === currentSlide || isAnimating) return;
   currentSlide = next;
   renderSlide(next, dir != null ? dir : 1);
+  // Mobile: volta ao card central ao mudar de slide
+  if (typeof window.__resetCardSwipe === 'function') window.__resetCardSwipe();
 }
 
 /* ══════════════════════════════════════════════════════
@@ -580,3 +582,122 @@ document.querySelectorAll('.slider-dot').forEach(dot => {
     goToSlide(target, target > currentSlide ? 1 : -1);
   });
 });
+
+/* ══════════════════════════════════════════════════════
+   ★ MOBILE CARD SWIPE CAROUSEL
+   Ativo apenas em telas ≤ 600px.
+   Desliza os 3 cards horizontalmente com touch/mouse.
+   Integrado ao renderSlide: ao trocar de slide, reseta
+   o carrossel para o card 0.
+══════════════════════════════════════════════════════ */
+(function initCardSwipe() {
+  if (window.innerWidth > 600) return;
+
+  const track     = document.getElementById('floatingCards');
+  const dotsEl    = document.getElementById('cardDots');
+  if (!track || !dotsEl) return;
+
+  const CARD_COUNT = 3;
+  let activeCard   = 1; // começa no card central (02)
+  let startX       = 0;
+  let currentDragX = 0;
+  let isDraggingCard = false;
+
+  function getOffset(index) {
+    // cada card ocupa 1/3 do track (que tem width:300%)
+    // translateX em % do track: -0%, -33.333%, -66.666%
+    return -(index * 100 / CARD_COUNT);
+  }
+
+  function goToCard(index, animated) {
+    index = Math.max(0, Math.min(CARD_COUNT - 1, index));
+    activeCard = index;
+
+    track.classList.toggle('is-dragging', !animated);
+    track.style.transition = animated
+      ? 'transform 0.38s cubic-bezier(0.16,1,0.3,1)'
+      : 'none';
+    track.style.transform = `translateX(${getOffset(index)}%)`;
+
+    dotsEl.querySelectorAll('.card-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === index);
+    });
+  }
+
+  // Começa no card central
+  goToCard(1, false);
+
+  /* ── Touch ── */
+  track.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    currentDragX = 0;
+    isDraggingCard = true;
+    track.style.transition = 'none';
+  }, { passive: true });
+
+  track.addEventListener('touchmove', (e) => {
+    if (!isDraggingCard) return;
+    currentDragX = e.touches[0].clientX - startX;
+    const baseOffset = getOffset(activeCard);
+    // Converte px para % do track (track.offsetWidth = 3× a largura visível)
+    const dragPercent = (currentDragX / track.offsetWidth) * 100;
+    track.style.transform = `translateX(${baseOffset + dragPercent}%)`;
+  }, { passive: true });
+
+  track.addEventListener('touchend', () => {
+    if (!isDraggingCard) return;
+    isDraggingCard = false;
+    const threshold = window.innerWidth * 0.18; // 18% da tela
+    if (currentDragX < -threshold && activeCard < CARD_COUNT - 1) {
+      goToCard(activeCard + 1, true);
+    } else if (currentDragX > threshold && activeCard > 0) {
+      goToCard(activeCard - 1, true);
+    } else {
+      goToCard(activeCard, true); // snap de volta
+    }
+  });
+
+  /* ── Mouse (para testar no desktop em DevTools mobile) ── */
+  track.addEventListener('mousedown', (e) => {
+    startX = e.clientX;
+    currentDragX = 0;
+    isDraggingCard = true;
+    track.style.transition = 'none';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!isDraggingCard) return;
+    currentDragX = e.clientX - startX;
+    const baseOffset = getOffset(activeCard);
+    const dragPercent = (currentDragX / track.offsetWidth) * 100;
+    track.style.transform = `translateX(${baseOffset + dragPercent}%)`;
+  });
+  window.addEventListener('mouseup', () => {
+    if (!isDraggingCard) return;
+    isDraggingCard = false;
+    const threshold = window.innerWidth * 0.18;
+    if (currentDragX < -threshold && activeCard < CARD_COUNT - 1) {
+      goToCard(activeCard + 1, true);
+    } else if (currentDragX > threshold && activeCard > 0) {
+      goToCard(activeCard - 1, true);
+    } else {
+      goToCard(activeCard, true);
+    }
+  });
+
+  /* ── Dots clicáveis ── */
+  dotsEl.querySelectorAll('.card-dot').forEach((dot) => {
+    dot.addEventListener('click', () => {
+      goToCard(parseInt(dot.dataset.card), true);
+    });
+  });
+
+  /* ── Reset ao trocar de slide (renderSlide) ── */
+  // Monkey-patch: após cada renderSlide, volta ao card central
+  const _origRender = window._renderSlide || renderSlide;
+  const _origGoTo   = goToSlide;
+  // Intercepta goToSlide para resetar o carrossel
+  const origGoToSlide = goToSlide;
+  window.__resetCardSwipe = function() { goToCard(1, true); };
+
+})();
