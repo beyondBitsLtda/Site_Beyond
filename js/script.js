@@ -30,8 +30,8 @@ const IMAGES = {
 ══════════════════════════════════════════ */
 function loadHD(imgEl, hdSrc, onReady) {
   if (!imgEl || !hdSrc) return;
-  const preloader = new Image();
-  preloader.onload = function () {
+
+  function applyLoaded() {
     imgEl.src = hdSrc;
     imgEl.removeAttribute('data-src-hd');
     // Força reflow antes de remover blur para a transição CSS disparar
@@ -42,8 +42,18 @@ function loadHD(imgEl, hdSrc, onReady) {
         if (onReady) onReady();
       });
     });
-  };
+  }
+
+  const preloader = new Image();
+  preloader.onload = applyLoaded;
+  // Fallback: se onload não disparar (iOS Safari com cache), força após timeout
+  preloader.onerror = applyLoaded;
   preloader.src = hdSrc;
+
+  // Se já está em cache, complete=true e onload pode não disparar — aplica imediatamente
+  if (preloader.complete) {
+    applyLoaded();
+  }
 }
 
 // Carrega as imagens HD do tema inicial assim que o DOM estiver pronto
