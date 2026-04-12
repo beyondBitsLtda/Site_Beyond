@@ -233,36 +233,36 @@ const SLIDE_DATA = [
     eyebrow: 'nossas soluções',
     titleLines: ['CRIADO', 'PARA VENDER'],
     cards: [
-      { n:'01', icon:'radar',  title:'Software Sob Medida',    desc:'Sistemas construídos pro seu negócio exato. Sem limitação de template, sem gambiarra de plugin. Só o que você precisa, funcionando.',              statNum:'100%',  statLabel:'personalizado' },
-      { n:'02', icon:'grid',   title:'Sites & Sistemas Web',   desc:'Performance, SEO e design que prende. Não é só bonito: é uma máquina de capturar e converter clientes reais — todo dia.',                         statNum:'3×',    statLabel:'mais leads' },
-      { n:'03', icon:'hex',    title:'Design de Marca',        desc:'Do logo à identidade completa — posts, apresentações, tudo com coerência visual que vende antes mesmo de você falar.',                             statNum:'∞',     statLabel:'impacto' },
+      { n:'', icon:'radar',  title:'Software Sob Medida',    desc:'Sistemas construídos pro seu negócio exato. Sem limitação de template, sem gambiarra de plugin. Só o que você precisa, funcionando.',              statNum:'100%',  statLabel:'personalizado' },
+      { n:'', icon:'grid',   title:'Sites & Sistemas Web',   desc:'Performance, SEO e design que prende. Não é só bonito: é uma máquina de capturar e converter clientes reais — todo dia.',                         statNum:'3×',    statLabel:'mais leads' },
+      { n:'', icon:'hex',    title:'Design de Marca',        desc:'Do logo à identidade completa — posts, apresentações, tudo com coerência visual que vende antes mesmo de você falar.',                             statNum:'∞',     statLabel:'impacto' },
     ]
   },
   {
     eyebrow: 'resultados reais',
     titleLines: ['PROVA', 'QUE FUNCIONA'],
     cards: [
-      { n:'01', icon:'star',   title:'50+ Projetos Entregues', desc:'Startups, PMEs e profissionais liberais — cada entrega com cliente satisfeito. Nosso portfólio é a nossa maior prova social.',                     statNum:'50+',   statLabel:'projetos' },
-      { n:'02', icon:'loop',   title:'Clientes que Voltam',    desc:'Mais de 80% dos nossos clientes voltam para novos projetos. Relacionamento não acaba na entrega — começa nela.',                                   statNum:'80%',   statLabel:'retenção' },
-      { n:'03', icon:'check',  title:'Zero Retrabalho',        desc:'Código limpo, documentado e escalável. Sua empresa cresce e o sistema acompanha — sem precisar refazer tudo mais tarde.',                          statNum:'0',     statLabel:'lock-in' },
+      { n:'', icon:'star',   title:'50+ Projetos Entregues', desc:'Startups, PMEs e profissionais liberais — cada entrega com cliente satisfeito. Nosso portfólio é a nossa maior prova social.',                     statNum:'50+',   statLabel:'projetos' },
+      { n:'', icon:'loop',   title:'Clientes que Voltam',    desc:'Mais de 80% dos nossos clientes voltam para novos projetos. Relacionamento não acaba na entrega — começa nela.',                                   statNum:'80%',   statLabel:'retenção' },
+      { n:'', icon:'check',  title:'Zero Retrabalho',        desc:'Código limpo, documentado e escalável. Sua empresa cresce e o sistema acompanha — sem precisar refazer tudo mais tarde.',                          statNum:'0',     statLabel:'lock-in' },
     ]
   },
   {
     eyebrow: 'nosso diferencial',
     titleLines: ['POR QUE', 'BEYOND?'],
     cards: [
-      { n:'01', icon:'bolt',   title:'Criatividade como Arma', desc:'Enquanto outros entregam o óbvio, a gente pensa diferente. Sua marca vai parecer maior do que é — e isso converte muito mais.',                   statNum:'#1',    statLabel:'diferencial' },
-      { n:'02', icon:'layers', title:'Estratégia + Execução',  desc:'Não somos só executores. Questionamos, sugerimos e entregamos o que vai realmente funcionar para o seu mercado e seus objetivos.',                statNum:'full',  statLabel:'stack' },
-      { n:'03', icon:'link',   title:'Parceria Real',          desc:'Você fala direto com quem desenvolve. Sem intermediários, sem caixa preta. Comunicação clara do briefing à entrega final.',                       statNum:'1:1',   statLabel:'acesso direto' },
+      { n:'', icon:'bolt',   title:'Criatividade como Arma', desc:'Enquanto outros entregam o óbvio, a gente pensa diferente. Sua marca vai parecer maior do que é — e isso converte muito mais.',                   statNum:'#1',    statLabel:'diferencial' },
+      { n:'', icon:'layers', title:'Estratégia + Execução',  desc:'Não somos só executores. Questionamos, sugerimos e entregamos o que vai realmente funcionar para o seu mercado e seus objetivos.',                statNum:'full',  statLabel:'stack' },
+      { n:'', icon:'link',   title:'Parceria Real',          desc:'Você fala direto com quem desenvolve. Sem intermediários, sem caixa preta. Comunicação clara do briefing à entrega final.',                       statNum:'1:1',   statLabel:'acesso direto' },
     ]
   },
   {
     eyebrow: 'comece agora',
     titleLines: ['SEU PROJETO', 'COMEÇA AQUI'],
     cards: [
-      { n:'01', icon:'gift',   title:'Briefing Gratuito',      desc:'Antes de qualquer proposta, a gente entende de verdade o que você precisa. Sem custo, sem compromisso, sem enrolação.',                           statNum:'free',  statLabel:'sem custo' },
-      { n:'02', icon:'clock',  title:'Resposta em 24h',        desc:'Nada de esperar semanas. Você recebe uma proposta detalhada e personalizada em até 24 horas úteis — garantido.',                                   statNum:'<24h', statLabel:'orçamento' },
-      { n:'03', icon:'shield', title:'Vagas Limitadas',        desc:'Trabalhamos com poucos clientes por mês para garantir qualidade e atenção total. Reserve sua vaga antes que feche.',                              statNum:'≤5',    statLabel:'clientes/mês' },
+      { n:'', icon:'gift',   title:'Briefing Gratuito',      desc:'Antes de qualquer proposta, a gente entende de verdade o que você precisa. Sem custo, sem compromisso, sem enrolação.',                           statNum:'free',  statLabel:'sem custo' },
+      { n:'', icon:'clock',  title:'Resposta em 24h',        desc:'Nada de esperar semanas. Você recebe uma proposta detalhada e personalizada em até 24 horas úteis — garantido.',                                   statNum:'<24h', statLabel:'orçamento' },
+      { n:'', icon:'shield', title:'Vagas Limitadas',        desc:'Trabalhamos com poucos clientes por mês para garantir qualidade e atenção total. Reserve sua vaga antes que feche.',                              statNum:'≤5',    statLabel:'clientes/mês' },
     ]
   },
 ];
