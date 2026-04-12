@@ -18,26 +18,28 @@ const themeToggle = document.getElementById('themeToggle');
 let isDark = document.body.classList.contains('dark-mode');
 let sphereReady = false;
 
-// Serve versão mobile (900px) em telas ≤ 768px, desktop (1920px) nas demais
-const _isMobile = window.innerWidth <= 768;
-const _sfx = _isMobile ? 'mobile' : 'desktop';
+;(function() {
+  // Pixels fisicos reais = CSS px * DPR
+  // iPhone 14 Pro: 393px * 3 = 1179 -> mobile
+  // iPad/Desktop: acima de 1600 -> desktop
+  const physicalW = window.innerWidth * (window.devicePixelRatio || 1);
+  window.__bbSfx  = physicalW <= 1600 ? 'mobile' : 'desktop';
+})();
+
 const IMAGES = {
-  light: { open: `assets/1-${_sfx}.webp`, closed: `assets/2-${_sfx}.webp` },
-  dark:  { open: `assets/3-${_sfx}.webp`, closed: `assets/4-${_sfx}.webp` }
+  light: { open: `assets/1-${window.__bbSfx}.webp`, closed: `assets/2-${window.__bbSfx}.webp` },
+  dark:  { open: `assets/3-${window.__bbSfx}.webp`, closed: `assets/4-${window.__bbSfx}.webp` }
 };
 
-/* ══════════════════════════════════════════
-   PROGRESSIVE BLUR-UP LOADER
-   Carrega a imagem HD em background; quando pronta,
-   substitui o src e remove a classe de blur suavemente.
-══════════════════════════════════════════ */
+/* PROGRESSIVE BLUR-UP LOADER
+   Fix: iOS Safari nao dispara onload em cache hit.
+   Verificamos preloader.complete e aplicamos direto. */
 function loadHD(imgEl, hdSrc, onReady) {
   if (!imgEl || !hdSrc) return;
-  const preloader = new Image();
-  preloader.onload = function () {
+
+  function applyLoaded() {
     imgEl.src = hdSrc;
     imgEl.removeAttribute('data-src-hd');
-    // Força reflow antes de remover blur para a transição CSS disparar
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         imgEl.classList.remove('img-loading');
@@ -45,8 +47,15 @@ function loadHD(imgEl, hdSrc, onReady) {
         if (onReady) onReady();
       });
     });
-  };
+  }
+
+  const preloader = new Image();
+  preloader.onload  = applyLoaded;
+  preloader.onerror = applyLoaded;
   preloader.src = hdSrc;
+
+  // Cache hit: iOS Safari nao dispara onload se complete ja for true
+  if (preloader.complete) applyLoaded();
 }
 
 // Carrega as imagens HD do tema inicial assim que o DOM estiver pronto

@@ -30,9 +30,9 @@
   var saved = localStorage.getItem('bb-theme');
   var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   window.__bbDark = saved === 'dark' || (!saved && prefersDark);
-  // Injeta preload do WebP correto conforme tema e tamanho de tela
+  // Injeta preload do WebP correto conforme tema
   var dark = window.__bbDark;
-  var sfx  = window.innerWidth <= 768 ? 'mobile' : 'desktop';
+  var sfx  = (window.innerWidth * (window.devicePixelRatio || 1)) <= 1600 ? 'mobile' : 'desktop';
   [dark?('assets/3-'+sfx+'.webp'):('assets/1-'+sfx+'.webp'), dark?('assets/4-'+sfx+'.webp'):('assets/2-'+sfx+'.webp')].forEach(function(href){
     var l = document.createElement('link');
     l.rel = 'preload'; l.as = 'image'; l.type = 'image/webp';
@@ -357,12 +357,12 @@ body.dark-mode .hero-sub p {
   -->
   <img id="img1" class="hero-img img-loading"
        src="data:image/webp;base64,UklGRlYAAABXRUJQVlA4IEoAAADQAQCdASoQAAkAAUAmJZQCdAEO/gHOAAD++Kf/zN3/5lf/vj3/+4f/VgA="
-       data-src-hd="assets/1-desktop.webp"
+       data-src-hd="assets/1.webp"
        alt="Beyond Bits — tecnologia e criatividade"
        fetchpriority="high" decoding="sync"/>
   <img id="img2" class="hero-img img-loading"
        src="data:image/webp;base64,UklGRlYAAABXRUJQVlA4IEoAAADQAQCdASoQAAkAAUAmJZQCdAEO/gHOAAD++Kf/zN3/5lf/vj3/+4f/VgA="
-       data-src-hd="assets/2-desktop.webp"
+       data-src-hd="assets/2.webp"
        alt="" decoding="async"/>
 
   <div class="hero-gradient"></div>
