@@ -29,7 +29,7 @@
 (function(){
   var saved = localStorage.getItem('bb-theme');
   var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  window.__bbDark = saved === 'dark' || (!saved && prefersDark);
+  window.__bbDark = saved !== 'light'; // dark é o padrão; só sai se usuário escolheu light
   // Injeta preload do WebP correto conforme tema
   var dark = window.__bbDark;
   var sfx  = (window.innerWidth * (window.devicePixelRatio || 1)) <= 1600 ? 'mobile' : 'desktop';
@@ -39,6 +39,7 @@
     l.href = href; l.setAttribute('fetchpriority','high');
     document.head.appendChild(l);
   });
+  if (window.__bbDark) document.documentElement.classList.add('dark-mode');
 })();
 </script>
 
@@ -98,14 +99,14 @@ a.btn-primary{display:inline-flex;align-items:center;text-decoration:none}
 
 /* ══ NAV CONTRAST — backdrop para garantir legibilidade sobre qualquer imagem ══ */
 nav {
-  background: rgba(232,232,230,0.55);
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(10,10,10,0.06);
   padding: 12px 48px;
+  transition: background 1.2s ease, border-color 0.6s ease;
 }
 body.dark-mode nav {
-  background: rgba(14,14,16,0.65);
   border-bottom-color: rgba(232,232,230,0.06);
 }
 
@@ -122,16 +123,16 @@ body.dark-mode nav {
 }
 /* Sub-texto descritivo */
 .hero-sub p {
-  background: rgba(232,232,230,0.72);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   padding: 10px 14px;
   border-radius: 6px;
   border-left: 2px solid var(--copper);
   color: rgba(10,10,10,0.82) !important;
+  transition: background 1.2s ease;
 }
 body.dark-mode .hero-sub p {
-  background: rgba(14,14,16,0.72);
   color: rgba(232,232,230,0.88) !important;
 }
 /* CTA — pointer-events já ativo, garante clicabilidade */
@@ -212,10 +213,10 @@ body.dark-mode .hero-sub p {
   body.dark-mode .hero-gradient {
     background: linear-gradient(
       180deg,
-      rgba(14,14,16,0.0)  0%,
-      rgba(14,14,16,0.0)  20%,
-      rgba(14,14,16,0.92) 55%,
-      #0e0e10 100%
+      transparent 0%,
+      transparent 20%,
+      color-mix(in srgb, var(--bg) 92%, transparent) 55%,
+      var(--bg) 100%
     );
   }
   /* Imagem fica centralizada no rosto do robô */
@@ -439,6 +440,12 @@ body.dark-mode .hero-sub p {
       <h2 class="benefits-title" id="benefitsTitle">CRIADO<br>PARA VENDER</h2>
     </div>
 
+    <!-- ══ SPACE BACKGROUND + EARTH GLOBE ══ -->
+    <div class="space-bg" id="spaceBg">
+      <div id="earthGlobeViz"></div>
+      <div class="stars-overlay"></div>
+    </div>
+
     <div class="hand-stage">
 
       <div class="cards-stage">
@@ -459,7 +466,7 @@ body.dark-mode .hero-sub p {
           <div class="card-3d" data-float-delay="0" data-tilt>
             <div class="card-3d-inner">
               <div class="card-glow"></div>
-              <div class="card-index"></div>
+              <div class="card-index">01</div>
               <div class="card-icon">
                 <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
                   <circle cx="16" cy="16" r="10"/><circle cx="16" cy="16" r="4"/>
@@ -479,7 +486,7 @@ body.dark-mode .hero-sub p {
           <div class="card-3d card-3d--center" data-float-delay="0.4" data-tilt>
             <div class="card-3d-inner">
               <div class="card-glow"></div>
-              <div class="card-index"></div>
+              <div class="card-index">02</div>
               <div class="card-icon">
                 <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
                   <rect x="4" y="4" width="24" height="24" rx="3"/>
@@ -499,7 +506,7 @@ body.dark-mode .hero-sub p {
           <div class="card-3d" data-float-delay="0.8" data-tilt>
             <div class="card-3d-inner">
               <div class="card-glow"></div>
-              <div class="card-index"></div>
+              <div class="card-index">03</div>
               <div class="card-icon">
                 <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
                   <path d="M16 4L28 12V24L16 28L4 24V12L16 4Z"/>

@@ -15,13 +15,15 @@ const img2 = document.getElementById('img2');
 const themeToggle = document.getElementById('themeToggle');
 
 // Sincroniza com o que o inline script já aplicou
+// Sincroniza dark-mode do <html> (aplicado no inline script do <head>) para o <body>
+if (document.documentElement.classList.contains('dark-mode')) {
+  document.body.classList.add('dark-mode');
+  document.documentElement.classList.remove('dark-mode');
+}
 let isDark = document.body.classList.contains('dark-mode');
 let sphereReady = false;
 
 ;(function() {
-  // Pixels fisicos reais = CSS px * DPR
-  // iPhone 14 Pro: 393px * 3 = 1179 -> mobile
-  // iPad/Desktop: acima de 1600 -> desktop
   const physicalW = window.innerWidth * (window.devicePixelRatio || 1);
   window.__bbSfx  = physicalW <= 1600 ? 'mobile' : 'desktop';
 })();
@@ -31,12 +33,13 @@ const IMAGES = {
   dark:  { open: `assets/3-${window.__bbSfx}.webp`, closed: `assets/4-${window.__bbSfx}.webp` }
 };
 
-/* PROGRESSIVE BLUR-UP LOADER
-   Fix: iOS Safari nao dispara onload em cache hit.
-   Verificamos preloader.complete e aplicamos direto. */
+/* ══════════════════════════════════════════
+   PROGRESSIVE BLUR-UP LOADER
+   Carrega a imagem HD em background; quando pronta,
+   substitui o src e remove a classe de blur suavemente.
+══════════════════════════════════════════ */
 function loadHD(imgEl, hdSrc, onReady) {
   if (!imgEl || !hdSrc) return;
-
   function applyLoaded() {
     imgEl.src = hdSrc;
     imgEl.removeAttribute('data-src-hd');
@@ -48,13 +51,10 @@ function loadHD(imgEl, hdSrc, onReady) {
       });
     });
   }
-
   const preloader = new Image();
   preloader.onload  = applyLoaded;
   preloader.onerror = applyLoaded;
   preloader.src = hdSrc;
-
-  // Cache hit: iOS Safari nao dispara onload se complete ja for true
   if (preloader.complete) applyLoaded();
 }
 
@@ -585,6 +585,115 @@ if (typeof THREE !== 'undefined') {
 } else {
   window.addEventListener('load', initSphere);
 }
+
+
+
+
+
+
+/* ══════════════════════════════════════════════════════
+   ★ EARTH GLOBE — Three.js r128
+   Textura NASA earth-night, nuvens, atmosfera, estrelas
+══════════════════════════════════════════════════════ */
+let earthGlobeRenderer = null;
+let earthGlobeMesh     = null;
+
+function initEarthGlobe() {
+  const el = document.getElementById('earthGlobeViz');
+  if (!el || typeof THREE === 'undefined') return;
+  if (earthGlobeRenderer) return;
+
+  const W   = el.offsetWidth  || 520;
+  const H   = el.offsetHeight || 520;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
+  camera.position.z = 2.5;
+
+  earthGlobeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  earthGlobeRenderer.setSize(W, H);
+  earthGlobeRenderer.setPixelRatio(dpr);
+  earthGlobeRenderer.setClearColor(0x000000, 0);
+  el.appendChild(earthGlobeRenderer.domElement);
+
+  const loader = new THREE.TextureLoader();
+  loader.crossOrigin = 'anonymous';
+
+  // Terra
+  const earthMat = new THREE.MeshPhongMaterial({
+    map:         loader.load('https://unpkg.com/three-globe/example/img/earth-night.jpg'),
+    bumpMap:     loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
+    bumpScale:   0.05,
+    specularMap: loader.load('https://unpkg.com/three-globe/example/img/earth-water.png'),
+    specular:    new THREE.Color(0x003366),
+    shininess:   20,
+  });
+  earthGlobeMesh = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), earthMat);
+  earthGlobeMesh.rotation.x = THREE.MathUtils.degToRad(20);
+  scene.add(earthGlobeMesh);
+
+  // Nuvens
+  const cloudMat = new THREE.MeshPhongMaterial({
+    map:         loader.load('https://unpkg.com/three-globe/example/img/earth-clouds.png'),
+    transparent: true, opacity: 0.30, depthWrite: false,
+  });
+  const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(1.008, 64, 64), cloudMat);
+  scene.add(cloudMesh);
+
+  // Atmosfera
+  const atmMat = new THREE.MeshPhongMaterial({
+    color: 0x4488ff, transparent: true, opacity: 0.07,
+    side: THREE.FrontSide, depthWrite: false,
+  });
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.06, 64, 64), atmMat));
+
+  // Estrelas
+  const starPos = new Float32Array(2500 * 3);
+  for (let i = 0; i < 2500; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi   = Math.acos(2 * Math.random() - 1);
+    const r     = 80 + Math.random() * 20;
+    starPos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+    starPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+    starPos[i*3+2] = r * Math.cos(phi);
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
+    color: 0xffffff, size: 0.18, sizeAttenuation: true, transparent: true, opacity: 0.9
+  })));
+
+  // Luzes
+  scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+  sun.position.set(5, 3, 5);
+  scene.add(sun);
+
+  // Animação
+  ;(function animateEarth() {
+    requestAnimationFrame(animateEarth);
+    earthGlobeMesh.rotation.y += 0.0015;
+    cloudMesh.rotation.y      += 0.0018;
+    earthGlobeRenderer.render(scene, camera);
+  })();
+}
+
+// Lazy init quando a seção entra na viewport
+const earthObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      initEarthGlobe();
+      earthObserver.disconnect();
+    }
+  });
+}, { threshold: 0.05 });
+const benefitsSec = document.querySelector('.benefits-section');
+if (benefitsSec) earthObserver.observe(benefitsSec);
+
+
+
+
 
 /* ── IntersectionObserver ── */
 const io = new IntersectionObserver(entries => {
