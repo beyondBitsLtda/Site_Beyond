@@ -23,11 +23,39 @@ const IMAGES = {
   dark:  { open: 'assets/3.webp', closed: 'assets/4.webp' }
 };
 
-// Garante que as imgs têm o src correto do tema inicial (sem piscar)
+/* ══════════════════════════════════════════
+   PROGRESSIVE BLUR-UP LOADER
+   Carrega a imagem HD em background; quando pronta,
+   substitui o src e remove a classe de blur suavemente.
+══════════════════════════════════════════ */
+function loadHD(imgEl, hdSrc, onReady) {
+  if (!imgEl || !hdSrc) return;
+  const preloader = new Image();
+  preloader.onload = function () {
+    imgEl.src = hdSrc;
+    imgEl.removeAttribute('data-src-hd');
+    // Força reflow antes de remover blur para a transição CSS disparar
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        imgEl.classList.remove('img-loading');
+        imgEl.classList.add('img-loaded');
+        if (onReady) onReady();
+      });
+    });
+  };
+  preloader.src = hdSrc;
+}
+
+// Carrega as imagens HD do tema inicial assim que o DOM estiver pronto
 (function syncInitialImages() {
   const theme = isDark ? 'dark' : 'light';
-  if (img1 && !img1.src.endsWith(IMAGES[theme].open.split('/').pop()))   img1.src = IMAGES[theme].open;
-  if (img2 && !img2.src.endsWith(IMAGES[theme].closed.split('/').pop())) img2.src = IMAGES[theme].closed;
+  const hdOpen   = IMAGES[theme].open;
+  const hdClosed = IMAGES[theme].closed;
+  // Atualiza data-src-hd para refletir tema correto
+  if (img1) img1.dataset.srcHd = hdOpen;
+  if (img2) img2.dataset.srcHd = hdClosed;
+  loadHD(img1, hdOpen);
+  loadHD(img2, hdClosed);
 })();
 
 function enableDark(animate) {
@@ -46,24 +74,22 @@ function enableLight(animate) {
 }
 function swapImages(animate) {
   const theme = isDark ? 'dark' : 'light';
+  const hdOpen   = IMAGES[theme].open;
+  const hdClosed = IMAGES[theme].closed;
+
   if (animate) {
-    img1.style.transition = 'opacity 0.5s ease';
-    img2.style.transition = 'opacity 0.5s ease';
-    img1.style.opacity    = '0';
-    img2.style.opacity    = '0';
+    // Aplica blur enquanto troca de tema
+    [img1, img2].forEach(el => {
+      if (el) { el.classList.add('img-loading'); el.classList.remove('img-loaded'); }
+    });
     setTimeout(() => {
-      img1.src = IMAGES[theme].open;
-      img2.src = IMAGES[theme].closed;
-      let loaded = 0;
-      const reveal = () => { loaded++; if (loaded >= 2) img1.style.opacity = '1'; };
-      img1.onload = reveal; img2.onload = reveal;
-      if (img1.complete) loaded++;
-      if (img2.complete) loaded++;
-      if (loaded >= 2) img1.style.opacity = '1';
-    }, 500);
+      loadHD(img1, hdOpen,   () => { img1.style.opacity = '1'; });
+      loadHD(img2, hdClosed, () => {});
+      img1.style.opacity = '1';
+    }, 300);
   } else {
-    img1.src = IMAGES[theme].open;
-    img2.src = IMAGES[theme].closed;
+    loadHD(img1, hdOpen);
+    loadHD(img2, hdClosed);
   }
 }
 themeToggle.addEventListener('click', () => isDark ? enableLight(true) : enableDark(true));
@@ -301,8 +327,6 @@ function goToSlide(n, dir) {
   if (next === currentSlide || isAnimating) return;
   currentSlide = next;
   renderSlide(next, dir != null ? dir : 1);
-  // Mobile: volta ao card central ao mudar de slide
-  if (typeof window.__resetCardSwipe === 'function') window.__resetCardSwipe();
 }
 
 /* ══════════════════════════════════════════════════════
@@ -582,122 +606,3 @@ document.querySelectorAll('.slider-dot').forEach(dot => {
     goToSlide(target, target > currentSlide ? 1 : -1);
   });
 });
-
-/* ══════════════════════════════════════════════════════
-   ★ MOBILE CARD SWIPE CAROUSEL
-   Ativo apenas em telas ≤ 600px.
-   Desliza os 3 cards horizontalmente com touch/mouse.
-   Integrado ao renderSlide: ao trocar de slide, reseta
-   o carrossel para o card 0.
-══════════════════════════════════════════════════════ */
-(function initCardSwipe() {
-  if (window.innerWidth > 600) return;
-
-  const track     = document.getElementById('floatingCards');
-  const dotsEl    = document.getElementById('cardDots');
-  if (!track || !dotsEl) return;
-
-  const CARD_COUNT = 3;
-  let activeCard   = 1; // começa no card central (02)
-  let startX       = 0;
-  let currentDragX = 0;
-  let isDraggingCard = false;
-
-  function getOffset(index) {
-    // cada card ocupa 1/3 do track (que tem width:300%)
-    // translateX em % do track: -0%, -33.333%, -66.666%
-    return -(index * 100 / CARD_COUNT);
-  }
-
-  function goToCard(index, animated) {
-    index = Math.max(0, Math.min(CARD_COUNT - 1, index));
-    activeCard = index;
-
-    track.classList.toggle('is-dragging', !animated);
-    track.style.transition = animated
-      ? 'transform 0.38s cubic-bezier(0.16,1,0.3,1)'
-      : 'none';
-    track.style.transform = `translateX(${getOffset(index)}%)`;
-
-    dotsEl.querySelectorAll('.card-dot').forEach((d, i) => {
-      d.classList.toggle('active', i === index);
-    });
-  }
-
-  // Começa no card central
-  goToCard(1, false);
-
-  /* ── Touch ── */
-  track.addEventListener('touchstart', (e) => {
-    startX = e.touches[0].clientX;
-    currentDragX = 0;
-    isDraggingCard = true;
-    track.style.transition = 'none';
-  }, { passive: true });
-
-  track.addEventListener('touchmove', (e) => {
-    if (!isDraggingCard) return;
-    currentDragX = e.touches[0].clientX - startX;
-    const baseOffset = getOffset(activeCard);
-    // Converte px para % do track (track.offsetWidth = 3× a largura visível)
-    const dragPercent = (currentDragX / track.offsetWidth) * 100;
-    track.style.transform = `translateX(${baseOffset + dragPercent}%)`;
-  }, { passive: true });
-
-  track.addEventListener('touchend', () => {
-    if (!isDraggingCard) return;
-    isDraggingCard = false;
-    const threshold = window.innerWidth * 0.18; // 18% da tela
-    if (currentDragX < -threshold && activeCard < CARD_COUNT - 1) {
-      goToCard(activeCard + 1, true);
-    } else if (currentDragX > threshold && activeCard > 0) {
-      goToCard(activeCard - 1, true);
-    } else {
-      goToCard(activeCard, true); // snap de volta
-    }
-  });
-
-  /* ── Mouse (para testar no desktop em DevTools mobile) ── */
-  track.addEventListener('mousedown', (e) => {
-    startX = e.clientX;
-    currentDragX = 0;
-    isDraggingCard = true;
-    track.style.transition = 'none';
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove', (e) => {
-    if (!isDraggingCard) return;
-    currentDragX = e.clientX - startX;
-    const baseOffset = getOffset(activeCard);
-    const dragPercent = (currentDragX / track.offsetWidth) * 100;
-    track.style.transform = `translateX(${baseOffset + dragPercent}%)`;
-  });
-  window.addEventListener('mouseup', () => {
-    if (!isDraggingCard) return;
-    isDraggingCard = false;
-    const threshold = window.innerWidth * 0.18;
-    if (currentDragX < -threshold && activeCard < CARD_COUNT - 1) {
-      goToCard(activeCard + 1, true);
-    } else if (currentDragX > threshold && activeCard > 0) {
-      goToCard(activeCard - 1, true);
-    } else {
-      goToCard(activeCard, true);
-    }
-  });
-
-  /* ── Dots clicáveis ── */
-  dotsEl.querySelectorAll('.card-dot').forEach((dot) => {
-    dot.addEventListener('click', () => {
-      goToCard(parseInt(dot.dataset.card), true);
-    });
-  });
-
-  /* ── Reset ao trocar de slide (renderSlide) ── */
-  // Monkey-patch: após cada renderSlide, volta ao card central
-  const _origRender = window._renderSlide || renderSlide;
-  const _origGoTo   = goToSlide;
-  // Intercepta goToSlide para resetar o carrossel
-  const origGoToSlide = goToSlide;
-  window.__resetCardSwipe = function() { goToCard(1, true); };
-
-})();

@@ -90,8 +90,10 @@ body.dark-mode .slider-drag-hint{color:rgba(232,232,230,0.18)}
 
 a.btn-primary{display:inline-flex;align-items:center;text-decoration:none}
 
-/* card-dots e swipe-hint: só no mobile */
-.card-dots, .swipe-hint { display: none; }
+/* ══ PROGRESSIVE IMAGE LOADING (blur-up) ══ */
+.hero-img{transition:filter 0.6s ease,opacity 0.5s ease}
+.hero-img.img-loading{filter:blur(18px);transform:scale(1.04)}
+.hero-img.img-loaded{filter:blur(0);transform:scale(1)}
 
 /* ══ NAV CONTRAST — backdrop para garantir legibilidade sobre qualquer imagem ══ */
 nav {
@@ -253,87 +255,33 @@ body.dark-mode .hero-sub p {
   /* HAND STAGE */
   .hand-stage { min-height: unset; padding: 0 0; }
 
-  /* CARDS — mobile: carrossel horizontal com swipe */
-  .cards-stage {
-    padding: 0;
+  /* CARDS — mobile: mostra só 1 card (o centro) */
+  .cards-stage { padding: 0 56px; } /* espaço para as setas nas laterais */
+  .floating-cards {
+    gap: 0;
+    width: 100%;
     overflow: hidden;
+    perspective: none;
+  }
+  /* Esconde card 1 e 3, mostra só o central */
+  .card-3d:not(.card-3d--center) { display: none; }
+  .card-3d--center {
+    margin-top: 0;
     width: 100%;
   }
+  .card-3d-inner { padding: 28px 24px 24px; }
 
-  /* Remove setas — navegação é por swipe */
-  .slider-arrow-side { display: none; }
+  /* Setas nas laterais do card */
+  #slidePrev { left: 4px; }
+  #slideNext { right: 4px; }
+  .slider-arrow-side { width: 40px; height: 40px; }
 
-  .floating-cards {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 0;
-    width: 300%;
-    transform: translateX(0);
-    transition: transform 0.38s cubic-bezier(0.16,1,0.3,1);
-    perspective: none;
-    will-change: transform;
-    cursor: grab;
-    touch-action: pan-y;
-  }
-  .floating-cards.is-dragging {
-    transition: none;
-    cursor: grabbing;
-  }
-
-  /* Todos os 3 cards visíveis no track */
-  .card-3d,
-  .card-3d--center {
-    display: flex !important;
-    flex: 0 0 33.333%;
-    width: 33.333%;
-    margin-top: 0;
-    box-sizing: border-box;
-    padding: 0 10px;
-  }
-  .card-3d-inner { padding: 28px 20px 24px; width: 100%; }
-
-  /* Dots de card */
-  .card-dots {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    padding: 14px 0 6px;
-  }
-  .card-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: rgba(10,10,10,0.18);
-    border: none; padding: 0; cursor: pointer;
-    transition: background 0.3s, transform 0.3s;
-  }
-  .card-dot.active { background: var(--copper); transform: scale(1.5); }
-  body.dark-mode .card-dot { background: rgba(232,232,230,0.2); }
-  body.dark-mode .card-dot.active { background: var(--copper); }
-
-  /* Swipe hint */
-  .swipe-hint {
-    font-family: var(--font-mono);
-    font-size: 0.48rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(10,10,10,0.28);
-    text-align: center;
-    padding-bottom: 8px;
-    animation: swipeHintFade 3.5s ease 1s forwards;
-    opacity: 0;
-    display: block;
-  }
-  body.dark-mode .swipe-hint { color: rgba(232,232,230,0.2); }
-  @keyframes swipeHintFade {
-    0%  { opacity:0; } 15% { opacity:1; } 75% { opacity:1; } 100% { opacity:0; }
-  }
-
-  /* Esfera e reflection — esconde no mobile */
+  /* Esfera — esconde no mobile (ocupa espaço; slider já funciona via setas) */
   .sphere-wrapper { display: none; }
   .cards-reflection { display: none; }
 
-  /* Slider nav original — esconde; usamos card-dots */
-  .slider-nav { display: none; }
   .slider-drag-hint { display: none; }
+  .slider-nav { padding: 12px 0 32px; }
 
   /* FOOTER */
   footer {
@@ -400,12 +348,21 @@ body.dark-mode .hero-sub p {
 
 <!-- ══ HERO ══ -->
 <section class="hero" id="inicio">
-  <!-- WebP direto — swap via img.src funciona perfeitamente, >97% suporte -->
-  <img id="img1" class="hero-img" src="assets/1.webp"
+  <!--
+    Progressive blur-up loading:
+    - data-src-hd = imagem full-res (carregada em background após parse)
+    - src         = placeholder tiny (16×9 px, base64) — aparece instantâneo
+    - Classe .img-loading aplica blur; .img-loaded remove ao fazer swap
+  -->
+  <img id="img1" class="hero-img img-loading"
+       src="data:image/webp;base64,UklGRlYAAABXRUJQVlA4IEoAAADQAQCdASoQAAkAAUAmJZQCdAEO/gHOAAD++Kf/zN3/5lf/vj3/+4f/VgA="
+       data-src-hd="assets/1.webp"
        alt="Beyond Bits — tecnologia e criatividade"
-       fetchpriority="high" loading="eager" decoding="sync"/>
-  <img id="img2" class="hero-img" src="assets/2.webp"
-       alt="" loading="eager" decoding="async"/>
+       fetchpriority="high" decoding="sync"/>
+  <img id="img2" class="hero-img img-loading"
+       src="data:image/webp;base64,UklGRlYAAABXRUJQVlA4IEoAAADQAQCdASoQAAkAAUAmJZQCdAEO/gHOAAD++Kf/zN3/5lf/vj3/+4f/VgA="
+       data-src-hd="assets/2.webp"
+       alt="" decoding="async"/>
 
   <div class="hero-gradient"></div>
 
@@ -559,14 +516,6 @@ body.dark-mode .hero-sub p {
 
         </div><!-- /floating-cards -->
       </div><!-- /cards-stage -->
-
-      <!-- Dots e hint de swipe — visíveis só no mobile via CSS -->
-      <div class="card-dots" id="cardDots" aria-hidden="true">
-        <button class="card-dot active" data-card="0"></button>
-        <button class="card-dot" data-card="1"></button>
-        <button class="card-dot" data-card="2"></button>
-      </div>
-      <div class="swipe-hint" id="swipeHint">← deslize os cards →</div>
 
       <div class="cards-reflection"></div>
 
