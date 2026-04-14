@@ -6,21 +6,19 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 /* ══════════════════════════════════════════
-   DARK MODE
-   isDark já foi aplicado via inline script no HTML (window.__bbDark)
-   para evitar flash. Aqui apenas sincronizamos o estado JS.
+   DARK MODE — sempre escuro, sem toggle
+   isDark sempre true; imagens do hero sempre diurnas (1/2)
 ══════════════════════════════════════════ */
 const img1 = document.getElementById('img1');
 const img2 = document.getElementById('img2');
-const themeToggle = document.getElementById('themeToggle');
 
-// Sincroniza com o que o inline script já aplicou
-// Sincroniza dark-mode do <html> (aplicado no inline script do <head>) para o <body>
+// Sincroniza dark-mode do <html> para o <body>
 if (document.documentElement.classList.contains('dark-mode')) {
   document.body.classList.add('dark-mode');
   document.documentElement.classList.remove('dark-mode');
 }
-let isDark = document.body.classList.contains('dark-mode');
+// Sempre escuro
+const isDark = true;
 let sphereReady = false;
 
 ;(function() {
@@ -28,15 +26,14 @@ let sphereReady = false;
   window.__bbSfx  = physicalW <= 1600 ? 'mobile' : 'desktop';
 })();
 
-const IMAGES = {
-  light: { open: `assets/1-${window.__bbSfx}.webp`, closed: `assets/2-${window.__bbSfx}.webp` },
-  dark:  { open: `assets/3-${window.__bbSfx}.webp`, closed: `assets/4-${window.__bbSfx}.webp` }
+// Imagens do hero: sempre as diurnas (assets/1 e assets/2)
+const DAY_IMAGES = {
+  open:   `assets/1-${window.__bbSfx}.webp`,
+  closed: `assets/2-${window.__bbSfx}.webp`,
 };
 
 /* ══════════════════════════════════════════
    PROGRESSIVE BLUR-UP LOADER
-   Carrega a imagem HD em background; quando pronta,
-   substitui o src e remove a classe de blur suavemente.
 ══════════════════════════════════════════ */
 function loadHD(imgEl, hdSrc, onReady) {
   if (!imgEl || !hdSrc) return;
@@ -58,64 +55,21 @@ function loadHD(imgEl, hdSrc, onReady) {
   if (preloader.complete) applyLoaded();
 }
 
-// Carrega as imagens HD do tema inicial assim que o DOM estiver pronto
-(function syncInitialImages() {
-  const theme = isDark ? 'dark' : 'light';
-  const hdOpen   = IMAGES[theme].open;
-  const hdClosed = IMAGES[theme].closed;
-  // Atualiza data-src-hd para refletir tema correto
-  if (img1) img1.dataset.srcHd = hdOpen;
-  if (img2) img2.dataset.srcHd = hdClosed;
-  loadHD(img1, hdOpen);
-  loadHD(img2, hdClosed);
-})();
-
-function enableDark(animate) {
-  isDark = true;
-  document.body.classList.add('dark-mode');
-  swapImages(animate);
-  localStorage.setItem('bb-theme', 'dark');
-  if (sphereReady) updateSphereColors();
-}
-function enableLight(animate) {
-  isDark = false;
-  document.body.classList.remove('dark-mode');
-  swapImages(animate);
-  localStorage.setItem('bb-theme', 'light');
-  if (sphereReady) updateSphereColors();
-}
-function swapImages(animate) {
-  const theme = isDark ? 'dark' : 'light';
-  const hdOpen   = IMAGES[theme].open;
-  const hdClosed = IMAGES[theme].closed;
-
-  if (animate) {
-    // Aplica blur enquanto troca de tema
-    [img1, img2].forEach(el => {
-      if (el) { el.classList.add('img-loading'); el.classList.remove('img-loaded'); }
-    });
-    setTimeout(() => {
-      loadHD(img1, hdOpen,   () => { img1.style.opacity = '1'; });
-      loadHD(img2, hdClosed, () => {});
-      img1.style.opacity = '1';
-    }, 300);
-  } else {
-    loadHD(img1, hdOpen);
-    loadHD(img2, hdClosed);
-  }
-}
-themeToggle.addEventListener('click', () => isDark ? enableLight(true) : enableDark(true));
+// Carrega sempre as imagens diurnas
+loadHD(img1, DAY_IMAGES.open);
+loadHD(img2, DAY_IMAGES.closed);
 
 /* ══════════════════════════════════════════
-   BLINK
+   BLINK — usa sempre imagens diurnas
 ══════════════════════════════════════════ */
 const BLINK_MS    = 280;
 const DARK_HOLD_MS = 400;
 function blink() {
+  if (!img1 || !img2) return;
   img2.style.transition = `opacity ${BLINK_MS * 0.4}ms cubic-bezier(0.4,0,0.2,1)`;
   img1.style.transition = `opacity ${BLINK_MS * 0.4}ms cubic-bezier(0.4,0,0.2,1)`;
   img2.style.opacity = '1'; img1.style.opacity = '0';
-  const hold = isDark ? (BLINK_MS * 0.45) + DARK_HOLD_MS : BLINK_MS * 0.45;
+  const hold = BLINK_MS * 0.45 + DARK_HOLD_MS;
   setTimeout(() => {
     img2.style.transition = `opacity ${BLINK_MS * 0.6}ms cubic-bezier(0.4,0,0.2,1)`;
     img1.style.transition = `opacity ${BLINK_MS * 0.6}ms cubic-bezier(0.4,0,0.2,1)`;
@@ -130,17 +84,17 @@ setTimeout(blink, 3500);
 ══════════════════════════════════════════ */
 const pixelCanvas = document.getElementById('pixelCanvas');
 const heroTitle   = document.getElementById('heroTitle');
-const pCtx        = pixelCanvas.getContext('2d');
+const pCtx        = pixelCanvas ? pixelCanvas.getContext('2d') : null;
 const PIXEL_SIZE = 3, SAMPLE_STEP = 3, ANIM_DURATION = 1800, ANIM_DELAY = 600, SCATTER_RANGE = 1.8;
 function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
-function getTextColor() { return isDark ? '#e8e8e6' : '#0a0a0a'; }
-// Mobile-friendly: menor mínimo para telas pequenas
+function getTextColor() { return '#e8e8e6'; } // sempre claro (dark mode fixo)
 function getFontSize() {
   const min = window.innerWidth <= 600 ? 56 : 110;
   return Math.min(Math.max(min, window.innerWidth * 0.18), 260);
 }
 
 function runPixelAnimation() {
+  if (!pixelCanvas || !pCtx) return;
   const fs = getFontSize(), lh = fs * 0.88;
   const cW = Math.ceil(fs * 5.5), cH = Math.ceil(lh * 2.15);
   const dpr = window.devicePixelRatio || 1;
@@ -196,9 +150,9 @@ function runPixelAnimation() {
     } else if (!done) {
       done = true;
       setTimeout(() => {
-        heroTitle.classList.add('revealed');
+        if (heroTitle) heroTitle.classList.add('revealed');
         pixelCanvas.style.opacity = '0';
-        setTimeout(() => pixelCanvas.style.display = 'none', 450);
+        setTimeout(() => { pixelCanvas.style.display = 'none'; }, 450);
       }, 150);
     }
   }
@@ -343,14 +297,12 @@ function goToSlide(n, dir) {
 
 /* ══════════════════════════════════════════════════════
    ★ THREE.JS — ESFERA 3D INTERATIVA
-   Não inicializa em telas pequenas (≤ 600px) para
-   poupar CPU/GPU e evitar travamentos no mobile.
 ══════════════════════════════════════════════════════ */
 
 const IS_MOBILE = window.innerWidth <= 600;
 
 function initSphere() {
-  if (IS_MOBILE) return; // esfera desativada no mobile
+  if (IS_MOBILE) return;
 
   const container = document.getElementById('sphereWrapper');
   const canvas    = document.getElementById('sphereCanvas');
@@ -368,30 +320,26 @@ function initSphere() {
   renderer.setPixelRatio(dpr);
   renderer.setClearColor(0x000000, 0);
 
-  const COPPER_L = 0xb87333;
+  // Sempre dark — cores cobre escuro
   const COPPER_D = 0xd4944a;
-  function copperHex() { return isDark ? COPPER_D : COPPER_L; }
-  function fgHex()     { return isDark ? 0xe8e8e6 : 0x0a0a0a; }
+  function copperHex() { return COPPER_D; }
+  function fgHex()     { return 0xe8e8e6; }
 
-  // Icosahedron wireframe
   const icoGeo = new THREE.IcosahedronGeometry(1.6, 1);
   const icoMat = new THREE.MeshBasicMaterial({ color: copperHex(), wireframe: true, transparent: true, opacity: 0.15 });
   const icoMesh = new THREE.Mesh(icoGeo, icoMat);
   scene.add(icoMesh);
 
-  // Inner sphere
   const coreGeo = new THREE.SphereGeometry(1.05, 32, 32);
   const coreMat = new THREE.MeshPhongMaterial({ color: copperHex(), emissive: copperHex(), emissiveIntensity: 0.15, transparent: true, opacity: 0.08, shininess: 100 });
   const coreMesh = new THREE.Mesh(coreGeo, coreMat);
   scene.add(coreMesh);
 
-  // Second wireframe
   const innerWireGeo = new THREE.IcosahedronGeometry(1.1, 2);
   const innerWireMat = new THREE.MeshBasicMaterial({ color: fgHex(), wireframe: true, transparent: true, opacity: 0.04 });
   const innerWire    = new THREE.Mesh(innerWireGeo, innerWireMat);
   scene.add(innerWire);
 
-  // Particle nodes
   const nodePositions = icoGeo.attributes.position;
   const nodeGroup     = new THREE.Group();
   const nodeDots      = [];
@@ -410,7 +358,6 @@ function initSphere() {
   }
   scene.add(nodeGroup);
 
-  // Orbital particles
   const orbitalCount = 60;
   const orbitalGeo   = new THREE.BufferGeometry();
   const orbPositions = new Float32Array(orbitalCount * 3);
@@ -429,7 +376,6 @@ function initSphere() {
   const orbitalPoints = new THREE.Points(orbitalGeo, orbMat);
   scene.add(orbitalPoints);
 
-  // Rings
   const ringGeo = new THREE.RingGeometry(1.75, 1.78, 64);
   const ringMat = new THREE.MeshBasicMaterial({ color: copperHex(), transparent: true, opacity: 0.1, side: THREE.DoubleSide });
   const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -441,7 +387,6 @@ function initSphere() {
   ring2.material.opacity = 0.06;
   scene.add(ring2);
 
-  // Lights
   scene.add(new THREE.AmbientLight(0xffffff, 0.4));
   const pointLight  = new THREE.PointLight(copperHex(), 1.5, 15);
   pointLight.position.set(3, 3, 5);
@@ -450,17 +395,8 @@ function initSphere() {
   pointLight2.position.set(-3, -2, 3);
   scene.add(pointLight2);
 
-  // Theme update
-  window.updateSphereColors = function() {
-    const c = copperHex(), f = fgHex();
-    icoMat.color.setHex(c); coreMat.color.setHex(c); coreMat.emissive.setHex(c);
-    innerWireMat.color.setHex(f); orbMat.color.setHex(c);
-    ringMat.color.setHex(c); ring2.material.color.setHex(c);
-    pointLight.color.setHex(c); pointLight2.color.setHex(c);
-    nodeDots.forEach(n => n.mat.color.setHex(c));
-  };
+  window.updateSphereColors = function() {}; // no-op: sempre dark
 
-  // Drag
   let dragging   = false;
   let prevMouse  = { x: 0, y: 0 };
   const sphereRot     = { x: 0, y: 0 };
@@ -488,7 +424,6 @@ function initSphere() {
   }, { passive: true });
   window.addEventListener('touchend', () => { dragging = false; });
 
-  // Card hover tilt
   const cards          = document.querySelectorAll('.card-3d');
   const cardBaseOffsets = [-1, 0, 1];
   cards.forEach(card => {
@@ -499,14 +434,11 @@ function initSphere() {
       const rx = ((e.clientY - r.top  - r.height/2) / (r.height/2)) * -8;
       const ry = ((e.clientX - r.left - r.width /2) / (r.width /2)) *  8;
       inner.style.transform  = `rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.03,1.03,1.03)`;
-      inner.style.background = isDark
-        ? `radial-gradient(circle at ${((e.clientX-r.left)/r.width)*100}% ${((e.clientY-r.top)/r.height)*100}%, rgba(212,148,74,0.07), rgba(28,28,32,0.7) 60%)`
-        : `radial-gradient(circle at ${((e.clientX-r.left)/r.width)*100}% ${((e.clientY-r.top)/r.height)*100}%, rgba(255,255,255,0.15), rgba(232,232,230,0.6) 60%)`;
+      inner.style.background = `radial-gradient(circle at ${((e.clientX-r.left)/r.width)*100}% ${((e.clientY-r.top)/r.height)*100}%, rgba(212,148,74,0.07), rgba(28,28,32,0.7) 60%)`;
     });
     card.addEventListener('mouseleave', () => { inner.style.transform = ''; inner.style.background = ''; });
   });
 
-  // Render loop
   const clock = new THREE.Clock();
   sphereReady = true;
 
@@ -546,7 +478,6 @@ function initSphere() {
     coreMat.emissiveIntensity = 0.1 + Math.sin(t * 1.2) * 0.08;
     coreMat.opacity           = 0.06 + Math.sin(t * 0.8) * 0.03;
 
-    // Card manipulation
     const lerpSpeed = 0.06;
     cardInfluence.x += (sphereRot.x - cardInfluence.x) * lerpSpeed;
     cardInfluence.y += (sphereRot.y - cardInfluence.y) * lerpSpeed;
@@ -560,7 +491,6 @@ function initSphere() {
         `rotateX(${infX*18*0.4}deg) rotateY(${infY*18*cardBaseOffsets[i]*0.6}deg)`;
     });
 
-    // Slide via sphere drag
     const deltaY = sphereRot.y - prevSphereY;
     prevSphereY  = sphereRot.y;
     if (!isIdle) {
@@ -586,14 +516,8 @@ if (typeof THREE !== 'undefined') {
   window.addEventListener('load', initSphere);
 }
 
-
-
-
-
-
 /* ══════════════════════════════════════════════════════
    ★ EARTH GLOBE — Three.js r128
-   Textura NASA earth-night, nuvens, atmosfera, estrelas
 ══════════════════════════════════════════════════════ */
 let earthGlobeRenderer = null;
 let earthGlobeMesh     = null;
@@ -620,7 +544,6 @@ function initEarthGlobe() {
   const loader = new THREE.TextureLoader();
   loader.crossOrigin = 'anonymous';
 
-  // Terra
   const earthMat = new THREE.MeshPhongMaterial({
     map:         loader.load('https://unpkg.com/three-globe/example/img/earth-night.jpg'),
     bumpMap:     loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
@@ -633,7 +556,6 @@ function initEarthGlobe() {
   earthGlobeMesh.rotation.x = THREE.MathUtils.degToRad(20);
   scene.add(earthGlobeMesh);
 
-  // Nuvens
   const cloudMat = new THREE.MeshPhongMaterial({
     map:         loader.load('https://unpkg.com/three-globe/example/img/earth-clouds.png'),
     transparent: true, opacity: 0.30, depthWrite: false,
@@ -641,14 +563,12 @@ function initEarthGlobe() {
   const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(1.008, 64, 64), cloudMat);
   scene.add(cloudMesh);
 
-  // Atmosfera
   const atmMat = new THREE.MeshPhongMaterial({
     color: 0x4488ff, transparent: true, opacity: 0.07,
     side: THREE.FrontSide, depthWrite: false,
   });
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.06, 64, 64), atmMat));
 
-  // Estrelas
   const starPos = new Float32Array(2500 * 3);
   for (let i = 0; i < 2500; i++) {
     const theta = Math.random() * Math.PI * 2;
@@ -664,13 +584,11 @@ function initEarthGlobe() {
     color: 0xffffff, size: 0.18, sizeAttenuation: true, transparent: true, opacity: 0.9
   })));
 
-  // Luzes
   scene.add(new THREE.AmbientLight(0xffffff, 0.25));
   const sun = new THREE.DirectionalLight(0xffffff, 1.3);
   sun.position.set(5, 3, 5);
   scene.add(sun);
 
-  // Animação
   ;(function animateEarth() {
     requestAnimationFrame(animateEarth);
     earthGlobeMesh.rotation.y += 0.0015;
@@ -679,7 +597,6 @@ function initEarthGlobe() {
   })();
 }
 
-// Lazy init quando a seção entra na viewport
 const earthObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => {
     if (e.isIntersecting) {
@@ -690,10 +607,6 @@ const earthObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.05 });
 const benefitsSec = document.querySelector('.benefits-section');
 if (benefitsSec) earthObserver.observe(benefitsSec);
-
-
-
-
 
 /* ── IntersectionObserver ── */
 const io = new IntersectionObserver(entries => {

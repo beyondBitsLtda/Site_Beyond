@@ -27,19 +27,18 @@
 <!-- ══ IMAGE PRELOAD — WebP direto, sem <picture>, swap via JS funciona corretamente ══ -->
 <script>
 (function(){
-  var saved = localStorage.getItem('bb-theme');
-  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  window.__bbDark = saved !== 'light'; // dark é o padrão; só sai se usuário escolheu light
-  // Injeta preload do WebP correto conforme tema
-  var dark = window.__bbDark;
-  var sfx  = (window.innerWidth * (window.devicePixelRatio || 1)) <= 1600 ? 'mobile' : 'desktop';
-  [dark?('assets/3-'+sfx+'.webp'):('assets/1-'+sfx+'.webp'), dark?('assets/4-'+sfx+'.webp'):('assets/2-'+sfx+'.webp')].forEach(function(href){
+  // Página sempre em modo escuro
+  window.__bbDark = true;
+  localStorage.setItem('bb-theme', 'dark');
+  var sfx = (window.innerWidth * (window.devicePixelRatio || 1)) <= 1600 ? 'mobile' : 'desktop';
+  // Preload das imagens DIURNAS (1 e 2) — UI fica escura mas hero usa foto de dia
+  ['assets/1-'+sfx+'.webp','assets/2-'+sfx+'.webp'].forEach(function(href){
     var l = document.createElement('link');
     l.rel = 'preload'; l.as = 'image'; l.type = 'image/webp';
     l.href = href; l.setAttribute('fetchpriority','high');
     document.head.appendChild(l);
   });
-  if (window.__bbDark) document.documentElement.classList.add('dark-mode');
+  document.documentElement.classList.add('dark-mode');
 })();
 </script>
 
@@ -304,6 +303,316 @@ body.dark-mode .hero-sub p {
   }
   .stats-section { gap: 20px; padding: 40px 16px; }
 }
+
+/* ══════════════════════════════════════════════
+   CICLO DE VIDA DO PROJETO
+══════════════════════════════════════════════ */
+
+/* ── Wrapper geral ── */
+.ciclo-section {
+  background: var(--bg);
+  transition: background 1.2s ease;
+  overflow: hidden;
+}
+
+/* ── HERO INTERNO (robô) — fundo sempre escuro ── */
+.ciclo-hero {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  /* Fundo fixo escuro, independente do tema */
+  background: #080818;
+}
+
+#robotCanvas {
+  position: absolute;
+  right: 0; top: 0;
+  width: 62%; height: 100%;
+  z-index: 1;
+  display: block;
+}
+
+.ciclo-hero-gradient {
+  position: absolute; inset: 0;
+  /* Sempre gradiente do escuro — não varia com o tema */
+  background: linear-gradient(
+    100deg,
+    #080818 0%,
+    rgba(8,8,24,0.88) 30%,
+    rgba(8,8,24,0.20) 58%,
+    transparent 75%
+  );
+  z-index: 3;
+  pointer-events: none;
+}
+/* No modo claro o gradiente continua igual (já hardcoded acima) */
+body.dark-mode .ciclo-hero-gradient {
+  background: linear-gradient(
+    100deg,
+    #080818 0%,
+    rgba(8,8,24,0.88) 30%,
+    rgba(8,8,24,0.20) 58%,
+    transparent 75%
+  );
+}
+
+.ciclo-hero-content {
+  position: absolute; inset: 0;
+  z-index: 5;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 0 7vw 80px;
+  max-width: 640px;
+  pointer-events: none;
+}
+
+.ciclo-hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 12px;
+  opacity: 0;
+  animation: cicloFadeUp 0.8s ease 0.3s forwards;
+}
+.ciclo-line-accent {
+  display: inline-block;
+  width: 28px; height: 1px;
+  background: var(--copper);
+  flex-shrink: 0;
+}
+
+.ciclo-hero-title {
+  font-family: var(--font-hero);
+  font-size: clamp(100px, 16vw, 220px);
+  line-height: 0.88;
+  letter-spacing: 0.02em;
+  /* Sempre claro — fundo é sempre escuro */
+  color: #e8e8e6;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.2);
+  opacity: 0;
+  animation: cicloFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.5s forwards;
+}
+
+.ciclo-hero-sub {
+  max-width: 340px;
+  margin-top: 18px;
+  opacity: 0;
+  animation: cicloFadeUp 0.8s ease 0.8s forwards;
+}
+.ciclo-hero-sub p {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  /* Sempre claro — fundo é sempre escuro */
+  color: rgba(232,232,230,0.88) !important;
+  background: rgba(8,8,24,0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 10px 14px;
+  border-radius: 6px;
+  border-left: 2px solid var(--copper);
+}
+body.dark-mode .ciclo-hero-sub p { color: rgba(232,232,230,0.88) !important; }
+
+/* Data tags do ciclo */
+.ciclo-data-tags {
+  position: absolute;
+  right: 3vw; top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+  display: flex; flex-direction: column; gap: 16px;
+  opacity: 0;
+  animation: cicloFadeIn 0.8s ease 1.2s forwards;
+}
+.ciclo-data-tag {
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  /* Sempre estilo escuro */
+  color: rgba(232,232,230,0.55);
+  background: rgba(14,14,30,0.75);
+  backdrop-filter: blur(8px);
+  padding: 5px 10px;
+  border-radius: 3px;
+  display: flex; align-items: center; gap: 6px;
+}
+body.dark-mode .ciclo-data-tag {
+  color: rgba(232,232,230,0.55);
+  background: rgba(14,14,16,0.75);
+}
+.ciclo-dot-pulse {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--copper);
+  animation: cicloDotp 2s ease infinite;
+  flex-shrink: 0;
+}
+
+/* ── TIMELINE ── */
+.ciclo-body {
+  padding: 80px 7vw 100px;
+  position: relative;
+}
+
+.ciclo-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.ciclo-timeline::before {
+  content: '';
+  position: absolute;
+  left: 27px; top: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--copper) 8%, var(--copper) 92%, transparent);
+  opacity: 0.28;
+  transition: opacity 0.6s ease;
+}
+
+.ciclo-step {
+  display: flex;
+  gap: 48px;
+  padding: 44px 0;
+  border-bottom: 1px solid rgba(10,10,10,0.06);
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.7s ease, transform 0.7s ease, border-color 0.6s ease;
+}
+body.dark-mode .ciclo-step { border-bottom-color: rgba(232,232,230,0.06); }
+.ciclo-step.ciclo-visible { opacity: 1; transform: translateX(0); }
+.ciclo-step:last-child { border-bottom: none; }
+
+.ciclo-step-num {
+  flex-shrink: 0;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 1px solid rgba(10,10,10,0.12);
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-hero);
+  font-size: 1.4rem;
+  color: var(--copper);
+  position: relative; z-index: 1;
+  align-self: flex-start;
+  margin-top: 4px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 1.2s ease;
+}
+.ciclo-step:hover .ciclo-step-num {
+  box-shadow: 0 0 0 6px rgba(184,115,51,0.12);
+  border-color: var(--copper);
+}
+body.dark-mode .ciclo-step-num { border-color: rgba(232,232,230,0.12); }
+
+.ciclo-step-content { flex: 1; }
+
+.ciclo-step-phase {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 8px;
+  opacity: 0.85;
+}
+
+.ciclo-step-title {
+  font-family: var(--font-hero);
+  font-size: clamp(22px, 2.6vw, 36px);
+  letter-spacing: 0.04em;
+  color: var(--black);
+  margin-bottom: 10px;
+  line-height: 1;
+  transition: color 0.6s ease;
+}
+
+.ciclo-step-intro {
+  font-family: var(--font-body);
+  font-size: 0.93rem;
+  color: rgba(10,10,10,0.52);
+  margin-bottom: 20px;
+  line-height: 1.6;
+  transition: color 0.6s ease;
+}
+body.dark-mode .ciclo-step-intro { color: rgba(232,232,230,0.48); }
+
+.ciclo-step-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.ciclo-detail-card {
+  background: color-mix(in srgb, var(--black) 4%, transparent);
+  border: 1px solid rgba(10,10,10,0.06);
+  border-radius: 6px;
+  padding: 16px 18px;
+  transition: background 1.2s ease, border-color 0.6s ease, transform 0.3s ease;
+}
+.ciclo-detail-card:hover { transform: translateY(-2px); }
+body.dark-mode .ciclo-detail-card {
+  background: rgba(232,232,230,0.04);
+  border-color: rgba(232,232,230,0.06);
+}
+
+.ciclo-detail-label {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 6px;
+}
+
+.ciclo-detail-text {
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: rgba(10,10,10,0.58);
+  transition: color 0.6s ease;
+}
+body.dark-mode .ciclo-detail-text { color: rgba(232,232,230,0.52); }
+
+/* ── Keyframes ciclo ── */
+@keyframes cicloFadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cicloFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes cicloDotp {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50%       { transform: scale(1.4); opacity: 1; }
+}
+
+/* ── Responsive ciclo ── */
+@media (max-width: 900px) {
+  #robotCanvas { width: 100%; opacity: 0.38; }
+  .ciclo-step-details { grid-template-columns: 1fr; }
+  .ciclo-body { padding: 60px 7vw 80px; }
+}
+@media (max-width: 600px) {
+  #robotCanvas { opacity: 0.22; }
+  .ciclo-hero-content { padding-left: 20px; padding-right: 20px; padding-bottom: 100px; }
+  .ciclo-hero-gradient {
+    background: linear-gradient(180deg,
+      transparent 0%, transparent 15%,
+      rgba(8,8,24,0.92) 52%,
+      #080818 100%
+    );
+  }
+  .ciclo-hero-title { font-size: clamp(72px, 22vw, 140px); }
+  .ciclo-data-tags { display: none; }
+  .ciclo-timeline::before { left: 20px; }
+  .ciclo-step { gap: 20px; padding: 32px 0; }
+  .ciclo-step-num { width: 42px; height: 42px; font-size: 1.1rem; }
+  .ciclo-step-details { grid-template-columns: 1fr; }
+  .ciclo-body { padding: 48px 20px 64px; }
+}
 </style>
 </head>
 <body>
@@ -330,21 +639,9 @@ body.dark-mode .hero-sub p {
     <ul class="nav-links">
       <li><a href="#solucoes">Serviços</a></li>
       <li><a href="#resultados">Resultados</a></li>
-      <li><a href="#solucoes">Soluções</a></li>
+      <li><a href="#processo">Processo</a></li>
       <li><a href="#contato">Contato</a></li>
     </ul>
-    <button class="theme-toggle" id="themeToggle" aria-label="Alternar modo escuro">
-      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-      </svg>
-      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-      </svg>
-    </button>
   </div>
 </nav>
 
@@ -548,6 +845,153 @@ body.dark-mode .hero-sub p {
     </div><!-- /hand-stage -->
   </section>
 
+  <!-- ══════════════════════════════════════════════════════
+       CICLO DE VIDA DO PROJETO
+  ══════════════════════════════════════════════════════ -->
+  <section class="ciclo-section" id="processo" aria-labelledby="cicloTitle">
+
+    <!-- Hero interno com robô Three.js -->
+    <div class="ciclo-hero">
+      <canvas id="robotCanvas"></canvas>
+      <div class="ciclo-hero-gradient"></div>
+      <div class="ciclo-hero-content">
+        <div class="ciclo-hero-eyebrow"><span class="ciclo-line-accent"></span> metodologia beyond bits</div>
+        <h2 class="ciclo-hero-title" id="cicloTitle">CICLO<br>DE VIDA</h2>
+        <div class="ciclo-hero-sub">
+          <p>Do planejamento à operação — entregamos projetos com processo claro, transparência total e qualidade que escala com sua empresa.</p>
+        </div>
+      </div>
+      <div class="ciclo-data-tags">
+        <div class="ciclo-data-tag"><span class="ciclo-dot-pulse"></span> PROCESSO_ÁGIL</div>
+        <div class="ciclo-data-tag"><span class="ciclo-dot-pulse"></span> 6 FASES CLARAS</div>
+        <div class="ciclo-data-tag"><span class="ciclo-dot-pulse"></span> ZERO SURPRESAS</div>
+      </div>
+    </div>
+
+    <!-- Timeline das 6 etapas -->
+    <div class="ciclo-body">
+
+      <div class="ciclo-timeline">
+
+        <div class="ciclo-step" data-ciclo-step>
+          <div class="ciclo-step-num">1</div>
+          <div class="ciclo-step-content">
+            <div class="ciclo-step-phase">Fase 01 · Planejamento</div>
+            <h3 class="ciclo-step-title">IMERSÃO E ESPECIFICAÇÃO</h3>
+            <p class="ciclo-step-intro">O projeto começa com o entendimento profundo do negócio do cliente.</p>
+            <div class="ciclo-step-details">
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">O que fazemos</div>
+                <div class="ciclo-detail-text">Mapeamento de regras de negócio, perfis de usuário, fluxos de trabalho e integrações necessárias.</div>
+              </div>
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">Entrega</div>
+                <div class="ciclo-detail-text">O Documento de Requisitos de Software (DRS), que atua como o contrato técnico do que será construído, garantindo alinhamento total.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ciclo-step" data-ciclo-step>
+          <div class="ciclo-step-num">2</div>
+          <div class="ciclo-step-content">
+            <div class="ciclo-step-phase">Fase 02 · Aprovação de Layout</div>
+            <h3 class="ciclo-step-title">DESIGN E PROTOTIPAÇÃO VISUAL</h3>
+            <p class="ciclo-step-intro">Antes de escrever qualquer linha de código de backend, validamos a interface visual.</p>
+            <div class="ciclo-step-details">
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">O que fazemos</div>
+                <div class="ciclo-detail-text">Criação de protótipos de alta fidelidade baseados na identidade visual da marca.</div>
+              </div>
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">Validação</div>
+                <div class="ciclo-detail-text">O cliente navega pelas telas estáticas para aprovar usabilidade, cores e disposição das informações antes da programação pesada.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ciclo-step" data-ciclo-step>
+          <div class="ciclo-step-num">3</div>
+          <div class="ciclo-step-content">
+            <div class="ciclo-step-phase">Fase 03 · Construção</div>
+            <h3 class="ciclo-step-title">DESENVOLVIMENTO EM CICLOS</h3>
+            <p class="ciclo-step-intro">O desenvolvimento não é uma "caixa preta". O sistema é construído de forma modular.</p>
+            <div class="ciclo-step-details">
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">O que fazemos</div>
+                <div class="ciclo-detail-text">Transformamos o protótipo aprovado em sistema funcional. A arquitetura de banco de dados é criada e as regras de negócio são programadas.</div>
+              </div>
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">Transparência</div>
+                <div class="ciclo-detail-text">O desenvolvimento pode ser dividido em Sprints, permitindo que o cliente acompanhe a evolução de módulos específicos ao longo do cronograma.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ciclo-step" data-ciclo-step>
+          <div class="ciclo-step-num">4</div>
+          <div class="ciclo-step-content">
+            <div class="ciclo-step-phase">Fase 04 · Quality Assurance</div>
+            <h3 class="ciclo-step-title">TESTES E HOMOLOGAÇÃO</h3>
+            <p class="ciclo-step-intro">Fase crítica para garantir que o sistema opere sem falhas em cenários reais.</p>
+            <div class="ciclo-step-details">
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">Testes Internos</div>
+                <div class="ciclo-detail-text">Nossa equipe realiza testes de estresse, segurança, responsividade em diferentes telas e validação de todas as regras de negócio.</div>
+              </div>
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">Homologação (UAT)</div>
+                <div class="ciclo-detail-text">Liberamos um ambiente "Sandbox" para que a equipe do cliente utilize o sistema com dados fictícios. A aprovação é o sinal verde para o lançamento.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ciclo-step" data-ciclo-step>
+          <div class="ciclo-step-num">5</div>
+          <div class="ciclo-step-content">
+            <div class="ciclo-step-phase">Fase 05 · Go-Live</div>
+            <h3 class="ciclo-step-title">IMPLANTAÇÃO E TREINAMENTO</h3>
+            <p class="ciclo-step-intro">O sistema é publicado oficialmente para o uso diário.</p>
+            <div class="ciclo-step-details">
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">O que fazemos</div>
+                <div class="ciclo-detail-text">Configuração dos servidores de produção, importação de base de dados legada (se houver) e criação dos acessos dos usuários administradores.</div>
+              </div>
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">Onboarding</div>
+                <div class="ciclo-detail-text">Treinamento prático com os usuários-chave para garantir a adoção correta da nova ferramenta desde o primeiro dia.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ciclo-step" data-ciclo-step>
+          <div class="ciclo-step-num">6</div>
+          <div class="ciclo-step-content">
+            <div class="ciclo-step-phase">Fase 06 · Pós-Lançamento</div>
+            <h3 class="ciclo-step-title">ESTABILIZAÇÃO E SUPORTE EVOLUTIVO</h3>
+            <p class="ciclo-step-intro">O lançamento é o começo da operação.</p>
+            <div class="ciclo-step-details">
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">Ajuste de Rota</div>
+                <div class="ciclo-detail-text">Foco total em garantir a estabilidade da plataforma, corrigir eventuais comportamentos atípicos e calibrar o escopo entregue nos primeiros meses.</div>
+              </div>
+              <div class="ciclo-detail-card">
+                <div class="ciclo-detail-label">Evolução Contínua</div>
+                <div class="ciclo-detail-text">Após a estabilização, iniciamos o ciclo de novas melhorias, criando funcionalidades conforme a empresa cresce e demanda novos recursos.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /ciclo-timeline -->
+    </div><!-- /ciclo-body -->
+  </section>
+  <!-- ══ /CICLO DE VIDA ══ -->
+
   <footer id="contato">
     <div class="footer-logo">Beyond Bits</div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
@@ -568,5 +1012,170 @@ body.dark-mode .hero-sub p {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/script.js"></script>
 <script src="js/whatsapp.js"></script>
+
+<!-- ══ ROBÔ THREE.JS — Ciclo de Vida ══ -->
+<script>
+(function initCicloRobot() {
+  const canvas = document.getElementById('robotCanvas');
+  if (!canvas) return;
+
+  function getSize() {
+    return { w: canvas.offsetWidth || window.innerWidth * 0.62, h: canvas.offsetHeight || window.innerHeight };
+  }
+  let { w, h } = getSize();
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(w, h);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+  camera.position.set(0, 2.2, 3.0);
+  camera.lookAt(0, 1.9, 0);
+
+  /* ── Materials — cores SEMPRE do modo noturno ── */
+  const isDarkNow = () => true; /* robô do ciclo é sempre noturno */
+  const getC = () => ({
+    body:   0x1a1a2e,
+    accent: 0xd4944a,
+    dark:   0x0d0d1a,
+    visor:  0x00d4ff,
+    glow:   0x00d4ff,
+    joint:  0x2a2a3e,
+  });
+
+  let C = getC();
+  const mBody   = new THREE.MeshStandardMaterial({ color: C.body,   metalness: 0.6, roughness: 0.3 });
+  const mAccent = new THREE.MeshStandardMaterial({ color: C.accent, metalness: 0.8, roughness: 0.2 });
+  const mDark   = new THREE.MeshStandardMaterial({ color: C.dark,   metalness: 0.4, roughness: 0.5 });
+  const mVisor  = new THREE.MeshStandardMaterial({ color: C.visor,  metalness: 1.0, roughness: 0.0, emissive: new THREE.Color(C.glow), emissiveIntensity: 0.7 });
+  const mJoint  = new THREE.MeshStandardMaterial({ color: C.joint,  metalness: 0.7, roughness: 0.3 });
+
+  function updateRobotColors() {
+    /* Robô do ciclo: cores sempre diurnas — não reage ao tema */
+  }
+
+  /* ── Helpers ── */
+  const bx  = (w,h,d,m,px=0,py=0,pz=0) => { const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); o.position.set(px,py,pz); o.castShadow=true; o.receiveShadow=true; return o; };
+  const cy  = (rt,rb,h,s,m,px=0,py=0,pz=0,rx=0,ry=0,rz=0) => { const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,s),m); o.position.set(px,py,pz); o.rotation.set(rx,ry,rz); o.castShadow=true; return o; };
+  const sp  = (r,m,px=0,py=0,pz=0) => { const o=new THREE.Mesh(new THREE.SphereGeometry(r,16,16),m); o.position.set(px,py,pz); o.castShadow=true; return o; };
+
+  const robot = new THREE.Group();
+  robot.position.y = -0.2; /* leve descida para cabeça+torso ficarem centrados */
+  scene.add(robot);
+
+  /* HEAD */
+  const head = new THREE.Group();
+  head.position.set(0, 2.45, 0);
+  head.add(bx(0.72,0.62,0.62,mBody));
+  head.add(bx(0.52,0.22,0.05,mVisor, 0,0.04,0.32));
+  [-0.14,0.14].forEach(x => head.add(sp(0.055,mVisor,x,0.04,0.33)));
+  [-0.42,0.42].forEach(x => { head.add(bx(0.08,0.38,0.42,mDark,x,0,0)); head.add(sp(0.04,mAccent,x,0.05,0.18)); });
+  head.add(cy(0.04,0.04,0.1,8,mDark, 0,0.38,0));
+  const antRod = cy(0.025,0.025,0.28,8,mJoint, 0,0.58,0);
+  head.add(antRod);
+  const antTip = sp(0.06,mAccent, 0,0.74,0);
+  head.add(antTip);
+  head.add(bx(0.48,0.06,0.06,mDark, 0,-0.26,0.3));
+  robot.add(head);
+
+  /* NECK */
+  robot.add(cy(0.12,0.14,0.18,8,mJoint, 0,2.22,0));
+
+  /* TORSO */
+  const torso = new THREE.Group();
+  torso.position.set(0,1.45,0);
+  torso.add(bx(0.88,0.88,0.5,mBody));
+  torso.add(bx(0.52,0.44,0.06,mDark, 0,0.08,0.28));
+  [-0.14,0.14].forEach(x => torso.add(bx(0.04,0.32,0.04,mAccent, x,0.08,0.31)));
+  const core = new THREE.Mesh(new THREE.CircleGeometry(0.1,16), mVisor);
+  core.position.set(0,0.08,0.315); torso.add(core);
+  [-0.56,0.56].forEach(x => torso.add(bx(0.18,0.24,0.46,mAccent, x,0.3,0)));
+  torso.add(bx(0.72,0.18,0.42,mDark, 0,-0.52,0));
+  robot.add(torso);
+
+  /* ARMS */
+  [-1,1].forEach(s => {
+    const x = s*0.72;
+    robot.add(bx(0.24,0.5,0.24,mBody, x,1.5,0));
+    robot.add(sp(0.14,mJoint, x,1.2,0));
+    robot.add(bx(0.2,0.44,0.2,mBody, x,0.92,0));
+    robot.add(bx(0.06,0.28,0.06,mAccent, x+s*0.08,0.92,0.12));
+    robot.add(bx(0.22,0.22,0.14,mDark, x+s*0.04,0.65,0));
+    for(let i=0;i<3;i++) robot.add(bx(0.05,0.12,0.06,mJoint, x+s*0.04+(i-1)*0.07,0.52,0.04));
+  });
+
+  /* HIPS + LEGS */
+  robot.add(bx(0.76,0.2,0.44,mDark, 0,0.84,0));
+  [-1,1].forEach(s => {
+    const x = s*0.28;
+    robot.add(bx(0.28,0.52,0.3,mBody, x,0.54,0));
+    robot.add(sp(0.15,mJoint, x,0.24,0.08));
+    robot.add(bx(0.24,0.48,0.26,mBody, x,-0.04,0));
+    robot.add(bx(0.06,0.3,0.06,mAccent, x+s*0.08,-0.04,0.14));
+    robot.add(bx(0.28,0.14,0.38,mDark, x,-0.35,0.06));
+  });
+
+  /* LIGHTS — iluminação para robô noturno */
+  scene.add(new THREE.AmbientLight(0x111133, 0.6));
+  const keyL = new THREE.DirectionalLight(0xffffff, 1.2); keyL.position.set(3,6,4); keyL.castShadow=true; scene.add(keyL);
+  const fillL = new THREE.DirectionalLight(0x4488ff, 0.7); fillL.position.set(-3,2,2); scene.add(fillL);
+  const rimL  = new THREE.DirectionalLight(0xd4944a, 0.8); rimL.position.set(2,5,-4); scene.add(rimL);
+  const pointGlow = new THREE.PointLight(0x00d4ff, 1.2, 4);
+  pointGlow.position.set(0,1.45,1.5); scene.add(pointGlow);
+
+  /* PARTICLES */
+  const pCount = 60;
+  const pGeo = new THREE.BufferGeometry();
+  const pPos = new Float32Array(pCount*3);
+  for(let i=0;i<pCount;i++){ pPos[i*3]=(Math.random()-0.5)*5; pPos[i*3+1]=Math.random()*4; pPos[i*3+2]=(Math.random()-0.5)*3-1; }
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos,3));
+  const particlesMat = new THREE.PointsMaterial({ color: C.accent, size: 0.025, transparent: true, opacity: 0.5 });
+  const particles = new THREE.Points(pGeo, particlesMat);
+  scene.add(particles);
+
+  /* Escuta mudança de tema do site (dispara quando o script.js altera dark-mode) */
+  const themeObserver = new MutationObserver(updateRobotColors);
+  themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  /* RESIZE */
+  window.addEventListener('resize', () => {
+    const s = getSize();
+    camera.aspect = s.w / s.h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(s.w, s.h);
+  });
+
+  /* LOOP */
+  let t = 0;
+  (function loop() {
+    requestAnimationFrame(loop);
+    t += 0.012;
+    robot.position.y = Math.sin(t*0.8)*0.06;
+    robot.rotation.y = Math.sin(t*0.4)*0.12;
+    head.rotation.y  = Math.sin(t*0.6)*0.18;
+    head.rotation.x  = Math.sin(t*0.45)*0.06;
+    antTip.position.y = 0.74 + Math.sin(t*2.2)*0.03;
+    const pp = particles.geometry.attributes.position.array;
+    for(let i=0;i<pCount;i++){ pp[i*3+1]+=0.003; if(pp[i*3+1]>4.5) pp[i*3+1]=-0.5; }
+    particles.geometry.attributes.position.needsUpdate = true;
+    particles.rotation.y += 0.001;
+    mVisor.emissiveIntensity = 0.65 + Math.sin(t*1.8)*0.18;
+    pointGlow.intensity = 1.0 + Math.sin(t*1.8)*0.22;
+    renderer.render(scene, camera);
+  })();
+
+  /* SCROLL REVEAL — steps da timeline */
+  const stepObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('ciclo-visible'); });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('[data-ciclo-step]').forEach((el, i) => {
+    el.style.transitionDelay = (i * 0.1) + 's';
+    stepObserver.observe(el);
+  });
+})();
+</script>
 </body>
 </html>
