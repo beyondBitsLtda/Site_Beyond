@@ -104,6 +104,9 @@ nav {
   border-bottom: 1px solid rgba(10,10,10,0.06);
   padding: 12px 48px;
   transition: background 1.2s ease, border-color 0.6s ease;
+  /* Performance: isola repaint do nav da página */
+  contain: layout style paint;
+  will-change: backdrop-filter;
 }
 body.dark-mode nav {
   border-bottom-color: rgba(232,232,230,0.06);
@@ -614,8 +617,123 @@ body.dark-mode .ciclo-detail-text { color: rgba(232,232,230,0.52); }
   .ciclo-body { padding: 48px 20px 64px; }
 }
 </style>
+
+<style>
+/* ═══════════ PERFORMANCE TUNING ═══════════ */
+/* ═══════════ SCROLL PERFORMANCE — visual preservado ═══════════ */
+/* Durante scroll ativo, desliga blur pesado. Religa ao parar.
+   Usuário não percebe (blur aparece em ~200ms após parar). */
+body.is-scrolling nav,
+body.is-scrolling .hero-sub p,
+body.is-scrolling .data-tag,
+body.is-scrolling .ciclo-hero-sub p,
+body.is-scrolling .ciclo-data-tag,
+body.is-scrolling .seg-hero-sub p,
+body.is-scrolling .seg-data-tag,
+body.is-scrolling .seg-card,
+body.is-scrolling .seg-badge {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Grain overlay: reduz opacidade durante scroll (menos paint) */
+body.is-scrolling::before {
+  opacity: 0.2 !important;
+}
+
+/* Transições pesadas: desliga durante scroll */
+body.is-scrolling * {
+  transition-duration: 0s !important;
+}
+
+/* Força camada de composição nos canvases (não repinta no scroll) */
+#robotCanvas, #segVaultCanvas, #sphereCanvas, #earthGlobeViz canvas {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Promove seções pesadas pra camadas independentes */
+.hero, .ciclo-hero, .seg-hero, .benefits-section {
+  transform: translateZ(0);
+}
+
+/* Reduz repaint ao fazer scroll — grain fica parado */
+body::before { will-change: auto; transform: translateZ(0); }
+
+/* Pausa TODAS as animações CSS quando a aba perde foco */
+body.page-hidden *,
+body.page-hidden *::before,
+body.page-hidden *::after {
+  animation-play-state: paused !important;
+}
+
+/* Reduz custo de backdrop-filter — grande vilão em GPU integrada */
+@media (max-width: 900px) {
+  nav,
+  .hero-sub p,
+  .ciclo-hero-sub p,
+  .seg-hero-sub p,
+  .ciclo-data-tag,
+  .seg-data-tag,
+  body.dark-mode .seg-card,
+  body.dark-mode .seg-badge {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Respeita quem desabilita animações no sistema */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Promove hero canvas pra camada de composição própria */
+#robotCanvas, #segVaultCanvas, #sphereCanvas, #pixelCanvas {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+</style>
+
 </head>
 <body>
+
+<script>
+/* ═══ PERFORMANCE — pausa animações e otimiza scroll ═══ */
+(function() {
+  // Pausa quando aba escondida
+  document.addEventListener('visibilitychange', () => {
+    document.body.classList.toggle('page-hidden', document.hidden);
+  });
+
+  // Detecta scroll ativo — desliga blur temporariamente
+  let scrollTimer = null;
+  let isScrolling = false;
+  const body = document.body;
+
+  function onScroll() {
+    if (!isScrolling) {
+      body.classList.add('is-scrolling');
+      isScrolling = true;
+    }
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      body.classList.remove('is-scrolling');
+      isScrolling = false;
+    }, 180);
+  }
+
+  // passive: true é crítico — deixa o browser scrollar sem esperar JS
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('wheel', onScroll, { passive: true });
+  window.addEventListener('touchmove', onScroll, { passive: true });
+})();
+</script>
+
 
 <!-- Aplica dark mode antes do paint para evitar flash -->
 <script>if(window.__bbDark){document.body.classList.add('dark-mode');}</script>
@@ -1464,6 +1582,14 @@ body.dark-mode .seg-badge {
   .seg-badge { padding: 26px 24px; gap: 18px; margin-top: 56px; }
   .seg-badge-seal { width: 52px; height: 52px; }
 }
+
+/* ═══ OTIMIZAÇÃO — pular layout de seções fora de tela ═══ */
+.ciclo-section,
+.seg-section,
+.benefits-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
+}
 </style>
 
 <!-- ═══════════ MARKUP ═══════════ -->
@@ -1675,7 +1801,7 @@ body.dark-mode .seg-badge {
   let { w, h } = getSize();
 
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.setSize(w, h);
 
   const scene  = new THREE.Scene();
@@ -1878,8 +2004,23 @@ body.dark-mode .seg-badge {
 
   /* ═══ 10) LOOP ═══ */
   let t = 0;
+  let vaultVisible = false;
+  let vaultPageVisible = !document.hidden;
+
+  const vaultVizObs = new IntersectionObserver(
+    (entries) => { vaultVisible = entries[0].isIntersecting; },
+    { threshold: 0.01 }
+  );
+  vaultVizObs.observe(canvas);
+
+  document.addEventListener('visibilitychange', () => {
+    vaultPageVisible = !document.hidden;
+  });
+
   function loop() {
     requestAnimationFrame(loop);
+    // Pular frames quando canvas não está visível ou aba em background
+    if (!vaultVisible || !vaultPageVisible) return;
     t += 0.012;
 
     /* suavização do drag */
@@ -1973,10 +2114,9 @@ body.dark-mode .seg-badge {
   let { w, h } = getSize();
 
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.setSize(w, h);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = false;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
@@ -2098,8 +2238,22 @@ body.dark-mode .seg-badge {
 
   /* LOOP */
   let t = 0;
+  let robotVisible = false;
+  let robotPageVisible = !document.hidden;
+
+  const robotVizObs = new IntersectionObserver(
+    (entries) => { robotVisible = entries[0].isIntersecting; },
+    { threshold: 0.01 }
+  );
+  robotVizObs.observe(canvas);
+
+  document.addEventListener('visibilitychange', () => {
+    robotPageVisible = !document.hidden;
+  });
+
   (function loop() {
     requestAnimationFrame(loop);
+    if (!robotVisible || !robotPageVisible) return;
     t += 0.012;
     robot.position.y = Math.sin(t*0.8)*0.06;
     robot.rotation.y = Math.sin(t*0.4)*0.12;
