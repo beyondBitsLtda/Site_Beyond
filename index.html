@@ -640,6 +640,7 @@ body.dark-mode .ciclo-detail-text { color: rgba(232,232,230,0.52); }
       <li><a href="#solucoes">Serviços</a></li>
       <li><a href="#resultados">Resultados</a></li>
       <li><a href="#processo">Processo</a></li>
+      <li><a href="#seguranca">Segurança</a></li>
       <li><a href="#contato">Contato</a></li>
     </ul>
   </div>
@@ -992,6 +993,641 @@ body.dark-mode .ciclo-detail-text { color: rgba(232,232,230,0.52); }
   </section>
   <!-- ══ /CICLO DE VIDA ══ -->
 
+<!-- ═══════════════════════════════════════════════════════════════════
+     SEGURANÇA DE DADOS & LGPD
+     —————————————————————————————————————————————————————————————————
+     Drop-in section: cole este bloco INTEIRO no seu index.html
+     LOGO ANTES de `<footer id="contato">` (depois do </section> do ciclo).
+
+     CSS usa prefixo .seg- → não colide com nada do seu site.
+     O <style> e o <script> ficam DENTRO deste bloco para ser 100% plug-and-play.
+═══════════════════════════════════════════════════════════════════ -->
+
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   SEÇÃO SEGURANÇA — herda variáveis (--bg, --copper, fontes) do site
+══════════════════════════════════════════════════════════════════ */
+
+.seg-section {
+  background: var(--bg);
+  transition: background 1.2s ease;
+  overflow: hidden;
+}
+
+/* ── HERO INTERNO: fundo sempre escuro, igual ao ciclo ── */
+.seg-hero {
+  position: relative;
+  height: 100vh;
+  min-height: 640px;
+  overflow: hidden;
+  background: #080818;
+}
+
+#segVaultCanvas {
+  position: absolute;
+  right: 0; top: 0;
+  width: 62%; height: 100%;
+  z-index: 1;
+  display: block;
+  cursor: grab;
+}
+#segVaultCanvas:active { cursor: grabbing; }
+
+.seg-hero-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    100deg,
+    #080818 0%,
+    rgba(8,8,24,0.88) 30%,
+    rgba(8,8,24,0.20) 58%,
+    transparent 75%
+  );
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Grade sutil — reforça ideia de "dados em malha" */
+.seg-hero-grid {
+  position: absolute; inset: 0;
+  z-index: 2;
+  opacity: 0.15;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(212,148,74,0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212,148,74,0.25) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: radial-gradient(ellipse 70% 60% at 75% 50%, black 20%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 75% 50%, black 20%, transparent 75%);
+}
+
+.seg-hero-content {
+  position: absolute; inset: 0;
+  z-index: 5;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 0 7vw 80px;
+  max-width: 720px;
+  pointer-events: none;
+}
+
+.seg-hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 12px;
+  opacity: 0;
+  animation: segFadeUp 0.8s ease 0.3s forwards;
+}
+.seg-line-accent {
+  display: inline-block;
+  width: 28px; height: 1px;
+  background: var(--copper);
+  flex-shrink: 0;
+}
+
+.seg-hero-title {
+  font-family: var(--font-hero);
+  font-size: clamp(84px, 13vw, 200px);
+  line-height: 0.88;
+  letter-spacing: 0.02em;
+  color: #e8e8e6;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.2);
+  opacity: 0;
+  animation: segFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.5s forwards;
+}
+.seg-hero-title .seg-accent {
+  color: var(--copper);
+  position: relative;
+}
+.seg-hero-title .seg-accent::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: 8%;
+  width: 100%; height: 6px;
+  background: var(--copper);
+  opacity: 0.35;
+  filter: blur(8px);
+}
+
+.seg-hero-sub {
+  max-width: 400px;
+  margin-top: 18px;
+  opacity: 0;
+  animation: segFadeUp 0.8s ease 0.8s forwards;
+}
+.seg-hero-sub p {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: rgba(232,232,230,0.88) !important;
+  background: rgba(8,8,24,0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 10px 14px;
+  border-radius: 6px;
+  border-left: 2px solid var(--copper);
+}
+
+/* Data tags do hero (igual ao ciclo) */
+.seg-data-tags {
+  position: absolute;
+  right: 3vw; top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+  display: flex; flex-direction: column; gap: 16px;
+  opacity: 0;
+  animation: segFadeIn 0.8s ease 1.2s forwards;
+  pointer-events: none;
+}
+.seg-data-tag {
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(232,232,230,0.55);
+  background: rgba(14,14,30,0.75);
+  backdrop-filter: blur(8px);
+  padding: 5px 10px;
+  border-radius: 3px;
+  display: flex; align-items: center; gap: 6px;
+}
+.seg-dot-pulse {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--copper);
+  animation: segDotp 2s ease infinite;
+  flex-shrink: 0;
+}
+
+/* Hint "arraste para girar" no canvas */
+.seg-drag-hint {
+  position: absolute;
+  bottom: 32px; right: 6vw;
+  z-index: 6;
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(232,232,230,0.4);
+  display: flex; align-items: center; gap: 8px;
+  opacity: 0;
+  animation: segFadeIn 0.8s ease 1.5s forwards;
+  pointer-events: none;
+}
+.seg-drag-hint-icon {
+  display: inline-block;
+  animation: segDragHint 2.8s ease infinite;
+}
+
+/* ═══════════ CORPO: CARDS DE PRINCÍPIOS ═══════════ */
+.seg-body {
+  padding: 100px 7vw 120px;
+  position: relative;
+}
+
+.seg-body-header {
+  max-width: 820px;
+  margin: 0 auto 72px;
+  text-align: center;
+}
+.seg-body-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 16px;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.seg-body-eyebrow::before,
+.seg-body-eyebrow::after {
+  content: '';
+  display: inline-block;
+  width: 22px; height: 1px;
+  background: var(--copper);
+  opacity: 0.6;
+}
+.seg-body-title {
+  font-family: var(--font-hero);
+  font-size: clamp(36px, 5vw, 64px);
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  color: var(--black);
+  margin-bottom: 18px;
+  transition: color 0.6s ease;
+}
+.seg-body-lead {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: rgba(10,10,10,0.68);
+  max-width: 620px;
+  margin: 0 auto;
+  transition: color 0.6s ease;
+}
+body.dark-mode .seg-body-lead { color: rgba(232,232,230,0.7); }
+
+/* Grid de cards */
+.seg-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.seg-card {
+  position: relative;
+  padding: 36px 28px 32px;
+  background: var(--bg);
+  border: 1px solid rgba(10,10,10,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: background 1.2s ease, border-color 0.6s ease, transform 0.5s cubic-bezier(0.16,1,0.3,1);
+  opacity: 0;
+  transform: translateY(24px);
+}
+.seg-card.seg-visible { opacity: 1; transform: translateY(0); }
+body.dark-mode .seg-card {
+  border-color: rgba(232,232,230,0.1);
+  background: rgba(14,14,22,0.6);
+  backdrop-filter: blur(12px);
+}
+
+.seg-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--copper);
+}
+
+/* Linha de destaque no topo do card */
+.seg-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  height: 2px;
+  width: 40px;
+  background: var(--copper);
+  transition: width 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+.seg-card:hover::before { width: 100%; }
+
+/* Glow sutil no hover */
+.seg-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 0%, rgba(212,148,74,0.08) 0%, transparent 55%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+.seg-card:hover::after { opacity: 1; }
+
+.seg-card-num {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  color: var(--copper);
+  margin-bottom: 20px;
+  display: block;
+}
+
+.seg-card-icon {
+  width: 44px; height: 44px;
+  margin-bottom: 22px;
+  color: var(--copper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.seg-card-icon svg {
+  width: 100%; height: 100%;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.seg-card-title {
+  font-family: var(--font-hero);
+  font-size: 1.6rem;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  color: var(--black);
+  margin-bottom: 14px;
+  transition: color 0.6s ease;
+}
+
+.seg-card-text {
+  font-family: var(--font-body);
+  font-size: 0.93rem;
+  line-height: 1.6;
+  color: rgba(10,10,10,0.7);
+  margin-bottom: 18px;
+  transition: color 0.6s ease;
+}
+body.dark-mode .seg-card-text { color: rgba(232,232,230,0.72); }
+
+.seg-card-tag {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(10,10,10,0.42);
+  padding-top: 14px;
+  border-top: 1px solid rgba(10,10,10,0.08);
+  transition: color 0.6s ease, border-color 0.6s ease;
+}
+body.dark-mode .seg-card-tag {
+  color: rgba(232,232,230,0.42);
+  border-top-color: rgba(232,232,230,0.1);
+}
+
+/* Selo final LGPD */
+.seg-badge {
+  margin: 80px auto 0;
+  max-width: 720px;
+  padding: 36px 40px;
+  border: 1px solid rgba(10,10,10,0.1);
+  border-left: 3px solid var(--copper);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  transition: background 1.2s ease, border-color 0.6s ease;
+}
+body.dark-mode .seg-badge {
+  border-color: rgba(232,232,230,0.1);
+  border-left-color: var(--copper);
+  background: rgba(14,14,22,0.5);
+  backdrop-filter: blur(12px);
+}
+
+.seg-badge-seal {
+  width: 60px; height: 60px;
+  border: 1px solid var(--copper);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--copper);
+  flex-shrink: 0;
+  position: relative;
+}
+.seg-badge-seal::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 1px dashed rgba(212,148,74,0.3);
+  border-radius: 50%;
+  animation: segRotate 30s linear infinite;
+}
+.seg-badge-seal svg { width: 26px; height: 26px; }
+
+.seg-badge-content { flex: 1; min-width: 240px; }
+.seg-badge-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  color: var(--copper);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.seg-badge-text {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--black);
+  transition: color 0.6s ease;
+}
+
+/* ═══════════ ANIMAÇÕES ═══════════ */
+@keyframes segFadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes segFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes segDotp {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%     { opacity: 0.4; transform: scale(1.4); }
+}
+@keyframes segDragHint {
+  0%,100% { transform: translateX(0); }
+  50%     { transform: translateX(6px); }
+}
+@keyframes segRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ═══════════ RESPONSIVO ═══════════ */
+@media (max-width: 900px) {
+  .seg-hero { height: auto; min-height: unset; }
+  #segVaultCanvas {
+    position: relative;
+    width: 100%; height: 360px;
+  }
+  .seg-hero-gradient {
+    background: linear-gradient(180deg, transparent 0%, rgba(8,8,24,0.4) 50%, #080818 100%);
+  }
+  .seg-hero-content {
+    position: relative; inset: auto;
+    padding: 48px 6vw 56px;
+    max-width: 100%;
+  }
+  .seg-data-tags {
+    position: relative;
+    inset: auto;
+    transform: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 0 6vw 32px;
+    gap: 10px;
+  }
+  .seg-drag-hint { bottom: auto; top: 12px; right: 12px; }
+  .seg-body { padding: 72px 6vw 88px; }
+  .seg-body-header { margin-bottom: 48px; }
+}
+
+@media (max-width: 600px) {
+  .seg-hero-title { font-size: clamp(56px, 17vw, 110px); }
+  .seg-hero-sub { max-width: 100%; }
+  #segVaultCanvas { height: 300px; }
+  .seg-cards-grid { grid-template-columns: 1fr; gap: 18px; }
+  .seg-card { padding: 30px 22px 26px; }
+  .seg-badge { padding: 26px 24px; gap: 18px; margin-top: 56px; }
+  .seg-badge-seal { width: 52px; height: 52px; }
+}
+</style>
+
+<!-- ═══════════ MARKUP ═══════════ -->
+<section class="seg-section" id="seguranca" aria-labelledby="segTitle">
+
+  <!-- HERO INTERNO: cofre 3D + título -->
+  <div class="seg-hero">
+    <canvas id="segVaultCanvas" aria-label="Visualização 3D interativa de segurança de dados"></canvas>
+    <div class="seg-hero-grid" aria-hidden="true"></div>
+    <div class="seg-hero-gradient" aria-hidden="true"></div>
+
+    <div class="seg-hero-content">
+      <div class="seg-hero-eyebrow">
+        <span class="seg-line-accent"></span> lgpd · cibersegurança
+      </div>
+      <h2 class="seg-hero-title" id="segTitle">
+        SEUS<br><span class="seg-accent">DADOS</span><br>BLINDADOS
+      </h2>
+      <div class="seg-hero-sub">
+        <p>Em um mundo onde dados valem mais que ouro, protegê-los não é opcional — é o contrato silencioso entre a sua empresa e cada cliente que confia nela.</p>
+      </div>
+    </div>
+
+    <div class="seg-data-tags">
+      <div class="seg-data-tag"><span class="seg-dot-pulse"></span> LGPD_COMPLIANCE</div>
+      <div class="seg-data-tag"><span class="seg-dot-pulse"></span> AES_256</div>
+      <div class="seg-data-tag"><span class="seg-dot-pulse"></span> ZERO_TRUST</div>
+    </div>
+
+    <div class="seg-drag-hint">
+      <span class="seg-drag-hint-icon">↻</span> arraste para girar
+    </div>
+  </div>
+
+  <!-- CORPO: Principios + Cards -->
+  <div class="seg-body">
+
+    <div class="seg-body-header">
+      <div class="seg-body-eyebrow">pilares de proteção</div>
+      <h3 class="seg-body-title">CONSTRUÍDO COM SEGURANÇA DESDE A PRIMEIRA LINHA DE CÓDIGO</h3>
+      <p class="seg-body-lead">Dado não é só informação — é a confiança do seu cliente em forma digital. Cada sistema que entregamos nasce alinhado à LGPD e às melhores práticas internacionais de cibersegurança, não por exigência legal, mas por princípio.</p>
+    </div>
+
+    <div class="seg-cards-grid">
+
+      <!-- Card 1: LGPD -->
+      <div class="seg-card" data-seg-card>
+        <span class="seg-card-num">01 / LEGAL</span>
+        <div class="seg-card-icon">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M16 3L5 7v9c0 7 5 11 11 13 6-2 11-6 11-13V7L16 3Z"/>
+            <path d="M11 16l3.5 3.5L22 12"/>
+          </svg>
+        </div>
+        <h4 class="seg-card-title">Conformidade LGPD</h4>
+        <p class="seg-card-text">Coleta mínima, base legal clara, consentimento explícito e direitos do titular sempre respeitados. Do banco de dados ao botão "excluir conta".</p>
+        <div class="seg-card-tag">Art. 6º · princípios · base legal</div>
+      </div>
+
+      <!-- Card 2: Criptografia -->
+      <div class="seg-card" data-seg-card>
+        <span class="seg-card-num">02 / TÉCNICO</span>
+        <div class="seg-card-icon">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <rect x="6" y="14" width="20" height="14" rx="2"/>
+            <path d="M10 14v-4a6 6 0 0 1 12 0v4"/>
+            <circle cx="16" cy="21" r="1.5"/>
+            <path d="M16 22.5v2.5"/>
+          </svg>
+        </div>
+        <h4 class="seg-card-title">Criptografia em Camadas</h4>
+        <p class="seg-card-text">TLS 1.3 em trânsito, AES-256 em repouso, hash bcrypt/Argon2 para senhas. Sem atalho, sem exceção — nenhum dado viaja ou dorme em texto plano.</p>
+        <div class="seg-card-tag">at-rest · in-transit · end-to-end</div>
+      </div>
+
+      <!-- Card 3: Acesso -->
+      <div class="seg-card" data-seg-card>
+        <span class="seg-card-num">03 / ACESSO</span>
+        <div class="seg-card-icon">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="11" r="5"/>
+            <path d="M6 28c0-5.5 4.5-10 10-10s10 4.5 10 10"/>
+            <path d="M22 7l3 3M22 10l3-3"/>
+          </svg>
+        </div>
+        <h4 class="seg-card-title">Autenticação Robusta</h4>
+        <p class="seg-card-text">Controle de acesso por papéis (RBAC), autenticação multifator e política Zero Trust: cada requisição é verificada, cada permissão é mínima e auditável.</p>
+        <div class="seg-card-tag">MFA · RBAC · zero-trust</div>
+      </div>
+
+      <!-- Card 4: Backup & Recuperação -->
+      <div class="seg-card" data-seg-card>
+        <span class="seg-card-num">04 / CONTINUIDADE</span>
+        <div class="seg-card-icon">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M4 8c0-2 5-4 12-4s12 2 12 4-5 4-12 4S4 10 4 8Z"/>
+            <path d="M4 8v8c0 2 5 4 12 4s12-2 12-4V8"/>
+            <path d="M4 16v8c0 2 5 4 12 4s12-2 12-4v-8"/>
+          </svg>
+        </div>
+        <h4 class="seg-card-title">Backups e Recuperação</h4>
+        <p class="seg-card-text">Snapshots automatizados, redundância geográfica e plano de resposta a incidentes testado. Se algo acontecer, voltar ao ar é questão de minutos, não dias.</p>
+        <div class="seg-card-tag">3-2-1 · DR plan · auditoria</div>
+      </div>
+
+      <!-- Card 5: Monitoramento -->
+      <div class="seg-card" data-seg-card>
+        <span class="seg-card-num">05 / VIGILÂNCIA</span>
+        <div class="seg-card-icon">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="16" r="10"/>
+            <circle cx="16" cy="16" r="4"/>
+            <path d="M16 2v3M16 27v3M2 16h3M27 16h3"/>
+          </svg>
+        </div>
+        <h4 class="seg-card-title">Monitoramento Contínuo</h4>
+        <p class="seg-card-text">Logs estruturados, alertas de anomalia em tempo real e revisão proativa de dependências vulneráveis (CVE). A ameaça que você vê chegando já perdeu metade do poder.</p>
+        <div class="seg-card-tag">SIEM · CVE tracking · alerts</div>
+      </div>
+
+      <!-- Card 6: Privacidade by design -->
+      <div class="seg-card" data-seg-card>
+        <span class="seg-card-num">06 / CULTURA</span>
+        <div class="seg-card-icon">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M16 4L6 9v7c0 6 4 10 10 12 6-2 10-6 10-12V9L16 4Z"/>
+            <circle cx="16" cy="15" r="3"/>
+            <path d="M16 18v4"/>
+          </svg>
+        </div>
+        <h4 class="seg-card-title">Privacy by Design</h4>
+        <p class="seg-card-text">Privacidade nasce junto com o sistema, não é remendo depois. Anonimização, pseudonimização e minimização de dados são decisões arquiteturais — não features opcionais.</p>
+        <div class="seg-card-tag">GDPR-ready · minimização · ética</div>
+      </div>
+
+    </div>
+
+    <!-- Selo final -->
+    <div class="seg-badge">
+      <div class="seg-badge-seal">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 3L5 7v9c0 7 5 11 11 13 6-2 11-6 11-13V7L16 3Z"/>
+          <path d="M11 16l3.5 3.5L22 12"/>
+        </svg>
+      </div>
+      <div class="seg-badge-content">
+        <div class="seg-badge-label">compromisso beyond bits</div>
+        <p class="seg-badge-text">Todo projeto entregue inclui documentação de conformidade, mapa de tratamento de dados e assinatura de DPA (Acordo de Processamento de Dados) quando aplicável. Segurança não é o último item da checklist — é a fundação.</p>
+      </div>
+    </div>
+
+  </div><!-- /seg-body -->
+</section>
+<!-- ═══════════════════════════════════════════════════════════════════
+     FIM DO MARKUP — a seguir, o script do cofre 3D interativo.
+═══════════════════════════════════════════════════════════════════ -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FIM DA SEÇÃO SEGURANÇA
+═══════════════════════════════════════════════════════════════════ -->
+
+
+
   <footer id="contato">
     <div class="footer-logo">Beyond Bits</div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
@@ -1012,6 +1648,318 @@ body.dark-mode .ciclo-detail-text { color: rgba(232,232,230,0.52); }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/script.js"></script>
 <script src="js/whatsapp.js"></script>
+
+<!-- ══ COFRE 3D — Segurança de Dados ══ -->
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   COFRE 3D INTERATIVO — Three.js (reutiliza r128 já carregado pelo ciclo)
+   Interações: arraste para girar · hover acelera rotação · pulso de dados
+═══════════════════════════════════════════════════════════════════ */
+(function initSegVault() {
+  try {
+  if (typeof THREE === 'undefined') {
+    console.error('[seg-vault] Three.js não carregado — cofre 3D não renderizará');
+    return;
+  }
+  const canvas = document.getElementById('segVaultCanvas');
+  if (!canvas) {
+    console.error('[seg-vault] Canvas #segVaultCanvas não encontrado');
+    return;
+  }
+  console.log('[seg-vault] Inicializando cofre 3D...');
+
+  const getSize = () => ({
+    w: canvas.offsetWidth  || window.innerWidth * 0.62,
+    h: canvas.offsetHeight || window.innerHeight
+  });
+  let { w, h } = getSize();
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(w, h);
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+  camera.position.set(0, 0.6, 6.2);
+  camera.lookAt(0, 0, 0);
+
+  /* Cores — sempre palette noturna para manter identidade do hero escuro */
+  const COLOR = {
+    copper: 0xd4944a,
+    amber:  0xffb56a,
+    cyan:   0x4ac4d4,
+    deep:   0x1a1a2e,
+    dark:   0x0d0d1a,
+  };
+
+  /* Grupo raiz: tudo orbita em torno daqui */
+  const group = new THREE.Group();
+  scene.add(group);
+
+  /* ═══ 1) CORE CENTRAL — octaedro com efeito wireframe vazado ═══ */
+  const coreGeo  = new THREE.OctahedronGeometry(0.85, 0);
+  const coreMat  = new THREE.MeshStandardMaterial({
+    color: COLOR.copper,
+    metalness: 0.85,
+    roughness: 0.22,
+    emissive: new THREE.Color(COLOR.copper),
+    emissiveIntensity: 0.35,
+  });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  group.add(core);
+
+  /* Wireframe sobreposto ao core (dá sensação de "dado criptografado") */
+  const coreWire = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.88, 0),
+    new THREE.MeshBasicMaterial({ color: COLOR.amber, wireframe: true, transparent: true, opacity: 0.55 })
+  );
+  group.add(coreWire);
+
+  /* ═══ 2) TRÊS ANÉIS ORBITAIS — como escudos em torno do core ═══ */
+  const rings = [];
+  const ringConfigs = [
+    { radius: 1.6, tube: 0.022, color: COLOR.copper, axis: 'x', speed:  0.006 },
+    { radius: 1.95, tube: 0.018, color: COLOR.amber,  axis: 'y', speed: -0.009 },
+    { radius: 2.3, tube: 0.016, color: COLOR.cyan,   axis: 'z', speed:  0.005 },
+  ];
+  ringConfigs.forEach(cfg => {
+    const g = new THREE.TorusGeometry(cfg.radius, cfg.tube, 16, 120);
+    const m = new THREE.MeshStandardMaterial({
+      color: cfg.color,
+      metalness: 0.9,
+      roughness: 0.15,
+      emissive: new THREE.Color(cfg.color),
+      emissiveIntensity: 0.45,
+    });
+    const ring = new THREE.Mesh(g, m);
+    if (cfg.axis === 'x') ring.rotation.x = Math.PI / 2;
+    if (cfg.axis === 'z') ring.rotation.y = Math.PI / 2;
+    ring.userData.speed = cfg.speed;
+    ring.userData.axis  = cfg.axis;
+    group.add(ring);
+    rings.push(ring);
+  });
+
+  /* ═══ 3) ESFERA WIREFRAME EXTERNA — "campo" de proteção ═══ */
+  const shieldGeo  = new THREE.IcosahedronGeometry(2.75, 1);
+  const shieldMat  = new THREE.MeshBasicMaterial({
+    color: COLOR.copper,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.18,
+  });
+  const shield = new THREE.Mesh(shieldGeo, shieldMat);
+  group.add(shield);
+
+  /* ═══ 4) NÓS DE DADO — pequenos cubos orbitando em pontos do icosaedro ═══ */
+  const nodes = [];
+  const nodePositions = shieldGeo.attributes.position;
+  const nodeCount = 14;
+  const step = Math.floor(nodePositions.count / nodeCount);
+  const nodeMat = new THREE.MeshStandardMaterial({
+    color: COLOR.amber,
+    emissive: new THREE.Color(COLOR.amber),
+    emissiveIntensity: 0.8,
+    metalness: 0.6,
+    roughness: 0.3,
+  });
+  for (let i = 0; i < nodeCount; i++) {
+    const idx = i * step;
+    const x = nodePositions.getX(idx);
+    const y = nodePositions.getY(idx);
+    const z = nodePositions.getZ(idx);
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), nodeMat.clone());
+    cube.position.set(x, y, z);
+    cube.userData.basePos = cube.position.clone();
+    cube.userData.phase = Math.random() * Math.PI * 2;
+    group.add(cube);
+    nodes.push(cube);
+  }
+
+  /* ═══ 5) LINHAS DE CONEXÃO — desenha uma malha entre nós próximos ═══ */
+  const linePositions = [];
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const d = nodes[i].position.distanceTo(nodes[j].position);
+      if (d < 2.2) {
+        linePositions.push(
+          nodes[i].position.x, nodes[i].position.y, nodes[i].position.z,
+          nodes[j].position.x, nodes[j].position.y, nodes[j].position.z
+        );
+      }
+    }
+  }
+  const lineGeo = new THREE.BufferGeometry();
+  lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+  const lineMat = new THREE.LineBasicMaterial({ color: COLOR.copper, transparent: true, opacity: 0.18 });
+  const lines = new THREE.LineSegments(lineGeo, lineMat);
+  group.add(lines);
+
+  /* ═══ 6) PARTÍCULAS — "bits" soltos no espaço ═══ */
+  const pCount = 120;
+  const pGeo = new THREE.BufferGeometry();
+  const pPos = new Float32Array(pCount * 3);
+  const pVel = new Float32Array(pCount);
+  for (let i = 0; i < pCount; i++) {
+    const r = 3.2 + Math.random() * 1.8;
+    const theta = Math.random() * Math.PI * 2;
+    const phi   = Math.acos(2 * Math.random() - 1);
+    pPos[i*3    ] = r * Math.sin(phi) * Math.cos(theta);
+    pPos[i*3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    pPos[i*3 + 2] = r * Math.cos(phi);
+    pVel[i] = 0.2 + Math.random() * 0.5;
+  }
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  const pMat = new THREE.PointsMaterial({
+    color: COLOR.amber,
+    size: 0.03,
+    transparent: true,
+    opacity: 0.55,
+    sizeAttenuation: true,
+  });
+  const particles = new THREE.Points(pGeo, pMat);
+  scene.add(particles);
+
+  /* ═══ 7) LUZES ═══ */
+  scene.add(new THREE.AmbientLight(0x222244, 0.55));
+  const key = new THREE.DirectionalLight(0xffffff, 0.9); key.position.set(4, 5, 3); scene.add(key);
+  const rim = new THREE.DirectionalLight(COLOR.copper, 1.1); rim.position.set(-3, 2, -2); scene.add(rim);
+  const fill = new THREE.PointLight(COLOR.cyan, 0.9, 6); fill.position.set(0, 0, 2); scene.add(fill);
+
+  /* ═══ 8) INTERAÇÃO — drag para rotacionar + hover boost ═══ */
+  const state = {
+    targetRotX: 0,
+    targetRotY: 0,
+    rotX: 0,
+    rotY: 0,
+    dragging: false,
+    lastX: 0,
+    lastY: 0,
+    hover: false,
+    speedBoost: 1,
+  };
+
+  const onPointerDown = (e) => {
+    state.dragging = true;
+    const p = e.touches ? e.touches[0] : e;
+    state.lastX = p.clientX;
+    state.lastY = p.clientY;
+  };
+  const onPointerMove = (e) => {
+    if (!state.dragging) return;
+    const p = e.touches ? e.touches[0] : e;
+    const dx = p.clientX - state.lastX;
+    const dy = p.clientY - state.lastY;
+    state.targetRotY += dx * 0.006;
+    state.targetRotX += dy * 0.006;
+    state.targetRotX = Math.max(-1.2, Math.min(1.2, state.targetRotX));
+    state.lastX = p.clientX;
+    state.lastY = p.clientY;
+  };
+  const onPointerUp = () => { state.dragging = false; };
+
+  canvas.addEventListener('mousedown', onPointerDown);
+  canvas.addEventListener('touchstart', onPointerDown, { passive: true });
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('touchmove', onPointerMove, { passive: true });
+  window.addEventListener('mouseup', onPointerUp);
+  window.addEventListener('touchend', onPointerUp);
+
+  canvas.addEventListener('mouseenter', () => { state.hover = true; });
+  canvas.addEventListener('mouseleave', () => { state.hover = false; });
+
+  /* ═══ 9) RESIZE ═══ */
+  window.addEventListener('resize', () => {
+    const s = getSize();
+    camera.aspect = s.w / s.h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(s.w, s.h);
+  });
+
+  /* ═══ 10) LOOP ═══ */
+  let t = 0;
+  function loop() {
+    requestAnimationFrame(loop);
+    t += 0.012;
+
+    /* suavização do drag */
+    state.rotX += (state.targetRotX - state.rotX) * 0.08;
+    state.rotY += (state.targetRotY - state.rotY) * 0.08;
+
+    /* boost suave no hover */
+    const targetBoost = state.hover ? 1.8 : 1;
+    state.speedBoost += (targetBoost - state.speedBoost) * 0.06;
+
+    /* auto-rotação lenta + rotação controlada pelo drag */
+    group.rotation.x = state.rotX;
+    group.rotation.y = state.rotY + t * 0.15 * state.speedBoost;
+
+    /* core pulsa */
+    const pulse = 1 + Math.sin(t * 1.6) * 0.06;
+    core.scale.setScalar(pulse);
+    coreWire.scale.setScalar(pulse * 1.04);
+    coreWire.rotation.y -= 0.008;
+    coreWire.rotation.x += 0.005;
+    coreMat.emissiveIntensity = 0.3 + Math.sin(t * 2.1) * 0.15;
+
+    /* anéis orbitam cada um no seu eixo */
+    rings.forEach(r => {
+      if (r.userData.axis === 'x') r.rotation.z += r.userData.speed * state.speedBoost;
+      if (r.userData.axis === 'y') r.rotation.x += r.userData.speed * state.speedBoost;
+      if (r.userData.axis === 'z') r.rotation.y += r.userData.speed * state.speedBoost;
+    });
+
+    /* escudo externo respira e gira devagar */
+    shield.rotation.y += 0.002 * state.speedBoost;
+    shield.rotation.x += 0.0008 * state.speedBoost;
+    shieldMat.opacity = 0.14 + Math.sin(t * 1.2) * 0.06;
+
+    /* nós pulsam */
+    nodes.forEach((n, i) => {
+      const s = 1 + Math.sin(t * 2.2 + n.userData.phase) * 0.35;
+      n.scale.setScalar(s);
+      n.material.emissiveIntensity = 0.55 + Math.sin(t * 2.2 + n.userData.phase) * 0.45;
+    });
+
+    /* partículas orbitam em torno do core */
+    const pp = particles.geometry.attributes.position.array;
+    for (let i = 0; i < pCount; i++) {
+      const idx = i * 3;
+      /* rotação suave em torno do eixo Y */
+      const x = pp[idx];
+      const z = pp[idx + 2];
+      const ang = 0.002 * pVel[i] * state.speedBoost;
+      pp[idx    ] = x * Math.cos(ang) - z * Math.sin(ang);
+      pp[idx + 2] = x * Math.sin(ang) + z * Math.cos(ang);
+      /* leve oscilação vertical */
+      pp[idx + 1] += Math.sin(t * 0.8 + i) * 0.001;
+    }
+    particles.geometry.attributes.position.needsUpdate = true;
+    particles.rotation.y -= 0.0008;
+
+    fill.intensity = 0.7 + Math.sin(t * 1.5) * 0.25;
+
+    renderer.render(scene, camera);
+  }
+  loop();
+
+  /* ═══ 11) REVEAL DOS CARDS ═══ */
+  const cardObserver = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('seg-visible'), i * 90);
+        cardObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('[data-seg-card]').forEach(el => cardObserver.observe(el));
+
+  console.log('[seg-vault] Cofre 3D inicializado com sucesso ✓');
+  } catch (err) {
+    console.error('[seg-vault] Erro ao inicializar cofre 3D:', err);
+  }
+})();
+</script>
 
 <!-- ══ ROBÔ THREE.JS — Ciclo de Vida ══ -->
 <script>
