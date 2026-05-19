@@ -55,9 +55,9 @@ function loadHD(imgEl, hdSrc, onReady) {
   if (preloader.complete) applyLoaded();
 }
 
-// Carregamento de imagens HD do hero desabilitado — imagem inline via base64
-// loadHD(img1, DAY_IMAGES.open);
-// loadHD(img2, DAY_IMAGES.closed);
+// Carrega sempre as imagens diurnas
+loadHD(img1, DAY_IMAGES.open);
+loadHD(img2, DAY_IMAGES.closed);
 
 /* ══════════════════════════════════════════
    BLINK — usa sempre imagens diurnas
@@ -77,8 +77,7 @@ function blink() {
   }, hold);
   setTimeout(() => setTimeout(blink, 3500 + Math.random() * 4000), hold + BLINK_MS * 0.6 + 200);
 }
-// Blink desabilitado — hero agora usa imagem única
-// setTimeout(blink, 3500);
+setTimeout(blink, 3500);
 
 /* ══════════════════════════════════════════
    PIXEL ASSEMBLY — "BEYOND BITS"
