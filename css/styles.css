@@ -34,10 +34,10 @@ body::after {
 }
 
 body.dark-mode::after {
-  /* Camada de profundidade noturna: brilho estelar suave */
+  /* Camada de profundidade noturna — mais escura */
   background:
-    radial-gradient(ellipse 60% 50% at 70% 15%, rgba(30,40,120,0.45) 0%, transparent 65%),
-    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(10,15,60,0.35) 0%, transparent 60%);
+    radial-gradient(ellipse 60% 50% at 70% 15%, rgba(15,20,60,0.3) 0%, transparent 65%),
+    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(5,8,30,0.25) 0%, transparent 60%);
 }
 
 /* Grain overlay */
@@ -52,20 +52,19 @@ body::before {
    DARK MODE
 ══════════════════════════════ */
 body.dark-mode {
-  /* Céu noturno — roxo-espacial, igual ao space-bg */
-  --bg: #080818;
+  /* Fundo quase preto */
+  --bg: #050508;
   --black: #e8e8e6;
-  --white: #07071a;
+  --white: #040406;
   --copper: #d4944a;
 }
 
 body.dark-mode .hero-gradient {
-  background: linear-gradient(
-    100deg,
-    var(--bg) 0%,
-    color-mix(in srgb, var(--bg) 88%, transparent) 28%,
-    color-mix(in srgb, var(--bg) 25%, transparent) 54%,
-    transparent 72%
+  background: radial-gradient(
+    ellipse 70% 70% at 50% 50%,
+    color-mix(in srgb, var(--bg) 80%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 45%, transparent) 45%,
+    transparent 80%
   );
 }
 
@@ -153,6 +152,31 @@ nav {
   opacity: 0;
   animation: fadeDown 0.8s ease 0.3s forwards;
   transition: color 0.6s ease;
+  display: flex;
+  align-items: center;
+}
+.nav-logo-img {
+  height: 32px;
+  width: auto;
+}
+/* Hero logo */
+.hero-logo-wrapper {
+  display: flex;
+  align-items: center;
+  opacity: 0;
+}
+.hero-logo-wrapper.revealed {
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+.hero-logo-img {
+  max-width: clamp(340px, 55vw, 780px);
+  height: auto;
+}
+/* Footer logo */
+.footer-logo-img {
+  height: 28px;
+  width: auto;
 }
 .nav-right {
   display: flex;
@@ -237,18 +261,16 @@ body.dark-mode .icon-moon {
   overflow: hidden;
 }
 
-#img1 { opacity: 1; z-index: 1; }
-#img2 { opacity: 0; z-index: 2; }
+#img1 { opacity: 1; z-index: 1; object-position: 70% center; }
 
-/* Gradiente lateral para texto ficar legível */
+/* Gradiente central para texto ficar legível sobre a imagem */
 .hero-gradient {
   position: absolute; inset: 0;
-  background: linear-gradient(
-    100deg,
-    var(--bg) 0%,
-    color-mix(in srgb, var(--bg) 88%, transparent) 28%,
-    color-mix(in srgb, var(--bg) 25%, transparent) 54%,
-    transparent 72%
+  background: radial-gradient(
+    ellipse 70% 70% at 50% 50%,
+    color-mix(in srgb, var(--bg) 75%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 40%, transparent) 45%,
+    transparent 80%
   );
   z-index: 3;
   pointer-events: none;
@@ -278,6 +300,125 @@ body.dark-mode .icon-moon {
 .circuit-dot:nth-child(3) { animation-delay: 2s, 2s; }
 .circuit-dot:nth-child(4) { animation-delay: 2.3s, 2.3s; }
 
+/* ── HERO LED GLOW EFFECT ── */
+.hero-led-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Glow principal — halo vermelho forte que contorna o robô */
+.hero-led-glow__core {
+  position: absolute;
+  top: 50%;
+  right: 15%;
+  transform: translate(50%, -55%);
+  width: 550px;
+  height: 650px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 50% 55% at 50% 45%,
+    rgba(255, 0, 0, 0.0) 28%,
+    rgba(255, 10, 10, 0.45) 48%,
+    rgba(200, 0, 0, 0.25) 60%,
+    rgba(120, 0, 0, 0.08) 78%,
+    transparent 100%
+  );
+  animation: ledContourGlow 3.5s ease-in-out infinite;
+  filter: blur(10px);
+}
+
+/* Segundo halo — mais largo e suave para profundidade */
+.hero-led-glow__outer {
+  position: absolute;
+  top: 50%;
+  right: 15%;
+  transform: translate(50%, -55%);
+  width: 700px;
+  height: 820px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 50% 55% at 50% 45%,
+    transparent 32%,
+    rgba(255, 0, 0, 0.12) 52%,
+    rgba(180, 0, 0, 0.05) 70%,
+    transparent 100%
+  );
+  animation: ledContourGlow 3.5s ease-in-out infinite;
+  animation-delay: 0.3s;
+  filter: blur(25px);
+}
+
+/* Pulse — onda que expande do centro */
+.hero-led-glow__pulse {
+  position: absolute;
+  top: 50%;
+  right: 15%;
+  transform: translate(50%, -55%) scale(0.6);
+  width: 550px;
+  height: 650px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 20, 20, 0.3);
+  box-shadow:
+    0 0 30px 8px rgba(255, 0, 0, 0.12),
+    inset 0 0 30px 8px rgba(255, 0, 0, 0.06);
+  animation: ledPulseRing 4s ease-out infinite;
+  filter: blur(3px);
+}
+
+.hero-led-glow__pulse--delayed {
+  animation-delay: 2s;
+}
+
+@keyframes ledContourGlow {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes ledPulseRing {
+  0% {
+    transform: translate(50%, -55%) scale(0.7);
+    opacity: 0.45;
+  }
+  60% {
+    opacity: 0;
+  }
+  100% {
+    transform: translate(50%, -55%) scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Responsive LED */
+@media (max-width: 900px) {
+  .hero-led-glow__core {
+    width: 380px; height: 450px; right: 10%;
+  }
+  .hero-led-glow__outer {
+    width: 480px; height: 560px; right: 10%;
+  }
+  .hero-led-glow__pulse {
+    width: 380px; height: 450px; right: 10%;
+  }
+}
+@media (max-width: 600px) {
+  .hero-led-glow__core {
+    width: 260px; height: 320px; right: 0%; top: 35%;
+  }
+  .hero-led-glow__outer {
+    width: 330px; height: 400px; right: 0%; top: 35%;
+  }
+  .hero-led-glow__pulse {
+    width: 260px; height: 320px; right: 0%; top: 35%;
+  }
+}
+
 /* ── HERO TEXT ── */
 .hero-content {
   position: absolute; inset: 0;
@@ -285,7 +426,9 @@ body.dark-mode .icon-moon {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding-left: 7vw;
+  align-items: center;
+  text-align: center;
+  padding: 0 7vw;
   pointer-events: none;
 }
 
@@ -296,7 +439,7 @@ body.dark-mode .icon-moon {
   text-transform: uppercase;
   color: var(--copper);
   margin-bottom: 16px;
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
   opacity: 0;
   animation: slideUp 0.7s ease 0.7s forwards;
   transition: color 0.6s ease;
@@ -354,7 +497,7 @@ body.dark-mode .icon-moon {
 }
 
 .hero-cta {
-  display: flex; gap: 16px; align-items: center;
+  display: flex; gap: 16px; align-items: center; justify-content: center;
   margin-top: 36px;
   opacity: 0;
   animation: slideUp 0.7s ease 1.25s forwards;
@@ -856,7 +999,7 @@ footer {
   z-index: 0;
   overflow: hidden;
   /* Sempre espaço profundo — independente do tema */
-  background: radial-gradient(ellipse at 60% 40%, #080818 0%, #040410 60%, #020208 100%);
+  background: radial-gradient(ellipse at 60% 40%, #050508 0%, #030308 60%, #010104 100%);
   opacity: 0;
   transition: opacity 1.2s ease;
 }
