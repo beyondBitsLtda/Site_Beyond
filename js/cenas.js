@@ -1,0 +1,119 @@
+/* ══════════════════════════════════════════════════════════════
+   MAESTRO DAS CENAS 3D (23/11/2026)
+   O site tem várias cenas em WebGL: o globo, os trilhos, o trem, o beco, a Lisa, o planeta,
+   o disco de ouro e os buracos. Para não pesar, só UMA desenha por vez: a que ocupa mais a
+   tela (com peso: o fundo dos trilhos cede para qualquer cena da frente). As outras que estão
+   aparecendo ficam paradas no último quadro, e a que sai da tela para de vez.
+   Cada cena também tem um limite de quadros por segundo: as de fundo rodam a 30; as rápidas,
+   ou as que o visitante está mexendo, a 60 (em monitores de 120/144 Hz também fica nesse limite).
+
+   Uso, em cada cena:
+     var c = Cenas.registrar({ nome, el, peso, fps, ligar, desligar, pintar });
+     no laço:  if (!c.vez(agora)) return;   // não é a vez (outra cena ativa ou limite de fps)
+     c.focar(ms)  dá a vez para a cena por um tempo (quando o visitante mexe nela)
+     c.fps(n)     muda o limite de quadros
+     c.repintar() desenha um quadro se ela aparece mas não está ativa (ex.: depois de mudar de tamanho)
+══════════════════════════════════════════════════════════════ */
+window.Cenas = (function () {
+  'use strict';
+  var lista = [];
+  var ativa = null;
+  var foco = null, focoAte = 0;
+  var agendado = false;
+  function nada() {}
+
+  function medir(c) {
+    var r = c.el.getBoundingClientRect();
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var w = Math.min(r.right, vw) - Math.max(r.left, 0);
+    var h = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+    c.area = (w > 0 && h > 0) ? w * h : 0;
+    c.visivel = c.area > 0;
+  }
+
+  function escolher() {
+    agendado = false;
+    var oculto = document.hidden;
+    var melhor = null, nota = 0, i, c;
+    for (i = 0; i < lista.length; i++) medir(lista[i]);
+    if (!oculto) {
+      if (foco && foco.visivel && performance.now() < focoAte) {
+        melhor = foco;
+      } else {
+        for (i = 0; i < lista.length; i++) {
+          c = lista[i];
+          if (c.visivel && c.area * c.peso > nota) { nota = c.area * c.peso; melhor = c; }
+        }
+        // um pouco de inércia: não fica trocando quando duas cenas ocupam quase o mesmo espaço
+        if (ativa && melhor && ativa !== melhor && ativa.visivel && ativa.area * ativa.peso * 1.2 >= nota) melhor = ativa;
+      }
+    }
+    if (melhor !== ativa) {
+      var antiga = ativa;
+      ativa = melhor;
+      if (antiga) { antiga.ligada = false; try { antiga.desligar(); } catch (e) { /* segue */ } }
+      if (ativa) { ativa.ligada = true; ativa.ultimo = 0; try { ativa.ligar(); } catch (e) { /* segue */ } }
+    }
+    // quem aparece sem ser a vez dela e nunca foi desenhada ganha um quadro, para não ficar em branco
+    if (!oculto) {
+      for (i = 0; i < lista.length; i++) {
+        c = lista[i];
+        if (c.visivel && c !== ativa && !c.pintada && c.pintar) { c.pintada = true; try { c.pintar(); } catch (e) { /* segue */ } }
+      }
+    }
+  }
+  function agendar() {
+    if (agendado) return;
+    agendado = true;
+    requestAnimationFrame(escolher);
+  }
+
+  var io = ('IntersectionObserver' in window) ? new IntersectionObserver(agendar) : null;
+  window.addEventListener('scroll', agendar, { passive: true });
+  window.addEventListener('resize', agendar, { passive: true });
+  document.addEventListener('visibilitychange', function () { agendado = false; escolher(); });
+  // o layout também muda sem rolagem (textos que entram, imagens que carregam): confere de vez em quando
+  setInterval(function () { if (!document.hidden && lista.length) agendar(); }, 1000);
+
+  function registrar(o) {
+    var c = {
+      nome: o.nome || '', el: o.el, peso: o.peso || 1, fps: o.fps || 30,
+      ligar: o.ligar || nada, desligar: o.desligar || nada, pintar: o.pintar || null,
+      area: 0, visivel: false, ligada: false, pintada: false, ultimo: 0, quadros: 0
+    };
+    lista.push(c);
+    if (io) io.observe(c.el);
+    agendar();
+    return {
+      vez: function (agora) {
+        if (ativa !== c) return false;
+        if (c.ultimo && agora - c.ultimo < 1000 / c.fps - 4) return false;   // limite de quadros por segundo
+        c.ultimo = agora;
+        c.pintada = true;
+        c.quadros++;
+        return true;
+      },
+      focar: function (ms) {
+        foco = c;
+        focoAte = performance.now() + (ms || 2500);
+        setTimeout(agendar, (ms || 2500) + 60);
+        agendado = false; escolher();
+      },
+      fps: function (n) { c.fps = n; },
+      ativa: function () { return ativa === c; },
+      visivel: function () { return c.visivel; },
+      repintar: function () { if (c.visivel && ativa !== c && c.pintar) { c.pintada = true; c.pintar(); } }
+    };
+  }
+
+  return {
+    registrar: registrar,
+    // para conferir no console: Cenas.estado()
+    estado: function () {
+      return lista.map(function (c) {
+        return { nome: c.nome, visivel: c.visivel, area: Math.round(c.area), ativa: c === ativa, fps: c.fps, quadros: c.quadros };
+      });
+    }
+  };
+})();

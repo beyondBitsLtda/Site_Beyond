@@ -530,6 +530,7 @@
       camera.lookAt(0, 0, 0);
       camera.updateProjectionMatrix();
       pedir();
+      if (cena3d) cena3d.repintar();
     }
 
     /* ── o estado do movimento ── */
@@ -548,9 +549,15 @@
       if (reduzido) yaw = yawAlvo;
       pedir();
     }
+    var cena3d = null, ultimoFoco = 0, voltaFps = 0;
     function usou() {
       ultimaAcao = performance.now();
       palco.classList.add('is-usado');
+      if (!cena3d) return;
+      cena3d.fps(60);                                     // mexendo: 60 quadros e a vez é dele
+      clearTimeout(voltaFps);
+      voltaFps = setTimeout(function () { cena3d.fps(30); }, 3000);
+      if (ultimaAcao - ultimoFoco > 500) { ultimoFoco = ultimaAcao; cena3d.focar(3000); }
     }
 
     function passo(dt) {
@@ -611,6 +618,8 @@
     }
 
     function quadro(agora) {
+      if (!visivel || document.hidden) { rodando = false; return; }
+      if (!cena3d.vez(agora)) { requestAnimationFrame(quadro); return; }   // limite de fps (js/cenas.js)
       var dt = Math.min(0.05, Math.max(0, (agora - relogio) / 1000));
       relogio = agora;
       t += dt;
@@ -690,15 +699,11 @@
     medir();
     if ('ResizeObserver' in window) new ResizeObserver(medir).observe(palco);
     else window.addEventListener('resize', medir, { passive: true });
-    if ('IntersectionObserver' in window) {
-      new IntersectionObserver(function (e) {
-        visivel = e[0].isIntersecting;
-        if (visivel) pedir();
-      }, { rootMargin: '80px 0px' }).observe(palco);
-    } else {
-      visivel = true;
-    }
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) pedir(); });
+    // a vez de desenhar vem do maestro (js/cenas.js): fora da tela ou sem a vez, para
+    cena3d = Cenas.registrar({ nome: 'disco', el: palco, peso: 1, fps: 30,
+      ligar: function () { visivel = true; pedir(); },
+      desligar: function () { visivel = false; },
+      pintar: function () { desenhar(); } });
     tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); visivel = false; });
 
     // primeiro quadro já pronto, mesmo antes de animar

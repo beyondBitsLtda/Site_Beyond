@@ -498,7 +498,16 @@
       document.body.appendChild(s);
     }
     if ('IntersectionObserver' in window) {
-      new IntersectionObserver(function (e) { if (e[0].isIntersecting) carregar(); else desmontarRosto(); }, { rootMargin: '300px 0px' }).observe(palco);
+      // ao sair da tela, espera um pouco antes de desmontar: se o visitante voltar logo, ela continua lá
+      // (e não desmonta no meio da preparação dos shaders do rosto)
+      var saida = 0;
+      new IntersectionObserver(function (e) {
+        clearTimeout(saida);
+        if (e[0].isIntersecting) carregar(); else saida = setTimeout(desmontarRosto, 1500);
+      }, { rootMargin: '150px 0px' }).observe(palco);
+      // o rosto tem o próprio laço (js/lisa-rosto.js); aqui ela só entra no maestro (js/cenas.js),
+      // para as outras cenas (os trilhos do fundo) pararem enquanto ela está na tela
+      if (window.Cenas) window.Cenas.registrar({ nome: 'lisa', el: palco, peso: 1, fps: 60 });
     } else { carregar(); }
 
     /* ── relógio da cena: tudo que está agendado some quando chega um pedido novo ── */

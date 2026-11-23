@@ -290,11 +290,33 @@ function initEarthGlobe() {
   sun.position.set(5, 3, 5);
   scene.add(sun);
 
-  ;(function animateEarth() {
-    requestAnimationFrame(animateEarth);
-    earthGlobeMesh.rotation.y += 0.0015;
+  // o globo só gira quando é a vez dele (js/cenas.js): fora da tela, ou com outra cena na frente, para de desenhar
+  let rodando = false, quadro = 0, ultimo = 0;
+  const desenharGlobo = (dt) => {
+    earthGlobeMesh.rotation.y += 0.09 * dt;            // a mesma velocidade de antes (0.0015 por quadro a 60 fps)
     earthGlobeRenderer.render(scene, camera);
-  })();
+  };
+  const passoGlobo = (agora) => {
+    if (!rodando) return;
+    quadro = requestAnimationFrame(passoGlobo);
+    if (!cenaGlobo.vez(agora)) return;
+    const dt = Math.min(0.05, (agora - ultimo) / 1000 || 0);
+    ultimo = agora;
+    desenharGlobo(dt);
+  };
+  const ligarGlobo = () => {
+    if (rodando) return;
+    rodando = true; ultimo = performance.now();
+    quadro = requestAnimationFrame(passoGlobo);
+  };
+  const cenaGlobo = window.Cenas
+    ? window.Cenas.registrar({
+        nome: 'globo', el, peso: 0.8, fps: 30, ligar: ligarGlobo,
+        desligar: () => { rodando = false; cancelAnimationFrame(quadro); },
+        pintar: () => desenharGlobo(0)
+      })
+    : { vez: () => true };
+  if (!window.Cenas) ligarGlobo();
 }
 
 const earthObserver = new IntersectionObserver((entries) => {

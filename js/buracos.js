@@ -320,6 +320,7 @@
       }
       aplicarTamanho();
       pedir();
+      if (cena3d) cena3d.repintar();
     }
     function aplicarTamanho() {
       var bw = Math.max(2, Math.round(lugar.w * escala)), bh = Math.max(2, Math.round(lugar.h * escala));
@@ -331,7 +332,7 @@
 
     /* ── o movimento: a órbita, a distância que respira e a câmera que passeia (e segue o mouse) ── */
     var mouse = { x: 0, y: 0, ax: 0, ay: 0 };
-    var t = reduzido ? 16 : 0, relogio = 0, rodando = false, visivel = false;
+    var t = reduzido ? 16 : 0, relogio = 0, rodando = false, visivel = false, cena3d = null;
     var UP = new THREE.Vector3(0, 1, 0);
     var RHO = 0.2;                                  // o plano da órbita um pouco inclinado na tela
     u.uN.value.set(-Math.sin(RHO), Math.cos(RHO), 0);
@@ -360,16 +361,19 @@
     }
 
     /* resolução que se ajusta: se os quadros ficarem lentos, desenha com menos pixels */
-    var media = 16, contagem = 0;
+    var media = 34, contagem = 0;                  // a 30 quadros por segundo, um quadro a cada ~33 ms
     function ajustarQualidade(ms) {
+      if (ms > 250) return;                         // voltou de uma pausa: não conta
       media += (ms - media) * 0.05;
-      if (++contagem < 50) return;
+      if (++contagem < 40) return;
       contagem = 0;
-      if (media > 24 && escala > 0.45) { escala = Math.max(0.45, escala * 0.85); aplicarTamanho(); }
-      else if (media < 13 && escala < escalaMax) { escala = Math.min(escalaMax, escala * 1.08); aplicarTamanho(); }
+      if (media > 46 && escala > 0.45) { escala = Math.max(0.45, escala * 0.85); aplicarTamanho(); }
+      else if (media < 36 && escala < escalaMax) { escala = Math.min(escalaMax, escala * 1.08); aplicarTamanho(); }
     }
 
     function quadro(agora) {
+      if (!visivel || document.hidden) { rodando = false; return; }
+      if (!cena3d.vez(agora)) { requestAnimationFrame(quadro); return; }   // limite de fps (js/cenas.js)
       var ms = agora - relogio;
       var dt = Math.min(0.05, Math.max(0, ms / 1000));
       relogio = agora;
@@ -405,15 +409,11 @@
     } else {
       window.addEventListener('resize', medir, { passive: true });
     }
-    if ('IntersectionObserver' in window) {
-      new IntersectionObserver(function (e) {
-        visivel = e[0].isIntersecting;
-        if (visivel) pedir();
-      }, { rootMargin: '100px 0px' }).observe(secao);
-    } else {
-      visivel = true;
-    }
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) pedir(); });
+    // a vez de desenhar vem do maestro (js/cenas.js): fora da tela ou sem a vez, para
+    cena3d = Cenas.registrar({ nome: 'buracos', el: tela, peso: 1, fps: 30,
+      ligar: function () { visivel = true; pedir(); },
+      desligar: function () { visivel = false; },
+      pintar: function () { atualizar(0); renderer.render(cena, cam2d); } });
     tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); visivel = false; });
     // o texto do contato aparece com uma animação: mede de novo quando ela termina
     setTimeout(medir, 1200);

@@ -226,7 +226,7 @@
   }
 
   /* ── laço ── */
-  var rodando = false, visivel = false, ultimo = 0, quadro = 0;
+  var rodando = false, ultimo = 0, quadro = 0, cena3d = null;
   function desenhar(dt) {
     tempo += dt;
     if (!reduzido && dt > 0) {
@@ -240,13 +240,14 @@
   }
   function passo(agora) {
     if (!rodando) return;
+    quadro = requestAnimationFrame(passo);
+    if (!cena3d.vez(agora)) return;              // não é a vez desta cena (js/cenas.js) ou passou do limite de fps
     var dt = Math.min(0.05, (agora - ultimo) / 1000 || 0);
     ultimo = agora;
     desenhar(dt);
-    quadro = requestAnimationFrame(passo);
   }
   function ligar() {
-    if (rodando || reduzido || !visivel || document.hidden) return;
+    if (rodando || reduzido || document.hidden) return;
     rodando = true; ultimo = performance.now();
     quadro = requestAnimationFrame(passo);
   }
@@ -256,15 +257,11 @@
   desenhar(0);
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(janela);
   else window.addEventListener('resize', medir, { passive: true });
+  // a vez de desenhar vem do maestro (js/cenas.js): os trilhos são fundo e cedem para as cenas da frente
+  cena3d = Cenas.registrar({ nome: 'trilhos', el: janela, peso: 0.3, fps: 30, ligar: ligar, desligar: desligar,
+    pintar: function () { if (!rodando) desenhar(0); } });
   if (reduzido) {                                              // parado: só redesenha a câmera ao rolar
-    window.addEventListener('scroll', function () { if (visivel) desenhar(0); }, { passive: true });
+    window.addEventListener('scroll', function () { if (cena3d.visivel()) desenhar(0); }, { passive: true });
   }
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(function (e) {
-      visivel = e[0].isIntersecting;
-      if (visivel) ligar(); else desligar();
-    }).observe(secao);
-  } else { visivel = true; ligar(); }
-  document.addEventListener('visibilitychange', function () { if (document.hidden) desligar(); else ligar(); });
   tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); desligar(); reduzido = true; });
 })();

@@ -653,15 +653,16 @@
     renderer.render(cena, camera);
     encaixarTela();
   }
-  var rodando = false, visivel = false, ultimo = 0, quadro = 0;
+  var rodando = false, ultimo = 0, quadro = 0, cena3d = null;
   function passo(agora) {
     if (!rodando) return;
+    quadro = requestAnimationFrame(passo);
+    if (!cena3d.vez(agora)) return;              // não é a vez desta cena (js/cenas.js) ou passou do limite de fps
     var dt = Math.min(0.05, (agora - ultimo) / 1000 || 0);
     ultimo = agora; desenhar(dt);
-    quadro = requestAnimationFrame(passo);
   }
   function ligar() {
-    if (rodando || reduzido || !visivel || document.hidden) return;
+    if (rodando || reduzido || document.hidden) return;
     rodando = true; ultimo = performance.now(); quadro = requestAnimationFrame(passo);
   }
   function desligar() { rodando = false; cancelAnimationFrame(quadro); }
@@ -669,13 +670,12 @@
   iniciarSite(0);
   medir();
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(beco); else window.addEventListener('resize', medir, { passive: true });
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(function (e) { visivel = e[0].isIntersecting; if (visivel) ligar(); else desligar(); }, { rootMargin: '100px 0px' }).observe(beco);
-  } else { visivel = true; ligar(); }
-  document.addEventListener('visibilitychange', function () { if (document.hidden) desligar(); else ligar(); });
+  // a vez de desenhar vem do maestro (js/cenas.js)
+  cena3d = Cenas.registrar({ nome: 'beco', el: beco, peso: 1, fps: 30, ligar: ligar, desligar: desligar,
+    pintar: function () { if (!rodando) desenhar(0); } });
   if (!reduzido && window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
     window.addEventListener('mousemove', function (e) {
-      if (!visivel) return;
+      if (!rodando) return;
       mouse.x = e.clientX / window.innerWidth - 0.5; mouse.y = e.clientY / window.innerHeight - 0.5;
     }, { passive: true });
   }

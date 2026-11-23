@@ -360,13 +360,14 @@
   var rodando = false, ultimo = 0, quadro = 0;
   function passo(agora) {
     if (!rodando) return;
+    quadro = requestAnimationFrame(passo);
+    if (!cena3d.vez(agora)) return;              // não é a vez desta cena (js/cenas.js) ou passou do limite de fps
     var dt = Math.min(0.05, (agora - ultimo) / 1000 || 0); ultimo = agora;
     if (!assado) { assado = assarUm(); if (assado) aplicar(typeof window.__cicloFase === 'number' ? window.__cicloFase : 0); }
     desenhar(dt);
-    quadro = requestAnimationFrame(passo);
   }
   function ligar() {
-    if (rodando || !visivel || document.hidden) return;
+    if (rodando || document.hidden) return;
     if (reduzido && assado) { desenhar(0); return; }
     rodando = true; ultimo = performance.now(); quadro = requestAnimationFrame(passo);
   }
@@ -375,7 +376,6 @@
   if (reduzido) {
     var antigoLigar = ligar;
     ligar = function () {
-      if (!visivel) return;
       if (!assado) { while (!assarUm()) { /* assa todas */ } assado = true; aplicar(window.__cicloFase || 0); }
       desenhar(0);
     };
@@ -384,9 +384,11 @@
   }
   medir();
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(tela); else window.addEventListener('resize', medir, { passive: true });
-  aoMudarVisibilidade.push(function (v) { if (v) ligar(); else desligar(); });
-  if (visivel) ligar();
-  document.addEventListener('visibilitychange', function () { if (document.hidden) desligar(); else ligar(); });
+  // a vez de desenhar vem do maestro (js/cenas.js); ao trocar de etapa o planeta ganha a vez enquanto gira
+  var cena3d = Cenas.registrar({ nome: 'planeta', el: tela, peso: 1, fps: 30,
+    ligar: function () { ligar(); }, desligar: desligar,
+    pintar: function () { if (assado) desenhar(0); } });   // sem pressa: as texturas são feitas quando for a vez dele
+  window.addEventListener('ciclo:fase', function () { cena3d.focar(2200); });
   if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
     window.addEventListener('pointermove', function (e) {
       if (!visivel) return;
