@@ -282,8 +282,8 @@
     /* ── o tamanho e o lugar dos buracos na seção ── */
     var celular = Math.min(window.innerWidth, window.innerHeight) < 700;
     var escalaMax = celular ? 0.75 : 1.0;
-    var escala = celular ? 0.7 : 0.85;
-    u.uPassos.value = celular ? 150 : 220;
+    var escala = celular ? 0.55 : 0.6;               // começa leve e sobe sozinho se a máquina aguentar
+    u.uPassos.value = celular ? 130 : 180;
     var D = 52;                                    // distância da câmera ao centro da órbita
     var lugar = { cx: 0, cy: 0, U: 30, w: 1, h: 1 };
 

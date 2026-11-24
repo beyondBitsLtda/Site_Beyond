@@ -8,11 +8,13 @@
    Na troca ele dá um giro rápido e a estação muda no meio do giro (js/vitrine.js avisa a fase pelo
    evento "ciclo:fase", quando o mouse passa num card).
 
-   Tudo é gerado na placa de vídeo, uma vez só, quando a seção chega perto da tela ("assado" em
-   texturas): o relevo (ruído fractal com cristas de montanha), a normal do relevo, as cores das três
-   estações, as nuvens e as luzes das cidades. O planeta usa um shader próprio: relevo de verdade na
-   geometria, sol de um lado e noite do outro (com as luzes das cidades), brilho do sol no mar,
-   nuvens numa camada acima e a atmosfera em volta.
+   As texturas (relevo, cores das três estações, mar, luzes das cidades e nuvens) vêm prontas, em
+   imagens (assets/planeta/), e só são baixadas quando a seção chega perto. Elas eram geradas aqui
+   por um shader de ruído fractal, mas na placa de vídeo integrada (Intel, Windows) esse shader levava
+   mais de um minuto para compilar e travava o navegador inteiro; agora são geradas uma vez, fora do
+   site, com o mesmo shader. O planeta usa um shader próprio e leve: relevo de verdade na geometria,
+   sol de um lado e noite do outro (com as luzes das cidades), brilho do sol no mar, nuvens numa
+   camada acima e a atmosfera em volta.
    No fundo, atrás do planeta, as naves cruzando (HTML, assets/nave.webp).
    Só desenha com a seção na tela e a aba visível. "Reduzir movimento": sem giro e sem naves.
 ══════════════════════════════════════════════════════════════ */
@@ -68,129 +70,38 @@
   try { renderer = new THREE.WebGLRenderer({ canvas: tela, alpha: true, antialias: true }); } catch (e) { return; }
   renderer.setClearColor(0x000000, 0);
   var celular = Math.min(window.innerWidth, window.innerHeight) < 700;
-  var TW = celular ? 1024 : 2048, TH = TW / 2;
   var cena = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
 
-  /* ══════════ o ruído e o mundo (GLSL, usado no "assado") ══════════ */
-  var RUIDO = [
-    'float hash(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }',
-    'float ruido(vec3 x){ vec3 i = floor(x); vec3 f = fract(x); f = f*f*(3.0-2.0*f);',
-    '  return mix(mix(mix(hash(i), hash(i+vec3(1.0,0.0,0.0)), f.x), mix(hash(i+vec3(0.0,1.0,0.0)), hash(i+vec3(1.0,1.0,0.0)), f.x), f.y),',
-    '             mix(mix(hash(i+vec3(0.0,0.0,1.0)), hash(i+vec3(1.0,0.0,1.0)), f.x), mix(hash(i+vec3(0.0,1.0,1.0)), hash(i+vec3(1.0,1.0,1.0)), f.x), f.y), f.z); }',
-    'float fbm(vec3 p){ float s = 0.0, a = 0.5; for (int i = 0; i < 7; i++){ s += a*ruido(p); p = p*2.03 + vec3(1.7,9.2,3.1); a *= 0.5; } return s; }',
-    'float crista(vec3 p){ float s = 0.0, a = 0.5; for (int i = 0; i < 6; i++){ float n = 1.0 - abs(ruido(p)*2.0 - 1.0); s += a*n*n; p = p*2.1 + vec3(3.1,1.7,5.3); a *= 0.5; } return s; }',
-    'vec3 esfera(vec2 uv){ float phi = uv.x*6.2831853, th = (1.0 - uv.y)*3.1415927; return vec3(-cos(phi)*sin(th), cos(th), sin(phi)*sin(th)); }',
-    'const float MAR = 0.52;',
-    // continentes com o domínio "torcido" (costas recortadas) e cordilheiras só em terra
-    'float altura(vec3 p){',
-    '  vec3 q = p*1.7 + vec3(fbm(p*2.2 + 3.0), fbm(p*2.2 + 7.0), fbm(p*2.2 + 11.0))*0.9;',
-    '  float h = fbm(q);',
-    '  float terra = smoothstep(0.47, 0.62, h);',
-    '  return h + terra*crista(p*3.2 + 5.0)*0.24;',
-    '}',
-    'float umidade(vec3 p){ return fbm(p*2.4 + vec3(20.0)); }'
-  ].join('\n');
-
-  // as cores de cada estação (e = 0 inverno, 1 primavera, 2 verão); "agua" sai 1 no mar (para o brilho do sol)
-  var ESTACOES = [
-    'vec3 corEstacao(float e, float h, float m, vec3 p, out float agua){',
-    '  float lat = abs(p.y);',
-    '  float det = fbm(p*28.0), det2 = ruido(p*95.0);',
-    '  float alt = h - MAR;',
-    '  float prof = clamp(-alt/0.16, 0.0, 1.0);',
-    '  float costa = 1.0 - smoothstep(0.0, 0.016, abs(alt));',
-    '  vec3 cor; agua = 0.0;',
-    '  if (e < 0.5) {',                                             // INVERNO
-    '    vec3 mar = mix(vec3(0.20,0.36,0.46), vec3(0.03,0.07,0.15), prof);',
-    '    float gelo = smoothstep(0.50, 0.60, lat + det*0.18 - 0.09);',
-    '    gelo = max(gelo, step(-0.025, alt)*smoothstep(0.22, 0.38, lat));',
-    '    vec3 marCor = mix(mar, vec3(0.80,0.88,0.94)*(0.85 + 0.15*det2), gelo);',
-    '    vec3 neve = vec3(0.90,0.93,0.97)*(0.80 + 0.20*det);',
-    '    vec3 tundra = mix(vec3(0.20,0.26,0.23), vec3(0.42,0.40,0.36), det);',
-    '    float cobre = smoothstep(0.06, 0.30, lat + alt*2.6 + (det - 0.5)*0.45);',
-    '    vec3 terraCor = mix(tundra, neve, cobre);',
-    '    terraCor = mix(terraCor, vec3(0.46,0.49,0.56)*(0.7 + 0.5*det2), smoothstep(0.22, 0.32, alt)*0.65);',
-    '    if (alt < 0.0) { cor = marCor; agua = 1.0 - gelo*0.85; } else cor = terraCor;',
-    '  } else if (e < 1.5) {',                                      // PRIMAVERA
-    '    vec3 mar = mix(vec3(0.12,0.46,0.58), vec3(0.02,0.10,0.25), prof);',
-    '    float gelo = smoothstep(0.80, 0.88, lat + det*0.1 - 0.05);',
-    '    vec3 marCor = mix(mar, vec3(0.86,0.92,0.96), gelo);',
-    '    vec3 verde = mix(vec3(0.28,0.54,0.19), vec3(0.50,0.70,0.30), m)*(0.78 + 0.38*det);',
-    '    float flor = smoothstep(0.66, 0.74, fbm(p*22.0 + 7.0))*step(lat, 0.62);',
-    '    vec3 florCor = mix(vec3(0.93,0.52,0.72), vec3(0.97,0.86,0.36), step(0.5, ruido(p*30.0)));',
-    '    vec3 terraCor = mix(verde, florCor, flor*0.75);',
-    '    terraCor = mix(terraCor, vec3(0.45,0.40,0.34)*(0.8 + 0.3*det2), smoothstep(0.16, 0.26, alt));',
-    '    terraCor = mix(terraCor, vec3(0.92,0.95,0.98), max(smoothstep(0.28, 0.34, alt), smoothstep(0.78, 0.86, lat)));',
-    '    terraCor = mix(terraCor, vec3(0.80,0.76,0.56), costa*0.55);',
-    '    if (alt < 0.0) { cor = marCor; agua = 1.0 - gelo; } else cor = terraCor;',
-    '  } else {',                                                   // VERÃO
-    '    vec3 mar = mix(vec3(0.05,0.56,0.62), vec3(0.01,0.12,0.32), smoothstep(0.0, 0.6, prof));',
-    '    float gelo = smoothstep(0.90, 0.95, lat);',
-    '    vec3 marCor = mix(mar, vec3(0.90,0.94,0.97), gelo);',
-    '    float seco = smoothstep(0.44, 0.32, m)*(1.0 - smoothstep(0.55, 0.70, lat));',
-    '    vec3 floresta = mix(vec3(0.09,0.34,0.11), vec3(0.24,0.50,0.16), m)*(0.74 + 0.42*det);',
-    '    vec3 deserto = mix(vec3(0.76,0.58,0.36), vec3(0.88,0.74,0.50), det);',
-    '    vec3 terraCor = mix(floresta, deserto, seco);',
-    '    terraCor = mix(terraCor, vec3(0.50,0.37,0.25)*(0.8 + 0.3*det2), smoothstep(0.18, 0.30, alt));',
-    '    terraCor = mix(terraCor, vec3(0.95,0.96,0.98), smoothstep(0.34, 0.40, alt));',
-    '    terraCor = mix(terraCor, vec3(0.86,0.80,0.62), costa*0.7);',
-    '    if (alt < 0.0) { cor = marCor; agua = 1.0 - gelo; } else cor = terraCor;',
-    '  }',
-    '  return cor;',
-    '}'
-  ].join('\n');
-
-  var BAKE_VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
-  var BAKE_FRAG = [
-    'precision highp float;',
-    'uniform float uModo; uniform float uEps; varying vec2 vUv;',
-    RUIDO, ESTACOES,
-    'void main(){',
-    '  vec3 p = esfera(vUv);',
-    '  if (uModo < 0.5) {',                                         // relevo: normal (rgb) e altura (a)
-    '    vec3 e = normalize(cross(vec3(0.0,1.0,0.0), p) + vec3(1e-5));',
-    '    vec3 nn = cross(p, e);',
-    '    float hc = max(altura(p), MAR);',
-    '    float hx = max(altura(normalize(p + e*uEps)), MAR);',
-    '    float hy = max(altura(normalize(p + nn*uEps)), MAR);',
-    '    vec3 tn = normalize(vec3(-(hx - hc)/uEps*0.16, -(hy - hc)/uEps*0.16, 1.0));',
-    '    gl_FragColor = vec4(tn*0.5 + 0.5, clamp((hc - MAR)/0.5, 0.0, 1.0));',
-    '  } else if (uModo > 3.5) {',                                  // nuvens (r) e luzes das cidades por estação (g, b, a)
-    '    vec3 q = p*2.0 + vec3(fbm(p*1.4 + 40.0), fbm(p*1.4 + 50.0), fbm(p*1.4 + 60.0))*1.3;',
-    '    float c = fbm(q*1.7) + 0.05*sin(p.y*14.0);',
-    '    float h = altura(p), alt = h - MAR, lat = abs(p.y);',
-    '    float baixa = step(0.0, alt)*(1.0 - smoothstep(0.0, 0.08, alt))*step(lat, 0.82);',
-    '    float grupo = smoothstep(0.52, 0.70, fbm(p*8.0 + 30.0));',
-    '    float pt = hash(floor(p*520.0));',
-    '    float base = baixa*grupo;',
-    '    gl_FragColor = vec4(c, base*step(0.975, pt), base*step(0.90, pt), base*step(0.76, pt) + baixa*step(0.995, pt));',
-    '  } else {',                                                    // cores de uma estação; a = água
-    '    float h = altura(p), agua;',
-    '    vec3 cor = corEstacao(uModo - 1.0, h, umidade(p), p, agua);',
-    '    gl_FragColor = vec4(cor, agua);',
-    '  }',
-    '}'
-  ].join('\n');
-
-  /* ══════════ o "assado" das texturas (uma passada por quadro, para não travar) ══════════ */
-  var cenaAssar = new THREE.Scene(), camAssar = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  var matAssar = new THREE.ShaderMaterial({ uniforms: { uModo: { value: 0 }, uEps: { value: Math.PI * 2 / TW } },
-    vertexShader: BAKE_VERT, fragmentShader: BAKE_FRAG, depthTest: false, depthWrite: false });
-  cenaAssar.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), matAssar));
+  /* ══════════ as texturas prontas (assets/planeta/; o celular usa as de 1024 px) ══════════
+       relevo                         normal do relevo (r, g) e altura (b)
+       inverno / primavera / verao    as cores de cada estação
+       agua                           onde é mar em cada estação (r inverno, g primavera, b verão)
+       luzes                          as luzes das cidades em cada estação (r, g, b)
+       nuvens                         as nuvens (r) */
+  var PASTA = 'assets/planeta/' + (celular ? '1024' : '2048') + '/';
   var ANISO = renderer.capabilities.getMaxAnisotropy();
-  function alvo() {
-    var r = new THREE.WebGLRenderTarget(TW, TH, { minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter,
-      generateMipmaps: true, wrapS: THREE.RepeatWrapping, wrapT: THREE.ClampToEdgeWrapping, depthBuffer: false, stencilBuffer: false });
-    r.texture.anisotropy = ANISO; return r;
+  function textura() {
+    var t = new THREE.Texture();
+    t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.ClampToEdgeWrapping;
+    t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.anisotropy = ANISO;
+    return t;
   }
-  var rtRelevo = alvo(), rtNuvem = alvo(), rtCor = [alvo(), alvo(), alvo()];
-  var fila = [[rtRelevo, 0], [rtCor[0], 1], [rtCor[1], 2], [rtCor[2], 3], [rtNuvem, 4]], assado = false;
-  function assarUm() {
-    var item = fila.shift(); if (!item) return true;
-    matAssar.uniforms.uModo.value = item[1];
-    renderer.setRenderTarget(item[0]); renderer.render(cenaAssar, camAssar); renderer.setRenderTarget(null);
-    return !fila.length;
+  var texRelevo = textura(), texAgua = textura(), texLuzes = textura(), texNuvem = textura();
+  var texCor = [textura(), textura(), textura()];
+  var ARQUIVOS = [['relevo', texRelevo], ['inverno', texCor[0]], ['primavera', texCor[1]], ['verao', texCor[2]],
+    ['agua', texAgua], ['luzes', texLuzes], ['nuvens', texNuvem]];
+  var assado = false, pedidas = false;
+  function carregarTexturas() {
+    if (pedidas) return;
+    pedidas = true;
+    var faltam = ARQUIVOS.length, leitor = new THREE.ImageLoader();
+    ARQUIVOS.forEach(function (arq) {
+      leitor.load(PASTA + arq[0] + '.webp', function (imagem) {
+        arq[1].image = imagem; arq[1].needsUpdate = true;
+        if (--faltam === 0) { assado = true; aplicar(typeof window.__cicloFase === 'number' ? window.__cicloFase : 0); }
+      }, undefined, function () { /* sem a imagem o planeta não aparece; o resto da seção segue normal */ });
+    });
   }
 
   /* ══════════ o planeta ══════════ */
@@ -205,32 +116,33 @@
     'varying vec2 vUv; varying vec3 vPos; varying vec3 vNor;',
     'void main(){',
     '  vUv = uv; vec3 n = normalize(position);',
-    vt ? '  float e = texture2D(tRelevo, uv).a;' : '  float e = 0.0;',
+    vt ? '  float e = texture2D(tRelevo, uv).b;' : '  float e = 0.0;',
     '  vec3 p = n*(1.0 + e*uRelevo);',
     '  vPos = p; vNor = n;',
     '  gl_Position = projectionMatrix*modelViewMatrix*vec4(p, 1.0);',
     '}'
   ].join('\n');
   var PLANETA_FRAG = [
-    'uniform sampler2D tRelevo, tCorA, tCorB, tNuvem;',
+    'uniform sampler2D tRelevo, tCorA, tCorB, tAgua, tLuzes;',
     'uniform float uMix; uniform vec3 uSol, uCam, uAtmA, uAtmB, uLuzA, uLuzB;',
     'varying vec2 vUv; varying vec3 vPos; varying vec3 vNor;',
     'void main(){',
     '  vec3 n0 = normalize(vNor);',
     '  vec3 leste = normalize(cross(vec3(0.0,1.0,0.0), n0) + vec3(1e-5));',
     '  vec3 norte = cross(n0, leste);',
-    '  vec3 tn = texture2D(tRelevo, vUv).rgb*2.0 - 1.0;',
+    '  vec2 nxy = texture2D(tRelevo, vUv).rg*2.0 - 1.0;',
+    '  vec3 tn = vec3(nxy, sqrt(max(1.0 - dot(nxy, nxy), 0.0)));',
     '  vec3 n = normalize(leste*tn.x + norte*tn.y + n0*tn.z);',
-    '  vec4 a = texture2D(tCorA, vUv), b = texture2D(tCorB, vUv);',
-    '  vec3 cor = mix(a.rgb, b.rgb, uMix);',
-    '  float agua = mix(a.a, b.a, uMix);',
+    '  vec3 cor = mix(texture2D(tCorA, vUv).rgb, texture2D(tCorB, vUv).rgb, uMix);',
+    '  vec3 ag = texture2D(tAgua, vUv).rgb;',
+    '  float agua = mix(dot(ag, uLuzA), dot(ag, uLuzB), uMix);',
     '  vec3 L = normalize(uSol);',
     '  float dif = max(dot(n, L), 0.0);',
     '  float dia = smoothstep(-0.16, 0.24, dot(n0, L));',
     '  vec3 V = normalize(uCam - vPos);',
     '  float esp = pow(max(dot(n0, normalize(L + V)), 0.0), 70.0)*agua;',
     '  vec3 luz = cor*(0.04 + 1.22*dif) + vec3(1.0,0.93,0.82)*esp*0.9*dia;',
-    '  vec3 cid = texture2D(tNuvem, vUv).gba;',
+    '  vec3 cid = texture2D(tLuzes, vUv).rgb;',
     '  float cidades = mix(dot(cid, uLuzA), dot(cid, uLuzB), uMix);',
     '  luz += vec3(1.0,0.70,0.34)*cidades*5.0*(1.0 - smoothstep(-0.3, 0.12, dot(n0, L)));',
     '  float fres = pow(1.0 - max(dot(n0, V), 0.0), 2.6);',
@@ -239,8 +151,8 @@
     '}'
   ].join('\n');
   var uPlaneta = {
-    tRelevo: { value: rtRelevo.texture }, tCorA: { value: rtCor[0].texture }, tCorB: { value: rtCor[0].texture },
-    tNuvem: { value: rtNuvem.texture }, uRelevo: { value: 0.045 }, uMix: { value: 0 },
+    tRelevo: { value: texRelevo }, tCorA: { value: texCor[0] }, tCorB: { value: texCor[0] },
+    tAgua: { value: texAgua }, tLuzes: { value: texLuzes }, uRelevo: { value: 0.045 }, uMix: { value: 0 },
     uSol: { value: new THREE.Vector3() }, uCam: { value: new THREE.Vector3() },
     uAtmA: { value: EST[0].atm.clone() }, uAtmB: { value: EST[0].atm.clone() },
     uLuzA: { value: EST[0].luz.clone() }, uLuzB: { value: EST[0].luz.clone() }
@@ -252,7 +164,7 @@
   eixo.add(planeta);
 
   // as nuvens: uma casca um pouco acima, que corre devagar sobre o planeta
-  var uNuvem = { tNuvem: { value: rtNuvem.texture }, uDesl: { value: 0 }, uCob: { value: EST[0].nuvem },
+  var uNuvem = { tNuvem: { value: texNuvem }, uDesl: { value: 0 }, uCob: { value: EST[0].nuvem },
     uSol: uPlaneta.uSol, uCam: uPlaneta.uCam };
   var nuvens = new THREE.Mesh(new THREE.SphereGeometry(1.028, 160, 80), new THREE.ShaderMaterial({
     uniforms: uNuvem, transparent: true, depthWrite: false,
@@ -298,12 +210,12 @@
     if (troca || i === atual) return;
     if (reduzido) { aplicar(i); return; }
     troca = { para: i, t: 0, dur: 1.7, base: extra };
-    uPlaneta.tCorB.value = rtCor[i].texture;
+    uPlaneta.tCorB.value = texCor[i];
     uPlaneta.uAtmB.value.copy(EST[i].atm); uPlaneta.uLuzB.value.copy(EST[i].luz);
   }
   function aplicar(i) {
     atual = i;
-    uPlaneta.tCorA.value = uPlaneta.tCorB.value = rtCor[i].texture;
+    uPlaneta.tCorA.value = uPlaneta.tCorB.value = texCor[i];
     uPlaneta.uAtmA.value.copy(EST[i].atm); uPlaneta.uAtmB.value.copy(EST[i].atm);
     uPlaneta.uLuzA.value.copy(EST[i].luz); uPlaneta.uLuzB.value.copy(EST[i].luz);
     uPlaneta.uMix.value = 0; uNuvem.uCob.value = EST[i].nuvem; uAtm.uCor.value.copy(EST[i].atm);
@@ -363,32 +275,36 @@
     quadro = requestAnimationFrame(passo);
     if (!cena3d.vez(agora)) return;              // não é a vez desta cena (js/cenas.js) ou passou do limite de fps
     var dt = Math.min(0.05, (agora - ultimo) / 1000 || 0); ultimo = agora;
-    if (!assado) { assado = assarUm(); if (assado) aplicar(typeof window.__cicloFase === 'number' ? window.__cicloFase : 0); }
     desenhar(dt);
   }
   function ligar() {
+    carregarTexturas();
     if (rodando || document.hidden) return;
     if (reduzido && assado) { desenhar(0); return; }
     rodando = true; ultimo = performance.now(); quadro = requestAnimationFrame(passo);
   }
   function desligar() { rodando = false; cancelAnimationFrame(quadro); }
-  // com "reduzir movimento": assa tudo de uma vez e desenha só quando algo muda
+  // com "reduzir movimento": desenha só quando algo muda (as texturas chegando chamam aplicar, que desenha)
   if (reduzido) {
-    var antigoLigar = ligar;
-    ligar = function () {
-      if (!assado) { while (!assarUm()) { /* assa todas */ } assado = true; aplicar(window.__cicloFase || 0); }
-      desenhar(0);
-    };
+    ligar = function () { carregarTexturas(); if (assado) desenhar(0); };
     window.addEventListener('ciclo:fase', function () { if (assado) desenhar(0); });
-    antigoLigar = null;
   }
   medir();
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(tela); else window.addEventListener('resize', medir, { passive: true });
   // a vez de desenhar vem do maestro (js/cenas.js); ao trocar de etapa o planeta ganha a vez enquanto gira
   var cena3d = Cenas.registrar({ nome: 'planeta', el: tela, peso: 1, fps: 30,
     ligar: function () { ligar(); }, desligar: desligar,
-    pintar: function () { if (assado) desenhar(0); } });   // sem pressa: as texturas são feitas quando for a vez dele
+    pintar: function () { carregarTexturas(); if (assado) desenhar(0); } });
   window.addEventListener('ciclo:fase', function () { cena3d.focar(2200); });
+  // as imagens começam a baixar quando a seção está a umas duas telas de distância
+  if ('IntersectionObserver' in window) {
+    var perto = new IntersectionObserver(function (e) {
+      if (e[0].isIntersecting) { carregarTexturas(); perto.disconnect(); }
+    }, { rootMargin: '1600px 0px' });
+    perto.observe(secao);
+  } else {
+    carregarTexturas();
+  }
   if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
     window.addEventListener('pointermove', function (e) {
       if (!visivel) return;

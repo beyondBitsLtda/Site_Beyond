@@ -28,6 +28,10 @@
   try {
     renderer = new THREE.WebGLRenderer({ canvas: tela, alpha: true, antialias: true });
   } catch (e) { return; }
+  // compilação dos shaders sem travar a página: o Three não fica esperando cada shader só para conferir
+  // erros, e o navegador compila em paralelo (em placas integradas no Windows cada um levava ~0,5 s)
+  renderer.debug.checkShaderErrors = false;
+  try { renderer.getContext().getExtension('KHR_parallel_shader_compile'); } catch (e) { /* sem a extensão */ }
   renderer.setClearColor(0x000000, 0);
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;       // o marfim não estoura: brilho com volume
@@ -444,7 +448,7 @@
     camera.updateProjectionMatrix();
     var dist = Math.hypot(CAM.x, CAM.y - CAM.alvoY, CAM.z);
     pxPorUnidade = buf.y / (2 * dist * Math.tan(camera.fov * Math.PI / 360));
-    if (!rodando) desenhar(0);
+    if (!rodando && cena3d && cena3d.visivel()) desenhar(0);    // longe da tela não desenha (o maestro pinta quando aparecer)
   }
 
   /* ───────── laço ───────── */
@@ -494,6 +498,11 @@
   function desligar() { rodando = false; cancelAnimationFrame(quadro); }
 
   medir();
+  // os shaders já vão compilando em segundo plano; o primeiro quadro só sai quando o trem aparece
+  try {
+    renderer.setRenderTarget(rt); renderer.compile(cenaTrem, camera); renderer.setRenderTarget(null);
+    renderer.compile(cenaTrilho, camera); renderer.compile(cenaQuad, camQuad);
+  } catch (e) { renderer.setRenderTarget(null); }
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(faixa);
   else window.addEventListener('resize', medir, { passive: true });
   // a vez de desenhar vem do maestro (js/cenas.js); o trem é rápido (60 quadros) e, mesmo sendo uma faixa

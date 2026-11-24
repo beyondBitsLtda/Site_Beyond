@@ -498,13 +498,18 @@
       document.body.appendChild(s);
     }
     if ('IntersectionObserver' in window) {
-      // ao sair da tela, espera um pouco antes de desmontar: se o visitante voltar logo, ela continua lá
-      // (e não desmonta no meio da preparação dos shaders do rosto)
-      var saida = 0;
+      // o rosto só monta quando o visitante para nela (~0,6 s com ela na tela): quem passa rolando rápido
+      // não paga a preparação dos shaders do rosto, que é pesada em placas de vídeo integradas. Depois de
+      // montado, só desmonta quando essa preparação certamente terminou (8 s depois de montar)
+      var espera = 0, saida = 0, montadoEm = 0;
       new IntersectionObserver(function (e) {
-        clearTimeout(saida);
-        if (e[0].isIntersecting) carregar(); else saida = setTimeout(desmontarRosto, 1500);
-      }, { rootMargin: '150px 0px' }).observe(palco);
+        clearTimeout(espera); clearTimeout(saida);
+        if (e[0].isIntersecting) {
+          espera = setTimeout(function () { if (!desmontar) montadoEm = Date.now(); carregar(); }, 600);
+        } else {
+          saida = setTimeout(desmontarRosto, Math.max(1500, 8000 - (Date.now() - montadoEm)));
+        }
+      }).observe(palco);
       // o rosto tem o próprio laço (js/lisa-rosto.js); aqui ela só entra no maestro (js/cenas.js),
       // para as outras cenas (os trilhos do fundo) pararem enquanto ela está na tela
       if (window.Cenas) window.Cenas.registrar({ nome: 'lisa', el: palco, peso: 1, fps: 60 });

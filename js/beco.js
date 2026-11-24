@@ -66,6 +66,10 @@
     renderer = new THREE.WebGLRenderer({ canvas: tela, alpha: true, antialias: true });
   } catch (e) { return; }
   beco.classList.add('beco--3d');
+  // compilação dos shaders sem travar a página: o Three não fica esperando cada shader só para conferir
+  // erros, e o navegador compila em paralelo (em placas integradas no Windows cada um levava ~0,5 s)
+  renderer.debug.checkShaderErrors = false;
+  try { renderer.getContext().getExtension('KHR_parallel_shader_compile'); } catch (e) { /* sem a extensão */ }
   renderer.setClearColor(0x000000, 0);
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -627,7 +631,7 @@
     poste.position.set(Math.max(bx - BW / 2 - 1.1, bx - meiaP * 0.72), 0, zp);
     refazerFios();
     LIM.x = meiaLarg + 3;
-    if (!rodando) desenhar(0);
+    if (!rodando && cena3d && cena3d.visivel()) desenhar(0);    // longe da tela não desenha (o maestro pinta quando aparecer)
   }
 
   /* ───────── laço ───────── */
@@ -669,6 +673,8 @@
 
   iniciarSite(0);
   medir();
+  // os shaders já vão compilando em segundo plano; o primeiro quadro só sai quando o beco aparece
+  try { renderer.compile(cena, camera); } catch (e) { /* compila no primeiro quadro */ }
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(beco); else window.addEventListener('resize', medir, { passive: true });
   // a vez de desenhar vem do maestro (js/cenas.js)
   cena3d = Cenas.registrar({ nome: 'beco', el: beco, peso: 1, fps: 30, ligar: ligar, desligar: desligar,
