@@ -26,7 +26,7 @@ Cenas.preparar('tremDivisa', function tremDaDivisa() {
 
   var renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas: tela, alpha: true, antialias: true });
+    renderer = Cenas.renderizador(tela);                       // o motor 3D compartilhado (js/cenas.js)
   } catch (e) { return; }
   // compilação dos shaders sem travar a página: o Three não fica esperando cada shader só para conferir
   // erros, e o navegador compila em paralelo (em placas integradas no Windows cada um levava ~0,5 s)
@@ -512,6 +512,7 @@ Cenas.preparar('tremDivisa', function tremDaDivisa() {
   // a vez de desenhar vem do maestro (js/cenas.js); o trem é rápido (60 quadros) e, mesmo sendo uma faixa
   // baixa, ganha a vez do fundo quando aparece (peso maior)
   cena3d = Cenas.registrar({ nome: 'trem', el: faixa, peso: 2.5, fps: 60, ligar: ligar, desligar: desligar,
+    motor: renderer, aoMudarQualidade: medir,             // o borrão usa o tamanho da imagem: recalcula
     pintar: function () { if (!rodando) desenhar(0); } });
   tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); desligar(); });
 });

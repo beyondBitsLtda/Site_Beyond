@@ -240,7 +240,7 @@
   function montar() {
     var renderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas: tela, antialias: false, alpha: true, premultipliedAlpha: true, powerPreference: 'high-performance' });
+      renderer = Cenas.renderizador(tela);                     // o motor 3D compartilhado (js/cenas.js); a resolução é ajustada aqui mesmo
     } catch (err) {
       tela.style.display = 'none';
       return;

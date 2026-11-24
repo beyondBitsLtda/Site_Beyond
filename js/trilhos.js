@@ -22,7 +22,7 @@ Cenas.preparar('projetos', function trilhosEspaciais() {
 
   var renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas: tela, alpha: true, antialias: true, powerPreference: 'low-power' });
+    renderer = Cenas.renderizador(tela);                       // o motor 3D compartilhado (js/cenas.js)
   } catch (e) { return; }
   renderer.setClearColor(0x000000, 0);
 
@@ -258,7 +258,7 @@ Cenas.preparar('projetos', function trilhosEspaciais() {
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(janela);
   else window.addEventListener('resize', medir, { passive: true });
   // a vez de desenhar vem do maestro (js/cenas.js): os trilhos são fundo e cedem para as cenas da frente
-  cena3d = Cenas.registrar({ nome: 'trilhos', el: janela, peso: 0.3, fps: 30, ligar: ligar, desligar: desligar,
+  cena3d = Cenas.registrar({ nome: 'trilhos', el: janela, peso: 0.3, fps: 30, ligar: ligar, desligar: desligar, motor: renderer,
     pintar: function () { if (!rodando) desenhar(0); } });
   if (reduzido) {                                              // parado: só redesenha a câmera ao rolar
     window.addEventListener('scroll', function () { if (cena3d.visivel()) desenhar(0); }, { passive: true });

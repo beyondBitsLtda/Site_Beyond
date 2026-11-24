@@ -252,7 +252,8 @@ function initEarthGlobe() {
   const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
   camera.position.z = 2.5;
 
-  earthGlobeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  // o motor 3D é compartilhado com as outras cenas (js/cenas.js)
+  earthGlobeRenderer = window.Cenas ? window.Cenas.renderizador(null) : new THREE.WebGLRenderer({ antialias: true, alpha: true });
   earthGlobeRenderer.setSize(W, H);
   earthGlobeRenderer.setPixelRatio(dpr);
   earthGlobeRenderer.setClearColor(0x000000, 0);
@@ -333,7 +334,7 @@ function initEarthGlobe() {
   };
   const cenaGlobo = window.Cenas
     ? window.Cenas.registrar({
-        nome: 'globo', el, peso: 0.8, fps: 30, ligar: ligarGlobo,
+        nome: 'globo', el, peso: 0.8, fps: 30, ligar: ligarGlobo, motor: earthGlobeRenderer,
         desligar: () => { rodando = false; cancelAnimationFrame(quadro); },
         pintar: () => desenharGlobo(0)
       })

@@ -65,7 +65,7 @@
   function montar() {
     var renderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas: tela, antialias: true, alpha: true, powerPreference: 'high-performance' });
+      renderer = Cenas.renderizador(tela);                     // o motor 3D compartilhado (js/cenas.js)
     } catch (err) {
       palco.classList.add('is-sem-3d');
       return;
@@ -714,7 +714,7 @@
     if ('ResizeObserver' in window) new ResizeObserver(medir).observe(palco);
     else window.addEventListener('resize', medir, { passive: true });
     // a vez de desenhar vem do maestro (js/cenas.js): fora da tela ou sem a vez, para
-    cena3d = Cenas.registrar({ nome: 'disco', el: palco, peso: 1, fps: 30,
+    cena3d = Cenas.registrar({ nome: 'disco', el: palco, peso: 1, fps: 30, motor: renderer,
       ligar: function () { visivel = true; pedir(); },
       desligar: function () { visivel = false; },
       pintar: function () { desenhar(); } });

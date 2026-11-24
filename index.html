@@ -1196,12 +1196,17 @@ body.dark-mode .seg-badge {
   .seg-badge-seal { width: 52px; height: 52px; }
 }
 
-/* ═══ OTIMIZAÇÃO — pular layout de seções fora de tela ═══ */
+/* ═══ OTIMIZAÇÃO — o navegador pula layout e pintura das seções fora da tela ═══
+   "auto" guarda a altura real da última vez que a seção apareceu (antes era 800 px fixos, e a página
+   mudava de altura quando o Ciclo saía de vista). Só nas seções que não vazam para as vizinhas. */
 .ciclo-section,
-.benefits-section {
+.benefits-section,
+.seg-section,
+.cta-section {
   content-visibility: auto;
-  contain-intrinsic-size: 800px;
+  contain-intrinsic-size: auto 1600px;
 }
+.cta-section { contain-intrinsic-size: auto 100vh; }
 </style>
 
 <!-- ═══════════ MARKUP ═══════════ -->

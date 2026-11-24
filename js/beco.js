@@ -63,7 +63,7 @@ Cenas.preparar('beco', function becoDoOutdoor() {
 
   var renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas: tela, alpha: true, antialias: true });
+    renderer = Cenas.renderizador(tela);                       // o motor 3D compartilhado (js/cenas.js)
   } catch (e) { return; }
   // compilação dos shaders sem travar a página: o Three não fica esperando cada shader só para conferir
   // erros, e o navegador compila em paralelo (em placas integradas no Windows cada um levava ~0,5 s)
@@ -687,7 +687,7 @@ Cenas.preparar('beco', function becoDoOutdoor() {
   function precompilar() { try { renderer.compile(cena, camera); } catch (e) { /* compila no primeiro quadro */ } }
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(beco); else window.addEventListener('resize', medir, { passive: true });
   // a vez de desenhar vem do maestro (js/cenas.js)
-  cena3d = Cenas.registrar({ nome: 'beco', el: beco, peso: 1, fps: 30, ligar: ligar, desligar: desligar,
+  cena3d = Cenas.registrar({ nome: 'beco', el: beco, peso: 1, fps: 30, ligar: ligar, desligar: desligar, motor: renderer,
     pintar: function () { if (!rodando) desenhar(0); } });
   if (!reduzido && window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
     window.addEventListener('mousemove', function (e) {

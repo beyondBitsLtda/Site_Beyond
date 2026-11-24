@@ -67,7 +67,7 @@ Cenas.preparar('processo', function planetaDasEstacoes() {
 
   if (!tela || typeof THREE === 'undefined') return;
   var renderer;
-  try { renderer = new THREE.WebGLRenderer({ canvas: tela, alpha: true, antialias: true }); } catch (e) { return; }
+  try { renderer = Cenas.renderizador(tela); } catch (e) { return; }     // o motor 3D compartilhado (js/cenas.js)
   renderer.setClearColor(0x000000, 0);
   var celular = Math.min(window.innerWidth, window.innerHeight) < 700;
   var cena = new THREE.Scene();
@@ -297,7 +297,7 @@ Cenas.preparar('processo', function planetaDasEstacoes() {
   medir();
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(tela); else window.addEventListener('resize', medir, { passive: true });
   // a vez de desenhar vem do maestro (js/cenas.js); ao trocar de etapa o planeta ganha a vez enquanto gira
-  var cena3d = Cenas.registrar({ nome: 'planeta', el: tela, peso: 1, fps: 30,
+  var cena3d = Cenas.registrar({ nome: 'planeta', el: tela, peso: 1, fps: 30, motor: renderer,
     ligar: function () { ligar(); }, desligar: desligar,
     pintar: function () { carregarTexturas(); if (assado) desenhar(0); } });
   window.addEventListener('ciclo:fase', function () { cena3d.focar(2200); });

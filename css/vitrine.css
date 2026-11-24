@@ -1480,3 +1480,10 @@
   .ciclo-cab { padding: 0 20px; }
   .ciclo-cards { padding-left: 20px; padding-right: 20px; }
 }
+
+/* ══════════ "por hero" (js/cenas.js): seção a mais de uma tela de distância ══════════
+   As animações CSS param e as camadas decorativas somem: o navegador deixa de animar e compor o que ninguém
+   está vendo. Tudo volta antes de a seção aparecer (a marca sai quando ela está a uma tela de distância). */
+.longe *, .longe *::before, .longe *::after { animation-play-state: paused !important; }
+.longe .depo-ceu, .longe .vit-ceu, .longe .ciclo-fundo, .longe .beco-fundo,
+.longe .seg-ceu, .longe .seg-nave-rota, .longe .space-bg, .longe .space-frente, .longe .sat-track { visibility: hidden; }
