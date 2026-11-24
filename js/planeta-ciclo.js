@@ -18,7 +18,7 @@
    No fundo, atrás do planeta, as naves cruzando (HTML, assets/nave.webp).
    Só desenha com a seção na tela e a aba visível. "Reduzir movimento": sem giro e sem naves.
 ══════════════════════════════════════════════════════════════ */
-(function planetaDasEstacoes() {
+Cenas.preparar('processo', function planetaDasEstacoes() {
   'use strict';
   var secao = document.getElementById('processo');
   var tela = document.getElementById('cicloPlaneta');
@@ -95,12 +95,17 @@
   function carregarTexturas() {
     if (pedidas) return;
     pedidas = true;
-    var faltam = ARQUIVOS.length, leitor = new THREE.ImageLoader();
+    var faltam = ARQUIVOS.length;
     ARQUIVOS.forEach(function (arq) {
-      leitor.load(PASTA + arq[0] + '.webp', function (imagem) {
-        arq[1].image = imagem; arq[1].needsUpdate = true;
-        if (--faltam === 0) { assado = true; aplicar(typeof window.__cicloFase === 'number' ? window.__cicloFase : 0); }
-      }, undefined, function () { /* sem a imagem o planeta não aparece; o resto da seção segue normal */ });
+      Cenas.imagem(PASTA + arq[0] + '.webp', true).then(function (r) {
+        arq[1].image = r.img; arq[1].flipY = !r.bitmap; arq[1].needsUpdate = true;
+        // cada textura vai para a placa num momento ocioso, uma de cada vez (antes iam as sete juntas no
+        // primeiro quadro do planeta, e a página travava ~3 s)
+        Cenas.ocioso(function () {
+          try { renderer.initTexture(arq[1]); } catch (e) { /* vai no primeiro quadro */ }
+          if (--faltam === 0) { assado = true; aplicar(typeof window.__cicloFase === 'number' ? window.__cicloFase : 0); }
+        }, tela);
+      }, function () { /* sem a imagem o planeta não aparece; o resto da seção segue normal */ });
     });
   }
 
@@ -312,4 +317,4 @@
     }, { passive: true });
   }
   tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); desligar(); });
-})();
+});

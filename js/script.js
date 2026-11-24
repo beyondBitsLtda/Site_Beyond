@@ -1,9 +1,20 @@
-/* ── PROGRESS BAR ── */
+/* ── PROGRESS BAR ──
+   A altura da página fica guardada (é medida só quando muda de tamanho) e a barra é atualizada uma vez por
+   quadro: ler a altura a cada evento de rolagem obrigava o navegador a recalcular o layout da página inteira. */
 const progressBar = document.getElementById('progressBar');
-window.addEventListener('scroll', () => {
-  const total = document.documentElement.scrollHeight - window.innerHeight;
-  progressBar.style.width = (window.scrollY / total * 100) + '%';
-}, { passive: true });
+if (progressBar) {
+  let totalRolagem = 1, barraPedida = false;
+  const medirRolagem = () => { totalRolagem = Math.max(1, document.documentElement.scrollHeight - window.innerHeight); };
+  medirRolagem();
+  window.addEventListener('resize', medirRolagem, { passive: true });
+  window.addEventListener('load', medirRolagem);
+  if ('ResizeObserver' in window) new ResizeObserver(medirRolagem).observe(document.body);
+  window.addEventListener('scroll', () => {
+    if (barraPedida) return;
+    barraPedida = true;
+    requestAnimationFrame(() => { barraPedida = false; progressBar.style.width = (window.scrollY / totalRolagem * 100) + '%'; });
+  }, { passive: true });
+}
 
 /* ══════════════════════════════════════════
    DARK MODE — sempre escuro, sem toggle
@@ -247,16 +258,27 @@ function initEarthGlobe() {
   earthGlobeRenderer.setClearColor(0x000000, 0);
   el.appendChild(earthGlobeRenderer.domElement);
 
-  const loader = new THREE.TextureLoader();
-  loader.crossOrigin = 'anonymous';
+  // as texturas da Terra são decodificadas fora da tarefa principal e vão para a placa num momento ocioso
+  const texDe = (url) => {
+    const t = new THREE.Texture();
+    if (window.Cenas) {
+      window.Cenas.imagem(url, true).then((r) => {
+        t.image = r.img; t.flipY = !r.bitmap; t.needsUpdate = true;
+        window.Cenas.ocioso(() => { try { earthGlobeRenderer.initTexture(t); } catch (e) { /* vai no primeiro quadro */ } }, el);
+      }, () => {});
+    } else {
+      new THREE.TextureLoader().load(url, (tx) => { t.image = tx.image; t.needsUpdate = true; });
+    }
+    return t;
+  };
 
   // Versão fixa: a URL sem versão redireciona e a resposta perde o cabeçalho CORS
   const TEX = 'https://unpkg.com/three-globe@2.45.6/example/img/';
   const earthMat = new THREE.MeshPhongMaterial({
-    map:         loader.load(TEX + 'earth-night.jpg'),
-    bumpMap:     loader.load(TEX + 'earth-topology.png'),
+    map:         texDe(TEX + 'earth-night.jpg'),
+    bumpMap:     texDe(TEX + 'earth-topology.png'),
     bumpScale:   0.05,
-    specularMap: loader.load(TEX + 'earth-water.png'),
+    specularMap: texDe(TEX + 'earth-water.png'),
     specular:    new THREE.Color(0x003366),
     shininess:   20,
   });
@@ -317,18 +339,15 @@ function initEarthGlobe() {
       })
     : { vez: () => true };
   if (!window.Cenas) ligarGlobo();
+  desenharGlobo(0);                                    // quadro de aquecimento: prepara o shader já na montagem
 }
 
-const earthObserver = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      initEarthGlobe();
-      earthObserver.disconnect();
-    }
-  });
-}, { threshold: 0.05 });
+// o globo é montado em segundo plano pelo maestro (js/cenas.js), logo depois de a página carregar
 const benefitsSec = document.querySelector('.benefits-section');
-if (benefitsSec) earthObserver.observe(benefitsSec);
+if (benefitsSec) {
+  if (window.Cenas) window.Cenas.preparar(benefitsSec, initEarthGlobe);
+  else initEarthGlobe();
+}
 
 /* ══════════════════════════════════════════════════════
    SEÇÃO "O QUE CONSTRUÍMOS" — cena espacial

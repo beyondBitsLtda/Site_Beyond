@@ -39,10 +39,19 @@
      ~1 estrela a cada `densidade` px², 1/3 delas puxadas para uma faixa na diagonal (a galáxia);
      `espelha` inverte a diagonal. */
   var CORES = ['255,255,255', '255,255,255', '255,255,255', '205,218,255', '255,234,214'];
+  // num momento ocioso (para redesenhar o céu sem atrapalhar a rolagem)
+  function ocioso(fn, el) {
+    if (window.Cenas && window.Cenas.ocioso) return window.Cenas.ocioso(fn, el);
+    (window.requestIdleCallback || function (f) { return setTimeout(f, 30); })(fn, { timeout: 500 });
+  }
+
   function ceuEstrelado(ceu, base, brilhos, semente, densidade, espelha) {
     if (!ceu || !base || !base.getContext) return;
     var tamanho = { w: 0, h: 0 };
+    var todas = [base].concat(brilhos.filter(Boolean));
+    var perto = !('IntersectionObserver' in window);
     function desenhar() {
+      if (!perto) return;                           // longe da tela: os canvas ficam vazios (memória livre)
       var w = ceu.clientWidth, h = ceu.clientHeight;
       if (!w || !h || (Math.abs(w - tamanho.w) < 2 && Math.abs(h - tamanho.h) < 2)) return;
       tamanho = { w: w, h: h };
@@ -79,6 +88,15 @@
       }
       // avisa quem usa o céu como textura (os buracos do contato, js/buracos.js)
       try { ceu.dispatchEvent(new CustomEvent('ceu:desenhado')); } catch (e) { /* navegador antigo */ }
+    }
+    // a mais de duas telas de distância, os três canvas do céu são esvaziados (cada um tem o tamanho da
+    // seção inteira); ao se aproximar, o céu é redesenhado igualzinho (a semente é fixa)
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (e) {
+        perto = e[0].isIntersecting;
+        if (perto) ocioso(desenhar, ceu);
+        else { todas.forEach(function (c) { c.width = 0; c.height = 0; }); tamanho = { w: 0, h: 0 }; }
+      }, { rootMargin: '1800px 0px' }).observe(ceu);
     }
     desenhar();
     if ('ResizeObserver' in window) {

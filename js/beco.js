@@ -25,7 +25,7 @@
    Só desenha com a cena na tela e a aba visível. Com "reduzir movimento": tudo parado no
    primeiro site (a lista ainda troca o site). Sem WebGL: fica a imagem de reserva.
 ══════════════════════════════════════════════════════════════ */
-(function becoDoOutdoor() {
+Cenas.preparar('beco', function becoDoOutdoor() {
   'use strict';
   var beco = document.getElementById('beco');
   var tela = document.getElementById('becoTela');
@@ -65,7 +65,6 @@
   try {
     renderer = new THREE.WebGLRenderer({ canvas: tela, alpha: true, antialias: true });
   } catch (e) { return; }
-  beco.classList.add('beco--3d');
   // compilação dos shaders sem travar a página: o Three não fica esperando cada shader só para conferir
   // erros, e o navegador compila em paralelo (em placas integradas no Windows cada um levava ~0,5 s)
   renderer.debug.checkShaderErrors = false;
@@ -118,16 +117,26 @@
   }
 
   /* ───────── ambiente para os reflexos do metal ───────── */
-  (function ambiente() {
-    var c = tela2d(512, 256), x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#0b0d22'); g.addColorStop(0.46, '#2a2440'); g.addColorStop(0.52, '#6d4e48'); g.addColorStop(1, '#050508');
-    x.fillStyle = g; x.fillRect(0, 0, 512, 256);
-    x.filter = 'blur(8px)';
-    x.fillStyle = 'rgba(255,226,190,0.9)'; x.fillRect(120, 70, 160, 40);
-    x.fillStyle = 'rgba(160,200,255,0.5)'; x.fillRect(330, 60, 90, 30);
-    var t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.encoding = THREE.sRGBEncoding;
-    var pm = new THREE.PMREMGenerator(renderer); cena.environment = pm.fromEquirectangular(t).texture; t.dispose(); pm.dispose();
-  })();
+  /* ───────── mapa de ambiente (os reflexos): imagem pronta, assets/ambiente-beco.webp ─────────
+     O céu da noite com o brilho da cidade no horizonte. Já vem processado no formato de reflexo do Three
+     (PMREM, "cube UV"): antes esse processamento rodava aqui e compilava shaders pesados ao abrir a
+     página; agora foi feito uma vez, fora do site, com o mesmo céu desenhado. */
+  var ambientePronto = false;
+  Cenas.imagem('assets/ambiente-beco.webp', false).then(function (r) {
+    var env = new THREE.Texture(r.img);
+    env.mapping = THREE.CubeUVReflectionMapping; env.encoding = THREE.sRGBEncoding;
+    env.minFilter = env.magFilter = THREE.NearestFilter; env.generateMipmaps = false; env.flipY = false;
+    env.needsUpdate = true;
+    cena.environment = env;
+    beco.classList.add('beco--3d');                      // até aqui fica a imagem de reserva do outdoor
+    ambientePronto = true;
+    Cenas.ocioso(function () {                           // num momento ocioso: envia à placa e compila já com o reflexo
+      try { renderer.initTexture(env); } catch (e) { /* vai no primeiro quadro */ }
+      precompilar();
+      if (!rodando) desenhar(0);                         // quadro de aquecimento, mesmo fora da tela: envia as texturas
+                                                         // e prepara tudo agora, e não no primeiro quadro que aparece
+    }, beco);
+  }, function () { /* sem o reflexo a cena não aparece; o resto da seção segue normal */ });
   cena.add(new THREE.HemisphereLight(0x8a9cff, 0x140e0a, 0.42));
   var lua = new THREE.DirectionalLight(0xb7c6ff, 0.55); lua.position.set(-10, 18, 8); cena.add(lua);
 
@@ -637,6 +646,7 @@
   /* ───────── laço ───────── */
   var tempo = 0;
   function desenhar(dt) {
+    if (!ambientePronto) return;                         // espera o reflexo chegar (evita compilar duas vezes)
     tempo += dt;
     if (!reduzido && dt > 0) {
       programa(dt);
@@ -673,8 +683,8 @@
 
   iniciarSite(0);
   medir();
-  // os shaders já vão compilando em segundo plano; o primeiro quadro só sai quando o beco aparece
-  try { renderer.compile(cena, camera); } catch (e) { /* compila no primeiro quadro */ }
+  // os shaders compilam em segundo plano assim que o reflexo chega; o primeiro quadro só sai quando o beco aparece
+  function precompilar() { try { renderer.compile(cena, camera); } catch (e) { /* compila no primeiro quadro */ } }
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(beco); else window.addEventListener('resize', medir, { passive: true });
   // a vez de desenhar vem do maestro (js/cenas.js)
   cena3d = Cenas.registrar({ nome: 'beco', el: beco, peso: 1, fps: 30, ligar: ligar, desligar: desligar,
@@ -686,4 +696,4 @@
     }, { passive: true });
   }
   tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); desligar(); beco.classList.remove('beco--3d'); });
-})();
+});

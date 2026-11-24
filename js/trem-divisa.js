@@ -12,12 +12,12 @@
    · os vagões andam para a esquerda e, ao sair, voltam lá para a direita (trem infinito);
    · velocidade: borrão de movimento só no trem (passada própria + desfoque horizontal),
      linhas de velocidade, faíscas nas rodas e as luzes dos dormentes correndo junto;
-   · reflexos: um "céu" desenhado em canvas vira mapa de ambiente (PMREM).
+   · reflexos: um "céu" noturno já processado como mapa de ambiente (assets/ambiente-trem.webp).
 
    Só desenha com a faixa na tela e a aba visível. Com "reduzir movimento", fica parado.
    Sem WebGL ou sem Three.js, a faixa fica vazia (só o respiro entre as partes).
 ══════════════════════════════════════════════════════════════ */
-(function tremDaDivisa() {
+Cenas.preparar('tremDivisa', function tremDaDivisa() {
   'use strict';
   var faixa = document.getElementById('tremDivisa');
   var tela = document.getElementById('tremTela');
@@ -53,24 +53,25 @@
     x.arcTo(X, Y + H, X, Y, R); x.arcTo(X, Y, X + W, Y, R); x.closePath();
   }
 
-  /* ───────── mapa de ambiente: um céu noturno com faixa quente no horizonte ───────── */
-  (function ambiente() {
-    var c = tela2d(512, 256), x = c.getContext('2d');
-    var g = x.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#0d0f24'); g.addColorStop(0.42, '#26213c'); g.addColorStop(0.5, '#8a6656');
-    g.addColorStop(0.58, '#1b1626'); g.addColorStop(1, '#050509');
-    x.fillStyle = g; x.fillRect(0, 0, 512, 256);
-    x.filter = 'blur(6px)';
-    x.fillStyle = 'rgba(255,240,222,0.95)'; x.fillRect(70, 36, 130, 24); x.fillRect(300, 26, 90, 18);
-    x.fillStyle = 'rgba(255,160,90,0.85)'; x.fillRect(0, 124, 512, 9);
-    x.fillStyle = 'rgba(150,178,255,0.6)'; x.fillRect(410, 58, 70, 36);
-    var t = new THREE.CanvasTexture(c);
-    t.mapping = THREE.EquirectangularReflectionMapping; t.encoding = THREE.sRGBEncoding;
-    var pm = new THREE.PMREMGenerator(renderer);
-    var env = pm.fromEquirectangular(t).texture;
-    t.dispose(); pm.dispose();
+  /* ───────── mapa de ambiente (os reflexos): imagem pronta, assets/ambiente-trem.webp ─────────
+     Um céu noturno com faixa quente no horizonte e janelas de luz. Já vem processado no formato de reflexo do Three
+     (PMREM, "cube UV"): antes esse processamento rodava aqui e compilava shaders pesados ao abrir a
+     página; agora foi feito uma vez, fora do site, com o mesmo céu desenhado. */
+  var ambientePronto = false;
+  Cenas.imagem('assets/ambiente-trem.webp', false).then(function (r) {
+    var env = new THREE.Texture(r.img);
+    env.mapping = THREE.CubeUVReflectionMapping; env.encoding = THREE.sRGBEncoding;
+    env.minFilter = env.magFilter = THREE.NearestFilter; env.generateMipmaps = false; env.flipY = false;
+    env.needsUpdate = true;
     cenaTrem.environment = env; cenaTrilho.environment = env;
-  })();
+    ambientePronto = true;
+    Cenas.ocioso(function () {                           // num momento ocioso: envia à placa e compila já com o reflexo
+      try { renderer.initTexture(env); } catch (e) { /* vai no primeiro quadro */ }
+      precompilar();
+      if (!rodando) desenhar(0);                         // quadro de aquecimento, mesmo fora da tela: envia as texturas
+                                                         // e prepara tudo agora, e não no primeiro quadro que aparece
+    }, faixa);
+  }, function () { /* sem o reflexo a cena não aparece; o resto da seção segue normal */ });
 
   function luzes(c) {
     c.add(new THREE.HemisphereLight(0xa9b8ff, 0x1a120a, 0.35));
@@ -454,6 +455,7 @@
   /* ───────── laço ───────── */
   var tempo = 0;
   function desenhar(dt) {
+    if (!ambientePronto) return;                         // espera o reflexo chegar (evita compilar duas vezes)
     tempo += dt;
     var v = reduzido ? 0 : VEL;
     for (var i = 0; i < N; i++) {
@@ -498,11 +500,13 @@
   function desligar() { rodando = false; cancelAnimationFrame(quadro); }
 
   medir();
-  // os shaders já vão compilando em segundo plano; o primeiro quadro só sai quando o trem aparece
-  try {
-    renderer.setRenderTarget(rt); renderer.compile(cenaTrem, camera); renderer.setRenderTarget(null);
-    renderer.compile(cenaTrilho, camera); renderer.compile(cenaQuad, camQuad);
-  } catch (e) { renderer.setRenderTarget(null); }
+  // os shaders compilam em segundo plano assim que o reflexo chega; o primeiro quadro só sai quando o trem aparece
+  function precompilar() {
+    try {
+      renderer.setRenderTarget(rt); renderer.compile(cenaTrem, camera); renderer.setRenderTarget(null);
+      renderer.compile(cenaTrilho, camera); renderer.compile(cenaQuad, camQuad);
+    } catch (e) { renderer.setRenderTarget(null); }
+  }
   if ('ResizeObserver' in window) new ResizeObserver(medir).observe(faixa);
   else window.addEventListener('resize', medir, { passive: true });
   // a vez de desenhar vem do maestro (js/cenas.js); o trem é rápido (60 quadros) e, mesmo sendo uma faixa
@@ -510,4 +514,4 @@
   cena3d = Cenas.registrar({ nome: 'trem', el: faixa, peso: 2.5, fps: 60, ligar: ligar, desligar: desligar,
     pintar: function () { if (!rodando) desenhar(0); } });
   tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); desligar(); });
-})();
+});

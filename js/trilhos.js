@@ -12,7 +12,7 @@
    Só desenha com a seção na tela e a aba visível; com "reduzir movimento", fica parado.
    Sem WebGL ou sem Three.js, simplesmente não aparece.
 ══════════════════════════════════════════════════════════════ */
-(function trilhosEspaciais() {
+Cenas.preparar('projetos', function trilhosEspaciais() {
   'use strict';
   var tela = document.getElementById('vitTrilhos');
   var janela = document.getElementById('vitCeu');
@@ -264,4 +264,4 @@
     window.addEventListener('scroll', function () { if (cena3d.visivel()) desenhar(0); }, { passive: true });
   }
   tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); desligar(); reduzido = true; });
-})();
+});

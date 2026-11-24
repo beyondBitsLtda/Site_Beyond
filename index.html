@@ -153,26 +153,6 @@ body.dark-mode nav {
 
 <style>
 /* ═══════════ PERFORMANCE TUNING ═══════════ */
-/* ═══════════ SCROLL PERFORMANCE — visual preservado ═══════════ */
-/* Durante scroll ativo, desliga blur pesado. Religa ao parar.
-   Usuário não percebe (blur aparece em ~200ms após parar). */
-body.is-scrolling nav,
-body.is-scrolling .seg-card,
-body.is-scrolling .seg-badge {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* Grain overlay: reduz opacidade durante scroll (menos paint) */
-body.is-scrolling::before {
-  opacity: 0.2 !important;
-}
-
-/* Transições pesadas: desliga durante scroll */
-body.is-scrolling * {
-  transition-duration: 0s !important;
-}
-
 /* Força camada de composição nos canvases (não repinta no scroll) */
 #earthGlobeViz canvas {
   will-change: transform;
@@ -232,27 +212,9 @@ body.page-hidden *::after {
     document.body.classList.toggle('page-hidden', document.hidden);
   });
 
-  // Detecta scroll ativo — desliga blur temporariamente
-  let scrollTimer = null;
-  let isScrolling = false;
-  const body = document.body;
-
-  function onScroll() {
-    if (!isScrolling) {
-      body.classList.add('is-scrolling');
-      isScrolling = true;
-    }
-    clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(() => {
-      body.classList.remove('is-scrolling');
-      isScrolling = false;
-    }, 180);
-  }
-
-  // passive: true é crítico — deixa o browser scrollar sem esperar JS
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('wheel', onScroll, { passive: true });
-  window.addEventListener('touchmove', onScroll, { passive: true });
+  // (a classe "is-scrolling", que desligava o desfoque durante a rolagem, saiu: ligar e desligar essa classe
+  //  recalculava o estilo da página inteira a cada rolagem — custava mais do que economizava — e o desfoque
+  //  dos cards piscava)
 })();
 </script>
 

@@ -71,7 +71,7 @@
 @keyframes depoPisca { from { opacity: 0.2; } to { opacity: 1; } }
 
 /* chuva de meteoros: cada risco atravessa um trecho do céu de cima/direita para baixo/esquerda */
-.depo-meteoros { position: absolute; inset: 0; overflow: hidden; }
+.depo-meteoros { position: absolute; inset: 0; overflow: hidden; contain: strict; }   /* a camada não passa do tamanho do céu */
 .meteoro {
   position: absolute;
   left: var(--x); top: var(--y);
@@ -577,6 +577,7 @@
   position: absolute; left: 0; top: 0; z-index: 0;
   width: 1280px; height: 640px;
   transform-origin: 0 0;
+  will-change: transform;          /* a perspectiva muda a cada quadro: sem isso o print do site era redesenhado sempre */
   overflow: hidden;
   background: #0b0b12;
   display: none;
@@ -602,8 +603,8 @@
 .beco-url-cadeado { width: 10px; height: 8px; border-radius: 2px; background: #8d95a5; position: relative; top: 2px; }
 .beco-url-cadeado::before { content: ''; position: absolute; left: 2px; top: -6px; width: 6px; height: 7px; border: 2px solid #8d95a5; border-bottom: 0; border-radius: 4px 4px 0 0; box-sizing: border-box; }
 .beco-janela { position: absolute; left: 0; right: 0; top: 48px; bottom: 0; overflow: hidden; background: #fff; }
-.beco-pagina { position: absolute; left: 0; top: 0; width: 100%; height: auto; display: block; opacity: 0; }
-.beco-pagina.is-no-ar { opacity: 1; }
+.beco-pagina { position: absolute; left: 0; top: 0; width: 100%; height: auto; display: block; opacity: 0; visibility: hidden; will-change: transform; }
+.beco-pagina.is-no-ar { opacity: 1; visibility: visible; }   /* só o site no ar ocupa memória de vídeo */
 .beco-ruido { position: absolute; inset: 0; opacity: 0; pointer-events: none; background-size: 160px 160px; }
 /* a troca de site: uma interferência de sinal rápida */
 .beco-site-tela.is-trocando .beco-janela { animation: becoSinal 0.8s steps(1, end) both; }

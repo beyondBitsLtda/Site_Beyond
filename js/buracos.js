@@ -24,15 +24,8 @@
   var brilhoB = document.getElementById('ctaBrilhoB');
   if (!base || !brilhoA || !brilhoB) return;
 
-  var montado = false;
-  if ('IntersectionObserver' in window) {
-    var espia = new IntersectionObserver(function (e) {
-      if (e[0].isIntersecting && !montado) { montado = true; espia.disconnect(); montar(); }
-    }, { rootMargin: '600px 0px' });
-    espia.observe(secao);
-  } else {
-    montado = true; montar();
-  }
+  // a cena é montada em segundo plano pelo maestro (js/cenas.js), num momento parado, ou na hora se o visitante chegar perto
+  if (window.Cenas) window.Cenas.preparar(secao, montar); else montar();
 
   var VERT = 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }';
 
@@ -43,6 +36,7 @@
     'uniform vec3 uCam, uF, uR, uU;',
     'uniform vec3 uB, uW, uN, uA1, uA2, uE1, uE2;',
     'uniform float uXB, uXW, uT, uPassos, uExpo;',
+    'uniform int uPassosI;',
     'uniform sampler2D uCeu, uBrA, uBrB;',
 
     'const float RCB = 12.5;',   // esfera onde o canvas pinta, em volta do buraco negro (raio de Schwarzschild = 1)
@@ -202,8 +196,14 @@
     '  vec3 emis = vec3(0.0);',
     '  float trans = 1.0, mB = 1e9, mW = 1e9;',
     '  bool engolido = false;',
+    // no WebGL 2 o limite do laço vem de uma variável: o compilador do DirectX (placas no Windows) não tenta
+    // "desenrolar" os 240 passos e compila muito mais rápido; no WebGL 1 fica o laço fixo com a saída antecipada
+    '#if __VERSION__ >= 300',
+    '  for (int i = 0; i < uPassosI; i++) {',
+    '#else',
     '  for (int i = 0; i < 240; i++) {',
     '    if (float(i) >= uPassos) break;',
+    '#endif',
     '    vec3 rb = pos - uB, rw = pos - uW;',
     '    float db = length(rb), dw = length(rw);',
     '    mB = min(mB, db); mW = min(mW, dw);',
@@ -268,7 +268,7 @@
       uA1: { value: V3() }, uA2: { value: V3() }, uE1: { value: V3() }, uE2: { value: V3() },
       uXB: { value: 4 }, uXW: { value: 9 },
       uT: { value: 0 },
-      uPassos: { value: 200 },
+      uPassos: { value: 200 }, uPassosI: { value: 200 },
       uExpo: { value: 1.0 },
       uCeu: { value: texCeu }, uBrA: { value: texA }, uBrB: { value: texB }
     };
@@ -284,6 +284,7 @@
     var escalaMax = celular ? 0.75 : 1.0;
     var escala = celular ? 0.55 : 0.6;               // começa leve e sobe sozinho se a máquina aguentar
     u.uPassos.value = celular ? 130 : 180;
+    u.uPassosI.value = u.uPassos.value;
     var D = 52;                                    // distância da câmera ao centro da órbita
     var lugar = { cx: 0, cy: 0, U: 30, w: 1, h: 1 };
 
@@ -390,10 +391,30 @@
       requestAnimationFrame(quadro);
     }
 
+    // o céu (três canvas do tamanho da seção) vai para a placa num momento ocioso, um de cada vez, assim
+    // que é desenhado (antes ia tudo no primeiro quadro dos buracos, ~1 s de travada)
+    var aquecido = false;
+    function enviarCeu() {
+      [texCeu, texA, texB].forEach(function (t) {
+        Cenas.ocioso(function () { if (t.image && t.image.width) { try { renderer.initTexture(t); } catch (e) { /* vai no primeiro quadro */ } } }, tela);
+      });
+      // depois, um quadro de aquecimento fora da tela: o shader dos buracos (pesado) fica pronto antes de aparecer
+      Cenas.ocioso(function () {
+        if (aquecido || !(texCeu.image && texCeu.image.width) || rodando) return;
+        aquecido = true;
+        try {
+          renderer.setSize(64, 32, false); u.uRes.value.set(64, 32);   // bem pequeno: só prepara o shader e as texturas
+          atualizar(0); renderer.render(cena, cam2d);
+        } catch (e) { /* desenha no primeiro quadro */ }
+        aplicarTamanho();
+      }, tela);
+    }
     secao.addEventListener('ceu:desenhado', function () {
       texCeu.needsUpdate = texA.needsUpdate = texB.needsUpdate = true;
       medir();
+      enviarCeu();
     });
+    enviarCeu();
     secao.addEventListener('pointermove', function (e) {
       if (e.pointerType !== 'mouse') return;
       var r = secao.getBoundingClientRect();

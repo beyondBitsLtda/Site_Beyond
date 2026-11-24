@@ -5,8 +5,9 @@
    o círculo, o mapa dos pulsares e o átomo de hidrogênio); do outro, o disco com os sulcos,
    o rótulo "THE SOUNDS OF EARTH" e a dedicatória gravada à mão perto do rótulo.
 
-   Tudo é desenhado aqui, sem imagens: as gravações são pintadas num canvas (viram relevo
-   no shader) e o metal é um shader próprio, com o dourado refletindo um estúdio de luz
+   As gravações são pintadas num canvas pelo código abaixo (viram relevo no shader); para não
+   gastar ~1 s desenhando a cada visita, elas já vêm prontas em imagens (assets/disco/, geradas
+   com este mesmo código) e o desenho aqui só roda se as imagens faltarem. O metal é um shader próprio, com o dourado refletindo um estúdio de luz
    imaginário. Os sulcos têm brilho anisotrópico, como um disco de verdade: o reflexo é
    uma faixa que atravessa o centro e fica parada enquanto o disco gira.
 
@@ -54,15 +55,8 @@
   }
 
   /* só monta a cena quando o palco chega perto da tela */
-  var montado = false;
-  if ('IntersectionObserver' in window) {
-    var espia = new IntersectionObserver(function (e) {
-      if (e[0].isIntersecting && !montado) { montado = true; espia.disconnect(); montar(); }
-    }, { rootMargin: '500px 0px' });
-    espia.observe(palco);
-  } else {
-    montado = true; montar();
-  }
+  // a cena é montada em segundo plano pelo maestro (js/cenas.js), num momento parado, ou na hora se o visitante chegar perto
+  if (window.Cenas) window.Cenas.preparar(palco, montar); else montar();
 
   function sorteio(s) {
     return function () { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
@@ -204,7 +198,7 @@
     }
 
     /* A CAPA: as instruções gravadas para quem encontrar o disco */
-    var texCapa = textura(function (x) {
+    function desenharCapa(x) {
       var rnd = sorteio(19770820), g = gravador(x, rnd);
       x.strokeStyle = '#f00'; x.fillStyle = '#f00';
       x.lineCap = 'round'; x.lineJoin = 'round';
@@ -300,10 +294,10 @@
       g.linha([701, hy - 9, 701, hy + 9]);
 
       desgaste(x, rnd, '0,255,0');
-    });
+    }
 
     /* O DISCO: o rótulo, a dedicatória e os intervalos entre as faixas */
-    var texDisco = textura(function (x) {
+    function desenharDisco(x) {
       var rnd = sorteio(19770905), g = gravador(x, rnd);
       x.strokeStyle = '#f00'; x.fillStyle = '#f00';
       x.lineCap = 'round';
@@ -327,7 +321,26 @@
       x.restore();
 
       desgaste(x, rnd, '0,0,255');
-    });
+    }
+
+    /* as gravações prontas (assets/disco/capa-2048.webp etc.): decodificadas fora da tarefa principal e
+       enviadas à placa num momento parado; sem as imagens, desenha aqui mesmo */
+    var texCapa = new THREE.Texture(), texDisco = new THREE.Texture(), prontas = 0;
+    texCapa.anisotropy = texDisco.anisotropy = ANISO;
+    function carregarGravacao(t, nome, desenho) {
+      function pronta() {
+        if (++prontas < 2) return;
+        passo(0); desenhar(); pedir();                     // as duas chegaram: primeiro quadro (fora da tela, se for o caso)
+      }
+      Cenas.imagem('assets/disco/' + nome + '-' + TX + '.webp', true).then(function (r) {
+        t.image = r.img; t.flipY = !r.bitmap; t.needsUpdate = true;
+        Cenas.ocioso(function () { try { renderer.initTexture(t); } catch (e) { /* vai no primeiro quadro */ } pronta(); }, palco);
+      }, function () {
+        var c = textura(desenho); t.image = c.image; t.flipY = true; t.needsUpdate = true; pronta();
+      });
+    }
+    carregarGravacao(texCapa, 'capa', desenharCapa);
+    carregarGravacao(texDisco, 'disco', desenharDisco);
 
     /* ── a geometria: um disco fino com a borda arredondada e o furo do centro ── */
     var MEIA = 0.012, FURO = 0.024;
@@ -612,6 +625,7 @@
     }
 
     function desenhar() {
+      if (prontas < 2) return;                           // sem as gravações ainda: nada a mostrar
       cena.updateMatrixWorld();
       uniforms.uRot.value.setFromMatrix4(disco.matrixWorld);
       renderer.render(cena, camera);
@@ -706,9 +720,8 @@
       pintar: function () { desenhar(); } });
     tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); visivel = false; });
 
-    // primeiro quadro já pronto, mesmo antes de animar
+    // o primeiro quadro sai quando as gravações chegam (carregarGravacao)
     passo(0);
-    desenhar();
     pedir();
   }
 })();
