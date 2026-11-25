@@ -65,9 +65,13 @@ a.btn-primary{display:inline-flex;align-items:center;text-decoration:none}
 /* ══ PROGRESSIVE IMAGE LOADING (blur-up) ══
    Só desfoque → nítido, sem zoom: a imagem não muda de tamanho ao carregar.
    --blink-ms é controlado pelo JS da piscada. */
-.hero-img{transition:opacity var(--blink-ms,500ms) cubic-bezier(0.4,0,0.2,1),filter 0.9s ease}
-.hero-img.img-loading{filter:blur(18px)}
-.hero-img.img-loaded{filter:blur(0)}
+.hero-img{transition:opacity var(--blink-ms,500ms) cubic-bezier(0.4,0,0.2,1)}
+/* a prévia (16×9 px) fica desfocada por trás, parada (desenhada uma vez só); a imagem nítida entra por cima
+   só com opacidade. Antes o desfoque de 18 px era animado até zero numa camada do tamanho da tela, e isso
+   pesava na placa de vídeo bem no primeiro segundo (e atrasava a entrada do título). */
+.hero-media::before{content:'';position:absolute;inset:0;background:url("data:image/webp;base64,UklGRlYAAABXRUJQVlA4IEoAAADQAQCdASoQAAkAAUAmJZQCdAEO/gHOAAD++Kf/zN3/5lf/vj3/+4f/VgA=") center/cover no-repeat;filter:blur(18px);transform:scale(1.04)}
+#img1.img-loading{opacity:0}
+#img1.img-loaded{opacity:1}
 
 /* ══ NAV CONTRAST — backdrop para garantir legibilidade sobre qualquer imagem ══ */
 nav {
@@ -194,11 +198,6 @@ body.page-hidden *::after {
   }
 }
 
-/* Promove hero canvas pra camada de composição própria */
-#pixelCanvas {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
 </style>
 
 </head>
@@ -263,12 +262,15 @@ body.page-hidden *::after {
          src="data:image/webp;base64,UklGRlYAAABXRUJQVlA4IEoAAADQAQCdASoQAAkAAUAmJZQCdAEO/gHOAAD++Kf/zN3/5lf/vj3/+4f/VgA="
          data-src-hd="assets/1-desktop.webp"
          alt="Humanoide de perfil — mente e máquina"
-         fetchpriority="high" decoding="sync"/>
+         fetchpriority="high" decoding="async"/>
     <img id="img2" class="hero-img img-loading"
          src="data:image/webp;base64,UklGRlYAAABXRUJQVlA4IEoAAADQAQCdASoQAAkAAUAmJZQCdAEO/gHOAAD++Kf/zN3/5lf/vj3/+4f/VgA="
          data-src-hd="assets/2-desktop.webp"
          alt="" decoding="async"/>
   </div>
+
+  <!-- estrelas cadentes atravessando o céu da abertura (as mesmas das outras seções; js/vitrine.js) -->
+  <div class="depo-meteoros hero-meteoros" id="heroMeteoros" aria-hidden="true"></div>
 
   <svg class="circuit-svg" viewBox="0 0 1400 700" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path class="circuit-path" d="M 80 200 H 220 V 340 H 360 V 280 H 480"/>
@@ -279,12 +281,23 @@ body.page-hidden *::after {
 
   <div class="hero-content">
     <div class="title-wrapper">
-      <canvas id="pixelCanvas"></canvas>
       <h1 class="hero-title" id="heroTitle">
         <span class="line"><span>BEYOND</span></span>
         <span class="line"><span>BITS</span></span>
         <span class="sr-only"> — engenharia de software e inteligência artificial sob medida</span>
       </h1>
+      <script>
+        /* o título entra com uma animação de texto (CSS em .hero-title.revealed) assim que a fonte dele carrega;
+           sem a fonte em 0,9 s, entra assim mesmo */
+        (function () {
+          var h = document.getElementById('heroTitle');
+          // enquanto o título entra, a montagem das cenas 3D espera (js/cenas.js), para a placa ficar com ele
+          function revelar() { h.classList.add('revealed'); window.__seguraCenas = performance.now() + 1700; }
+          if (document.fonts && document.fonts.load) {
+            Promise.race([document.fonts.load("800 100px 'Unbounded'"), new Promise(function (r) { setTimeout(r, 900); })]).then(revelar, revelar);
+          } else { revelar(); }
+        })();
+      </script>
       <!-- Contorno do BEYOND desenhado por cima do robô (só aparece sobre ele):
            as letras que passam atrás do rosto continuam legíveis -->
       <div class="hero-ghost" id="heroGhost" aria-hidden="true"><span>BEYOND</span></div>

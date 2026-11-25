@@ -270,7 +270,7 @@ window.Cenas = (function () {
      Depois que a página termina de carregar, elas são montadas uma de cada vez, só nos momentos em que o
      visitante não está rolando, para já estarem prontas (e com os shaders compilados) quando ele chegar.
      Se ele chegar perto de uma antes disso, ela passa na frente e é montada na hora. */
-  var fila = [], montando = false, ultimaRolagem = 0, historico = [];
+  var fila = [], montando = false, ultimaRolagem = 0, historico = [], seguraAte = 0;
   window.addEventListener('scroll', function () { ultimaRolagem = performance.now(); }, { passive: true });
   function distancia(item) {
     if (!item.el) return 1e9;                                                  // sem lugar na página: nunca é urgente
@@ -279,12 +279,20 @@ window.Cenas = (function () {
     var r = alvo.getBoundingClientRect(), vh = window.innerHeight || 800;
     return r.top > vh ? r.top - vh : (r.bottom < 0 ? -r.bottom : 0);
   }
+  function naTelaAgora(item) {
+    if (!item.el) return false;
+    var r = (item.secao || item.el).getBoundingClientRect();
+    return r.top < (window.innerHeight || 800) && r.bottom > 0;
+  }
   function proxima() {
     if (montando || !fila.length) return;
     fila.sort(function (a, b) { return distancia(a) - distancia(b); });       // a mais perto primeiro
     var item = fila[0], vh = window.innerHeight || 800;
     var urgente = distancia(item) < vh * 1.3;
     if (!urgente && performance.now() - ultimaRolagem < 400) { setTimeout(proxima, 200); return; }   // espera parar de rolar
+    // alguém pediu a placa (Cenas.segurar; ou a entrada do título do hero, window.__seguraCenas): só passa o que já está na tela
+    var segura = Math.max(seguraAte, window.__seguraCenas || 0);
+    if (performance.now() < segura && !naTelaAgora(item)) { setTimeout(proxima, 250); return; }
     montando = true;
     var esperar = window.requestIdleCallback || function (fn) { return setTimeout(fn, 50); };
     esperar(function () {
@@ -355,6 +363,8 @@ window.Cenas = (function () {
     preparar: preparar,
     imagem: imagem,
     ocioso: ocioso,
+    // segura a fila por um tempo (ex.: o rosto da Lisa, que tem motor próprio, está compilando os shaders dele)
+    segurar: function (ms) { seguraAte = Math.max(seguraAte, performance.now() + ms); },
     historico: function () { return historico.slice(); },
     pendentes: function () { return fila.map(function (i) { return (i.el ? (i.el.id || i.el.className.split(' ')[0]) : '-') + ':' + Math.round(distancia(i)); }).concat(montando ? ['(montando)'] : []); },
     estado: function () {

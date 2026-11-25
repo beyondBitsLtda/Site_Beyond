@@ -253,15 +253,22 @@ nav {
   letter-spacing: -0.01em;
   color: var(--black);
 }
-/* Cada linha aparece sozinha (opacidade na linha, não no h1, para não juntar as camadas) */
+/* Cada linha entra sozinha: sobe um pouco, ganha foco e aparece, uma depois da outra.
+   A animação fica no texto de dentro (não na linha nem no h1), para não juntar as camadas
+   (o BEYOND passa atrás do robô e o BITS na frente). */
 .hero-title .line {
   display: block;
   position: relative;
-  opacity: 0;                       /* escondida até a animação de pixels terminar */
-  transition: opacity 0.5s ease;
 }
-.hero-title.revealed .line { opacity: 1; }
-.hero-title .line span { display: block; }
+.hero-title .line span {
+  display: block;
+  opacity: 0;
+  transform: translateY(0.4em);
+  filter: blur(8px);
+}
+.hero-title.revealed .line span { animation: heroLinha 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.hero-title.revealed .line:nth-child(2) span { animation-delay: 0.16s; }
+@keyframes heroLinha { to { opacity: 1; transform: none; filter: blur(0); } }
 .hero-title .line:nth-child(1) { z-index: 2; }   /* BEYOND: atrás do robô */
 .hero-title .line:nth-child(2) { z-index: 4; }   /* BITS: na frente */
 
@@ -288,19 +295,11 @@ nav {
 .hero-ghost span { display: block; }
 .hero-title.revealed ~ .hero-ghost { opacity: 1; }
 
-/* ── PIXEL CANVAS ── */
 .title-wrapper {
   position: relative;
 }
-/* Mesma camada do BEYOND (atrás do robô): as partículas já se montam atrás do rosto,
-   sem "pular" de profundidade quando o texto real aparece. No celular vai pra frente. */
-#pixelCanvas {
-  position: absolute;
-  top: 0; left: 0;
-  z-index: 2;
-  pointer-events: none;
-  transition: opacity 0.5s ease;
-}
+/* estrelas cadentes no céu da abertura, atrás do robô e do título */
+.hero-meteoros { z-index: 1; }
 
 .hero-cta {
   position: relative; z-index: 6;
@@ -371,7 +370,6 @@ a.btn-ghost { display: inline-flex; align-items: center; text-decoration: none; 
   .hero::before { left: -20vw; top: -10vh; width: 140vw; height: 80vh; }
   .hero-content { justify-content: flex-end; padding: 0 16px 40px; }
   .hero-title .line:nth-child(1) { z-index: 4; }
-  #pixelCanvas { z-index: 5; }
   .hero-ghost { display: none; }    /* aqui o título já fica todo na frente */
 }
 

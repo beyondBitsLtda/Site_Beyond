@@ -53,11 +53,15 @@ function loadHD(imgEl, hdSrc, onReady) {
       });
     });
   }
+  // decodifica fora da tarefa principal antes de trocar (sem travar o primeiro segundo da página)
   const preloader = new Image();
-  preloader.onload  = applyLoaded;
-  preloader.onerror = applyLoaded;
+  preloader.decoding = 'async';
   preloader.src = hdSrc;
-  if (preloader.complete) applyLoaded();
+  const pronto = preloader.decode ? preloader.decode()
+    : new Promise((ok, erro) => { preloader.onload = ok; preloader.onerror = erro; });
+  let feito = false;
+  const aplicar = () => { if (!feito) { feito = true; applyLoaded(); } };
+  pronto.then(aplicar, aplicar);
 }
 
 // Carrega sempre as imagens diurnas
@@ -86,113 +90,8 @@ function blink() {
 }
 setTimeout(blink, 3500);
 
-/* ══════════════════════════════════════════
-   PIXEL ASSEMBLY — "BEYOND BITS"
-══════════════════════════════════════════ */
-const pixelCanvas = document.getElementById('pixelCanvas');
-const heroTitle   = document.getElementById('heroTitle');
-const pCtx        = pixelCanvas ? pixelCanvas.getContext('2d') : null;
-const PIXEL_SIZE = 3, SAMPLE_STEP = 3, ANIM_DURATION = 1800, ANIM_DELAY = 600, SCATTER_RANGE = 1.8;
-function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
-function getTextColor() { return '#e8e8e6'; } // sempre claro (dark mode fixo)
-
-function runPixelAnimation() {
-  if (!pixelCanvas || !pCtx || !heroTitle) return;
-
-  // Mede o título real no DOM: o canvas usa a mesma fonte, tamanho e posição
-  // de cada linha, então a troca pixels → texto acontece sem "pulo".
-  const lines = [...heroTitle.querySelectorAll('.line')];
-  if (!lines.length) return;
-  const wrapBox = pixelCanvas.parentElement.getBoundingClientRect();
-  const cs   = getComputedStyle(lines[0]);
-  const fs   = parseFloat(cs.fontSize);
-  const font = `${cs.fontWeight} ${fs}px ${cs.fontFamily}`;
-
-  const off  = document.createElement('canvas');
-  const oCtx = off.getContext('2d');
-  // mesmo espaçamento entre letras do CSS (navegadores sem suporte ignoram)
-  const setFont = () => { oCtx.font = font; if ('letterSpacing' in oCtx) oCtx.letterSpacing = cs.letterSpacing; };
-  setFont();
-  const rows = lines.map(el => {
-    const text = el.textContent.trim();
-    const box  = el.getBoundingClientRect();
-    const m    = oCtx.measureText(text);
-    const asc  = m.fontBoundingBoxAscent  ?? fs * 0.8;
-    const desc = m.fontBoundingBoxDescent ?? fs * 0.2;
-    return {
-      text,
-      x: box.left - wrapBox.left,
-      // linha de base dentro da caixa da linha (mesma conta que o navegador faz)
-      y: box.top - wrapBox.top + (box.height - (asc + desc)) / 2 + asc,
-      right:  box.left - wrapBox.left + m.width,
-      bottom: box.bottom - wrapBox.top
-    };
-  });
-
-  const cW = Math.ceil(Math.max(...rows.map(r => r.right))  + fs * 0.1);
-  const cH = Math.ceil(Math.max(...rows.map(r => r.bottom)) + fs * 0.1);
-  const dpr = window.devicePixelRatio || 1;
-  pixelCanvas.width  = cW * dpr; pixelCanvas.height = cH * dpr;
-  pixelCanvas.style.width  = cW + 'px'; pixelCanvas.style.height = cH + 'px';
-  pCtx.scale(dpr, dpr);
-
-  off.width = cW; off.height = cH;   // redimensionar zera o contexto: define a fonte de novo
-  setFont();
-  oCtx.fillStyle = '#000'; oCtx.textBaseline = 'alphabetic';
-  rows.forEach(r => oCtx.fillText(r.text, r.x, r.y));
-
-  const imgData = oCtx.getImageData(0, 0, cW, cH).data;
-  const targets = [];
-  for (let y = 0; y < cH; y += SAMPLE_STEP)
-    for (let x = 0; x < cW; x += SAMPLE_STEP)
-      if (imgData[(y * cW + x) * 4 + 3] > 80) targets.push({ x, y });
-
-  const particles = targets.map(t => {
-    const a  = Math.random() * Math.PI * 2;
-    const d  = (0.5 + Math.random()) * Math.max(cW, cH) * SCATTER_RANGE * 0.5;
-    const dc = Math.sqrt(Math.pow(t.x - cW/2, 2) + Math.pow(t.y - cH/2, 2));
-    const md = Math.sqrt(cW*cW + cH*cH) / 2;
-    return {
-      sx: cW/2 + Math.cos(a)*d, sy: cH/2 + Math.sin(a)*d,
-      tx: t.x, ty: t.y,
-      delay: (dc / md) * 0.35 + (Math.random() - 0.5) * 0.15,
-      cx: 0, cy: 0
-    };
-  });
-
-  let st = null, done = false;
-  function anim(ts) {
-    if (!st) st = ts;
-    const p = Math.min((ts - st) / ANIM_DURATION, 1);
-    pCtx.clearRect(0, 0, cW, cH);
-    const col = getTextColor();
-    for (const pt of particles) {
-      const ap = Math.max(0, Math.min(1, (p - pt.delay) / (1 - pt.delay)));
-      const e  = easeOutQuart(ap);
-      pt.cx = pt.sx + (pt.tx - pt.sx) * e;
-      pt.cy = pt.sy + (pt.ty - pt.sy) * e;
-      pCtx.globalAlpha = Math.min(1, ap * 1.8);
-      pCtx.fillStyle   = col;
-      pCtx.fillRect(Math.round(pt.cx), Math.round(pt.cy), PIXEL_SIZE, PIXEL_SIZE);
-    }
-    pCtx.globalAlpha = 1;
-    if (p < 1) {
-      requestAnimationFrame(anim);
-    } else if (!done) {
-      done = true;
-      setTimeout(() => {
-        if (heroTitle) heroTitle.classList.add('revealed');
-        pixelCanvas.style.opacity = '0';
-        setTimeout(() => { pixelCanvas.style.display = 'none'; }, 450);
-      }, 150);
-    }
-  }
-  setTimeout(() => requestAnimationFrame(anim), ANIM_DELAY);
-}
-
-document.fonts.ready.then(() => {
-  document.fonts.load("800 100px 'Unbounded'").then(runPixelAnimation).catch(runPixelAnimation);
-});
+/* (o título do hero — "BEYOND BITS" — entra por um script curto logo depois dele, no index.html,
+   para não esperar este arquivo carregar) */
 
 /* ══════════════════════════════════════════
    CONTORNO DO "BEYOND" SOBRE O ROBÔ

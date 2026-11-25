@@ -132,6 +132,12 @@
     }
   }
 
+  /* ══════════════ HERO: estrelas cadentes atravessando o céu da abertura ══════════════ */
+  (function meteorosDoHero() {
+    var chuva = document.getElementById('heroMeteoros');
+    if (chuva) chuvaDeMeteoros(chuva, window.innerWidth < 700 ? 5 : 10);
+  })();
+
   /* ══════════════ DEPOIMENTOS: o céu estrelado com chuva de meteoros ══════════════
      Os meteoros são riscos animados por CSS; a cada passagem cada um muda de lugar, para a
      chuva não se repetir. Tudo pausa quando a seção sai da tela (classe .in-view). */
@@ -491,47 +497,99 @@
     }
 
     /* ── o rosto: só baixa quando chega perto e desmonta quando sai da tela ── */
-    var desmontar = null, carregando = false;
+    /* O ROSTO 3D (js/lisa-rosto.js, com motor próprio). O shader dele leva vários segundos para compilar em
+       placas de vídeo integradas no Windows, então:
+         1. depois que a página carrega, o arquivo é baixado e o rosto é montado ESCONDIDO (aquecimento): os
+            shaders compilam e ficam guardados no navegador; assim que ele desenha o primeiro quadro, é
+            desmontado (só servia para isso);
+         2. quando a Lisa está a duas telas e meia de distância, o rosto é montado de verdade — rápido, porque
+            os shaders já estão guardados (ou, se o aquecimento ainda estiver rodando, ele só aparece);
+         3. a imagem de reserva fica até o rosto desenhar de verdade, e some devagar enquanto ele "acende";
+         4. bem longe (a mais de duas telas e meia, por 10 s), desmonta, para liberar a placa. */
+    var desmontar = null, carregando = false, querMontar = false, querVer = false, alvoRosto = null, montadoEm = 0;
+    // avisa quando um canvas WebGL desenha pela primeira vez (o rosto não tem como avisar sozinho)
+    (function avisoDePrimeiroDesenho() {
+      [window.WebGL2RenderingContext, window.WebGLRenderingContext].forEach(function (K) {
+        if (!K || K.prototype.__avisaPrimeiroDesenho) return;
+        K.prototype.__avisaPrimeiroDesenho = true;
+        ['drawArrays', 'drawElements'].forEach(function (n) {
+          var original = K.prototype[n];
+          K.prototype[n] = function () {
+            var c = this.canvas, f = c && c.__aoDesenhar;
+            if (f) { c.__aoDesenhar = null; setTimeout(f, 0); }
+            return original.apply(this, arguments);
+          };
+        });
+      });
+    })();
+    function primeiroDesenho() {
+      if (querVer) { palco.classList.add('is-viva'); return; }
+      desmontarRosto();                              // era só o aquecimento: os shaders já ficaram guardados
+    }
     function montar() {
       if (desmontar || !window.LisaRosto || !window.LisaRosto.temWebgl()) return;
-      var alvo = palco.querySelector('.lisa-rosto');
-      if (!alvo) { alvo = document.createElement('div'); alvo.className = 'lisa-rosto'; palco.appendChild(alvo); }
+      alvoRosto = palco.querySelector('.lisa-rosto');
+      if (!alvoRosto) { alvoRosto = document.createElement('div'); alvoRosto.className = 'lisa-rosto'; palco.appendChild(alvoRosto); }
+      alvoRosto.style.display = querVer ? '' : 'none';
       try {
-        desmontar = window.LisaRosto.montar(alvo, sinal, { paleta: 'holograma', cabelo: 'longo' }, { ocupacao: 0.98 });
-        palco.classList.add('is-viva');
+        desmontar = window.LisaRosto.montar(alvoRosto, sinal, { paleta: 'holograma', cabelo: 'longo' }, { ocupacao: 0.98 });
+        montadoEm = Date.now();
+        var marcar = function () {
+          var cv = alvoRosto && alvoRosto.querySelector('canvas');
+          if (cv) cv.__aoDesenhar = primeiroDesenho;
+          return !!cv;
+        };
+        if (!marcar()) {
+          new MutationObserver(function (ms, mo) { if (marcar()) mo.disconnect(); }).observe(alvoRosto, { childList: true, subtree: true });
+        }
       } catch (e) { desmontar = null; }
     }
     function desmontarRosto() {
+      querMontar = false;
       if (!desmontar) return;
       try { desmontar(); } catch (e) { /* já saiu */ }
       desmontar = null;
       palco.classList.remove('is-viva');
     }
-    function carregar() {
-      if (window.LisaRosto) return montar();
-      if (carregando) return;
+    // o arquivo do rosto (740 KB) é baixado sozinho; montar é outra etapa
+    function baixarRosto() {
+      if (window.LisaRosto || carregando) return;
       carregando = true;
       var s = document.createElement('script');
-      s.src = 'js/lisa-rosto.js'; s.async = true; s.onload = montar;
+      s.src = 'js/lisa-rosto.js'; s.async = true;
+      s.onload = function () { if (querMontar) montar(); };
       document.body.appendChild(s);
     }
+    function carregar() {
+      querMontar = true;
+      if (window.LisaRosto) montar(); else baixarRosto();
+    }
+    function aquecerRosto() {                        // 1. montado escondido, só para compilar
+      if (desmontar || querMontar) return;
+      if (window.Cenas && window.Cenas.segurar) window.Cenas.segurar(8000);   // a placa fica com ele enquanto compila
+      carregar();
+    }
+    function verRosto() {                            // 2. a Lisa está chegando
+      querVer = true;
+      if (desmontar) { if (alvoRosto) alvoRosto.style.display = ''; return; }   // o aquecimento ainda está rodando: só aparece
+      if (window.Cenas && window.Cenas.segurar) window.Cenas.segurar(4000);
+      carregar();
+    }
     if ('IntersectionObserver' in window) {
-      // o rosto só monta quando o visitante para nela (~0,6 s com ela na tela): quem passa rolando rápido
-      // não paga a preparação dos shaders do rosto, que é pesada em placas de vídeo integradas. Depois de
-      // montado, só desmonta quando essa preparação certamente terminou (8 s depois de montar)
-      var espera = 0, saida = 0, montadoEm = 0;
+      var saida = 0;
       new IntersectionObserver(function (e) {
-        clearTimeout(espera); clearTimeout(saida);
-        if (e[0].isIntersecting) {
-          espera = setTimeout(function () { if (!desmontar) montadoEm = Date.now(); carregar(); }, 600);
-        } else {
-          saida = setTimeout(desmontarRosto, Math.max(1500, 8000 - (Date.now() - montadoEm)));
-        }
-      }).observe(palco);
+        clearTimeout(saida);
+        if (e[0].isIntersecting) { verRosto(); return; }
+        if (!querVer) return;                        // nunca esteve perto (o aquecimento segue o caminho dele)
+        querVer = false;
+        saida = setTimeout(function () { if (!querVer) desmontarRosto(); }, Math.max(10000, 15000 - (Date.now() - montadoEm)));
+      }, { rootMargin: '250% 0px' }).observe(palco);
+      if (window.Cenas && window.Cenas.preparar) window.Cenas.preparar(palco, aquecerRosto);
+      else aquecerRosto();
       // o rosto tem o próprio laço (js/lisa-rosto.js); aqui ela só entra no maestro (js/cenas.js),
       // para as outras cenas (os trilhos do fundo) pararem enquanto ela está na tela
       if (window.Cenas) window.Cenas.registrar({ nome: 'lisa', el: palco, peso: 1, fps: 60 });
-    } else { carregar(); }
+    } else { querVer = true; carregar(); }
 
     /* ── relógio da cena: tudo que está agendado some quando chega um pedido novo ── */
     var timers = [], falaTimer = null, codTimer = null, falaId = 0;
