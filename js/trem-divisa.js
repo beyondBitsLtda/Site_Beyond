@@ -16,7 +16,15 @@
 
    Só desenha com a faixa na tela e a aba visível. Com "reduzir movimento", fica parado.
    Sem WebGL ou sem Three.js, a faixa fica vazia (só o respiro entre as partes).
+   NO SITE, o trem aparece como vídeo gravado deste 3D (assets/videos/trem-*.mp4, js/cenas.js): o 3D
+   abaixo só roda na gravação (index.html?gravar=trem&periodo=5).
 ══════════════════════════════════════════════════════════════ */
+if (window.Cenas && Cenas.emVideo) {
+  (function () {
+    var faixa = document.getElementById('tremDivisa');
+    if (faixa) Cenas.video({ nome: 'trem', lugar: faixa, classe: 'cena-video--luz' });
+  })();
+}
 Cenas.preparar('tremDivisa', function tremDaDivisa() {
   'use strict';
   var faixa = document.getElementById('tremDivisa');
@@ -312,6 +320,13 @@ Cenas.preparar('tremDivisa', function tremDaDivisa() {
     var v = vagao(tp); v.position.x = -LIMITE + PASSO * (i + 0.5); cenaTrem.add(v); return v;
   });
   var VEL = 132;                                          // unidades por segundo: uns 4 vagões por segundo
+  var PULSO = 15;                                         // as luzes dos dormentes correndo
+  // gravando em vídeo (js/cenas.js): o trem e as luzes fecham o ciclo exatamente no tempo do loop
+  var GRAV = window.Cenas && Cenas.gravacao && Cenas.gravacao.periodo;
+  if (GRAV) {
+    VEL = Math.max(1, Math.round(GRAV * VEL / (N * PASSO))) * N * PASSO / GRAV;
+    PULSO = 2 * Math.PI * Math.max(1, Math.round(PULSO * GRAV / (2 * Math.PI))) / GRAV;
+  }
 
   /* ───────── trilho: dois trilhos de metal, dormentes com luzes que correm, viga e canal de energia ───────── */
   var LARG = 460;
@@ -349,7 +364,7 @@ Cenas.preparar('tremDivisa', function tremDaDivisa() {
   [dorm, luzD, halo].forEach(function (o) { o.frustumCulled = false; cenaTrilho.add(o); });
   function luzesCorrendo(t) {                              // pulsos que andam para a esquerda, junto com o trem
     for (var i = 0; i < ND; i++) {
-      var b = 0.18 + 0.82 * Math.pow(Math.max(0, Math.sin(xs[i] * 0.21 + t * 15)), 10);
+      var b = 0.18 + 0.82 * Math.pow(Math.max(0, Math.sin(xs[i] * 0.21 + t * PULSO)), 10);
       for (var k = 0; k < 2; k++) {
         luzD.setColorAt(i * 2 + k, cor.setRGB(1.0 * b + 0.15, 0.55 * b + 0.06, 0.2 * b + 0.02));
         halo.setColorAt(i * 2 + k, cor.setRGB(0.9 * b, 0.45 * b, 0.15 * b));

@@ -215,7 +215,9 @@ function initEarthGlobe() {
   // o globo só gira quando é a vez dele (js/cenas.js): fora da tela, ou com outra cena na frente, para de desenhar
   let rodando = false, quadro = 0, ultimo = 0;
   const desenharGlobo = (dt) => {
-    earthGlobeMesh.rotation.y += 0.09 * dt;            // a mesma velocidade de antes (0.0015 por quadro a 60 fps)
+    // a mesma velocidade de antes (0.0015 por quadro a 60 fps); gravando o vídeo, uma volta exata no tempo do loop
+    const g = window.Cenas && window.Cenas.gravacao && window.Cenas.gravacao.periodo;
+    earthGlobeMesh.rotation.y += (g ? 2 * Math.PI / g : 0.09) * dt;
     earthGlobeRenderer.render(scene, camera);
   };
   const passoGlobo = (agora) => {
@@ -245,6 +247,9 @@ function initEarthGlobe() {
 // o globo é montado em segundo plano pelo maestro (js/cenas.js), logo depois de a página carregar
 const benefitsSec = document.querySelector('.benefits-section');
 if (benefitsSec) {
+  // no site, o globo é um vídeo gravado deste 3D (assets/videos/globo-*.mp4); o 3D só roda na gravação
+  const globoEl = document.getElementById('earthGlobeViz');
+  if (window.Cenas && window.Cenas.emVideo && globoEl) window.Cenas.video({ nome: 'globo', lugar: globoEl });
   if (window.Cenas) window.Cenas.preparar(benefitsSec, initEarthGlobe);
   else initEarthGlobe();
 }

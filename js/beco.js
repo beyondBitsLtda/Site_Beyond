@@ -25,12 +25,12 @@
    Só desenha com a cena na tela e a aba visível. Com "reduzir movimento": tudo parado no
    primeiro site (a lista ainda troca o site). Sem WebGL: fica a imagem de reserva.
 ══════════════════════════════════════════════════════════════ */
-Cenas.preparar('beco', function becoDoOutdoor() {
+(function becoDosSites() {
   'use strict';
   var beco = document.getElementById('beco');
   var tela = document.getElementById('becoTela');
   var lista = document.getElementById('becoLista');
-  if (!beco || !tela || typeof THREE === 'undefined') return;
+  if (!beco || !tela) return;
   var reduzido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var itens = lista ? Array.prototype.slice.call(lista.querySelectorAll('.beco-site')) : [];
 
@@ -60,6 +60,174 @@ Cenas.preparar('beco', function becoDoOutdoor() {
       }, { threshold: 0.25 }).observe(caixa);
     }
   })();
+
+  function tela2d(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  /* ───────── a tela: os sites rolando (HTML de verdade por baixo do canvas) ───────── */
+  // altura de cada captura em relação à largura (as imagens têm 1920 px de largura no HD)
+  var SITES = [
+    { nome: 'versatte', prop: 7680 / 1920, url: 'versattesports.com.br', cor: 0xff9a5c },
+    { nome: 'montador', prop: 7680 / 1920, url: 'aluisiomontadordemoveis.com.br', cor: 0xffcf6a },
+    // o fundo deste site é um degradê FIXO na tela (o conteúdo rola por cima dele): a captura é só o
+    // conteúdo, com fundo transparente, e o degradê fica parado na janela do outdoor, como no site
+    { nome: 'mundo-feliz', prop: 6123 / 1920, url: 'mundofelizlocacoes.com.br', cor: 0x7cc0ff,
+      fundo: 'linear-gradient(rgb(30,167,255) 0%, rgb(59,182,255) 25%, rgb(108,200,255) 50%, rgb(159,220,255) 75%, rgb(207,236,255) 100%)' }
+  ];
+  var LOGICO = { w: 1280, h: 640, barra: 48 };          // tamanho do HTML da tela (o site tem 1280 de largura)
+  SITES.forEach(function (s) { s.altura = LOGICO.w * s.prop; s.rep = (LOGICO.h - LOGICO.barra) / s.altura; s.fim = 1 - s.rep; });
+  var telaSite = document.getElementById('becoSiteTela');
+  var urlTexto = document.getElementById('becoUrl');
+  var paginas = telaSite ? Array.prototype.slice.call(telaSite.querySelectorAll('.beco-pagina')) : [];
+  var janelaSite = telaSite && telaSite.querySelector('.beco-janela');
+
+  // perspectiva: leva o retângulo do HTML aos quatro cantos do painel na tela (homografia → matrix3d)
+  function adj(m) { return [m[4] * m[8] - m[5] * m[7], m[2] * m[7] - m[1] * m[8], m[1] * m[5] - m[2] * m[4],
+    m[5] * m[6] - m[3] * m[8], m[0] * m[8] - m[2] * m[6], m[2] * m[3] - m[0] * m[5],
+    m[3] * m[7] - m[4] * m[6], m[1] * m[6] - m[0] * m[7], m[0] * m[4] - m[1] * m[3]]; }
+  function mm(a, b) { var c = []; for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) { var s = 0; for (var k = 0; k < 3; k++) s += a[3 * i + k] * b[3 * k + j]; c[3 * i + j] = s; } return c; }
+  function mv(m, v) { return [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]]; }
+  function base4(p) { var m = [p[0], p[2], p[4], p[1], p[3], p[5], 1, 1, 1], v = mv(adj(m), [p[6], p[7], 1]); return mm(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]); }
+  var origem = base4([0, 0, LOGICO.w, 0, 0, LOGICO.h, LOGICO.w, LOGICO.h]), adjOrigem = adj(origem);
+  // leva a tela HTML aos quatro cantos q (x0,y0 .. x3,y3: em cima à esquerda, em cima à direita, embaixo à esquerda, embaixo à direita)
+  function encaixar(q) {
+    if (!telaSite) return;
+    var t = mm(base4(q), adjOrigem);
+    for (var k = 0; k < 9; k++) t[k] /= t[8];
+    telaSite.style.transform = 'matrix3d(' + [t[0], t[3], 0, t[6], t[1], t[4], 0, t[7], 0, 0, 1, 0, t[2], t[5], 0, t[8]].join(',') + ')';
+  }
+  // chiado da troca de sinal (textura de ruído gerada uma vez)
+  (function () {
+    var r = telaSite && telaSite.querySelector('.beco-ruido'); if (!r) return;
+    var c = tela2d(160, 160), x = c.getContext('2d'), d = x.createImageData(160, 160);
+    for (var i = 0; i < d.data.length; i += 4) { var v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+    x.putImageData(d, 0, 0); r.style.backgroundImage = 'url(' + c.toDataURL() + ')';
+  })();
+
+  /* ══════════ o programa do outdoor ══════════ */
+  var atual = 0, proximo = -1, trocou = false, timerTroca = null;
+  var est = { fase: 'topo', t: 0, p: 0, de: 0, para: 0, mix: 0, total: 1, gasto: 0 };
+  var aoMudarCor = null;                                // o 3D tinge a luz em volta com a cor do site
+  function definirCor(c) { if (aoMudarCor) aoMudarCor(c); }
+  // as imagens só carregam quando a cena está chegando na tela (HD no computador, SD no celular);
+  // a do site no ar primeiro, as outras depois
+  var carregou = false;
+  function iniciarCarga() {
+    if (carregou || !paginas.length) return; carregou = true;
+    var suf = beco.clientWidth < 900 ? '-sd.webp' : '-hd.webp';
+    function fonte(i) { return 'assets/portfolio/outdoor-' + SITES[i].nome + suf; }
+    paginas[0].onload = function () { for (var i = 1; i < paginas.length; i++) paginas[i].src = fonte(i); };
+    paginas[0].src = fonte(0);
+  }
+  if ('IntersectionObserver' in window) {
+    var obsCarga = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { iniciarCarga(); obsCarga.disconnect(); } }, { rootMargin: '900px 0px' });
+    obsCarga.observe(beco);
+  } else { iniciarCarga(); }
+  var GOLPE = 0.82, T_GOLPE = 0.95, T_PAUSA = 0.85, T_TOPO = 1.6, T_FIM = 1.1, T_TROCA = 0.8;
+  function duracao(i) { var s = SITES[i]; return T_TOPO + Math.ceil(s.fim / (s.rep * GOLPE)) * (T_GOLPE + T_PAUSA) + T_FIM; }
+  function mostrar(i, p) {                               // qual página está no ar e onde ela está rolada
+    paginas.forEach(function (img, k) { img.classList.toggle('is-no-ar', k === i); });
+    if (urlTexto) urlTexto.textContent = SITES[i].url;
+    if (janelaSite) janelaSite.style.background = SITES[i].fundo || '#fff';
+    rolar(i, p);
+  }
+  function rolar(i, p) { if (paginas[i]) paginas[i].style.transform = 'translate3d(0,' + (-p * SITES[i].altura).toFixed(1) + 'px,0)'; }
+  function iniciarSite(i) {
+    atual = i; est = { fase: 'topo', t: 0, p: 0, de: 0, para: 0, mix: 0, total: duracao(i), gasto: 0 };
+    mostrar(i, 0);
+    definirCor(SITES[i].cor);
+    itens.forEach(function (li, k) { li.classList.toggle('is-ativo', k === i); });
+  }
+  function trocarPara(i) {
+    if (est.fase === 'troca' || i === atual) return;
+    proximo = i; trocou = false; est.fase = 'troca'; est.t = 0;
+    if (telaSite) {                                       // a interferência de sinal (CSS)
+      telaSite.classList.remove('is-trocando'); void telaSite.offsetWidth; telaSite.classList.add('is-trocando');
+      clearTimeout(timerTroca); timerTroca = setTimeout(function () { telaSite.classList.remove('is-trocando'); }, T_TROCA * 1000 + 60);
+    }
+  }
+  function suave(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function programa(dt) {
+    var s = SITES[atual];
+    est.t += dt; est.gasto += dt;
+    if (est.fase === 'topo' && est.t > T_TOPO) { est.fase = 'pausa'; est.t = T_PAUSA; }
+    if (est.fase === 'pausa' && est.t >= T_PAUSA) {
+      if (est.p >= s.fim - 1e-4) { est.fase = 'fim'; est.t = 0; }
+      else { est.fase = 'golpe'; est.t = 0; est.de = est.p; est.para = Math.min(s.fim, est.p + s.rep * GOLPE); }
+    }
+    if (est.fase === 'golpe') {
+      var k = Math.min(1, est.t / T_GOLPE); est.p = est.de + (est.para - est.de) * suave(k);
+      if (k >= 1) { est.fase = 'pausa'; est.t = 0; }
+    }
+    if (est.fase === 'fim' && est.t > T_FIM) trocarPara((atual + 1) % SITES.length);
+    if (est.fase === 'troca') {
+      var m = Math.min(1, est.t / T_TROCA);
+      if (m >= 0.5 && !trocou) { trocou = true; mostrar(proximo, 0); definirCor(SITES[proximo].cor); }   // no meio do chiado
+      if (m >= 1) { var n = proximo; proximo = -1; iniciarSite(n); }
+      return;
+    }
+    rolar(atual, est.p);
+    var li = itens[atual];
+    if (li) li.style.setProperty('--prog', Math.min(1, est.gasto / est.total).toFixed(3));
+  }
+  itens.forEach(function (li, i) {
+    var b = li.querySelector('.beco-escolher');
+    if (b) b.addEventListener('click', function () {
+      if (reduzido) { iniciarSite(i); return; }
+      trocarPara(i);
+    });
+  });
+
+  iniciarSite(0);
+
+  var GRAV = window.Cenas && Cenas.gravacao;
+  /* NO SITE, a cena aparece como vídeo gravado deste 3D (assets/videos/beco-*.mp4, js/cenas.js), com a câmera
+     parada. Por cima do vídeo, uma máscara tirada do próprio 3D (assets/videos/beco-mascara-*.png) deixa o céu de
+     verdade aparecer onde o 3D era transparente (estrelas e meteoros continuam vivos). A tela do outdoor continua
+     sendo o HTML de verdade, agora por cima do vídeo, no lugar gravado (CANTOS) e misturada com ele ("lighten"):
+     os panfletos brancos que passam na frente dela continuam aparecendo. O programa (os sites rolando, a lista)
+     anda sozinho, sem o 3D. O 3D abaixo só roda na gravação (index.html?gravar=beco&periodo=12). */
+  // os cantos da tela no vídeo, como a gravação os mediu: { W, H (a caixa da cena), q (em cima à esquerda,
+  // em cima à direita, embaixo à esquerda, embaixo à direita, em px) }
+  var CANTOS = {
+    pc: { W: 1920, H: 994, q: [369.88, 139.10, 1566.52, 123.31, 334.27, 737.68, 1604.25, 739.52] },
+    cel: { W: 390, H: 460, q: [16.41, 114.87, 373.59, 114.87, 8.42, 295.10, 381.58, 295.10] }
+  };
+  if (window.Cenas && Cenas.emVideo) {
+    var versao = (window.innerWidth || 1024) < 700 ? 'cel' : 'pc';
+    var v = Cenas.video({ nome: 'beco', lugar: beco, antes: telaSite, classe: 'beco-video', versao: versao });
+    v.el.style.webkitMaskImage = v.el.style.maskImage = 'url(assets/videos/beco-mascara-' + versao + '.png)';
+    beco.classList.add('beco--3d', 'beco--video');
+    var gravado = CANTOS[versao];
+    var posicionar = function () {
+      if (!gravado) return;
+      var W = beco.clientWidth, H = beco.clientHeight;
+      if (!W || !H) return;
+      // o vídeo cobre a caixa (como object-fit: cover): a mesma escala e o mesmo deslocamento nos cantos
+      var e = Math.max(W / gravado.W, H / gravado.H), ox = (W - gravado.W * e) / 2, oy = (H - gravado.H * e) / 2;
+      encaixar(gravado.q.map(function (n, i) { return n * e + (i % 2 ? oy : ox); }));
+    };
+    posicionar();
+    if ('ResizeObserver' in window) new ResizeObserver(posicionar).observe(beco);
+    else window.addEventListener('resize', posicionar, { passive: true });
+    // o programa anda com a cena na tela
+    var rodando = false, ultimo = 0, quadro = 0;
+    var passo = function (agora) {
+      if (!rodando) return;
+      quadro = requestAnimationFrame(passo);
+      var dt = Math.min(0.05, (agora - ultimo) / 1000 || 0); ultimo = agora;
+      programa(dt);
+    };
+    if (!reduzido && 'IntersectionObserver' in window) {
+      new IntersectionObserver(function (e) {
+        if (e[0].isIntersecting && !rodando) { rodando = true; ultimo = performance.now(); quadro = requestAnimationFrame(passo); }
+        else if (!e[0].isIntersecting) { rodando = false; cancelAnimationFrame(quadro); }
+      }).observe(beco);
+    }
+    return;
+  }
+  if (typeof THREE === 'undefined') return;
+
+Cenas.preparar('beco', function becoDoOutdoor() {
+  'use strict';
 
   var renderer;
   try {
@@ -256,53 +424,22 @@ Cenas.preparar('beco', function becoDoOutdoor() {
     lampadas.instanceColor.needsUpdate = true; halos.instanceColor.needsUpdate = true;
   }
 
-  /* ───────── a tela: os sites rolando (HTML de verdade por baixo do canvas) ───────── */
-  // altura de cada captura em relação à largura (as imagens têm 1920 px de largura no HD)
-  var SITES = [
-    { nome: 'versatte', prop: 7680 / 1920, url: 'versattesports.com.br', cor: 0xff9a5c },
-    { nome: 'montador', prop: 7680 / 1920, url: 'aluisiomontadordemoveis.com.br', cor: 0xffcf6a },
-    // o fundo deste site é um degradê FIXO na tela (o conteúdo rola por cima dele): a captura é só o
-    // conteúdo, com fundo transparente, e o degradê fica parado na janela do outdoor, como no site
-    { nome: 'mundo-feliz', prop: 6123 / 1920, url: 'mundofelizlocacoes.com.br', cor: 0x7cc0ff,
-      fundo: 'linear-gradient(rgb(30,167,255) 0%, rgb(59,182,255) 25%, rgb(108,200,255) 50%, rgb(159,220,255) 75%, rgb(207,236,255) 100%)' }
-  ];
-  var LOGICO = { w: 1280, h: 640, barra: 48 };          // tamanho do HTML da tela (o site tem 1280 de largura)
-  SITES.forEach(function (s) { s.altura = LOGICO.w * s.prop; s.rep = (LOGICO.h - LOGICO.barra) / s.altura; s.fim = 1 - s.rep; });
-  var telaSite = document.getElementById('becoSiteTela');
-  var urlTexto = document.getElementById('becoUrl');
-  var paginas = telaSite ? Array.prototype.slice.call(telaSite.querySelectorAll('.beco-pagina')) : [];
-  var janelaSite = telaSite && telaSite.querySelector('.beco-janela');
   // o painel "fura" o canvas: grava cor e alfa zero (com profundidade), e o HTML aparece por baixo
   var matFuro = new THREE.MeshBasicMaterial({ color: 0x000000, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation,
     blendSrc: THREE.ZeroFactor, blendDst: THREE.ZeroFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.ZeroFactor });
   var painel = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), matFuro);
   painel.position.set(bx, by, 0.18); outdoor.add(painel);
-  // perspectiva: leva o retângulo do HTML aos quatro cantos do painel na tela (homografia → matrix3d)
-  function adj(m) { return [m[4] * m[8] - m[5] * m[7], m[2] * m[7] - m[1] * m[8], m[1] * m[5] - m[2] * m[4],
-    m[5] * m[6] - m[3] * m[8], m[0] * m[8] - m[2] * m[6], m[2] * m[3] - m[0] * m[5],
-    m[3] * m[7] - m[4] * m[6], m[1] * m[6] - m[0] * m[7], m[0] * m[4] - m[1] * m[3]]; }
-  function mm(a, b) { var c = []; for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) { var s = 0; for (var k = 0; k < 3; k++) s += a[3 * i + k] * b[3 * k + j]; c[3 * i + j] = s; } return c; }
-  function mv(m, v) { return [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]]; }
-  function base4(p) { var m = [p[0], p[2], p[4], p[1], p[3], p[5], 1, 1, 1], v = mv(adj(m), [p[6], p[7], 1]); return mm(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]); }
   var cantos = [new THREE.Vector3(bx - BW / 2, by + BH / 2, 0.18), new THREE.Vector3(bx + BW / 2, by + BH / 2, 0.18),
                 new THREE.Vector3(bx - BW / 2, by - BH / 2, 0.18), new THREE.Vector3(bx + BW / 2, by - BH / 2, 0.18)];
-  var origem = base4([0, 0, LOGICO.w, 0, 0, LOGICO.h, LOGICO.w, LOGICO.h]), adjOrigem = adj(origem), pv = new THREE.Vector3();
+  var pv = new THREE.Vector3();
   function encaixarTela() {
     if (!telaSite) return;
     var W = beco.clientWidth, H = beco.clientHeight, q = [];
     camera.updateMatrixWorld();
     for (var i = 0; i < 4; i++) { pv.copy(cantos[i]).project(camera); q.push((pv.x + 1) / 2 * W, (1 - pv.y) / 2 * H); }
-    var t = mm(base4(q), adjOrigem);
-    for (var k = 0; k < 9; k++) t[k] /= t[8];
-    telaSite.style.transform = 'matrix3d(' + [t[0], t[3], 0, t[6], t[1], t[4], 0, t[7], 0, 0, 1, 0, t[2], t[5], 0, t[8]].join(',') + ')';
+    encaixar(q);
+    if (GRAV) window.__becoCantos = { W: W, H: H, q: q };   // a gravação guarda os cantos junto do vídeo
   }
-  // chiado da troca de sinal (textura de ruído gerada uma vez)
-  (function () {
-    var r = telaSite && telaSite.querySelector('.beco-ruido'); if (!r) return;
-    var c = tela2d(160, 160), x = c.getContext('2d'), d = x.createImageData(160, 160);
-    for (var i = 0; i < d.data.length; i += 4) { var v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
-    x.putImageData(d, 0, 0); r.style.backgroundImage = 'url(' + c.toDataURL() + ')';
-  })();
   // brilho da tela vazando em volta e a luz que ela joga no chão
   var vazamento = new THREE.Mesh(new THREE.PlaneGeometry(BW * 1.6, BH * 1.9), aditivo(GLOW_FRIO, 0x9fb0ff, 0.22));
   vazamento.position.set(bx, by, -0.9); outdoor.add(vazamento);
@@ -542,80 +679,11 @@ Cenas.preparar('beco', function becoDoOutdoor() {
   var poeira = new THREE.Points(geoP, new THREE.PointsMaterial({ map: GLOW_QUENTE, color: 0xffe2bd, size: 0.12, transparent: true, opacity: 0.7,
     blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
   poeira.frustumCulled = false; cena.add(poeira);
+  if (GRAV) window.__becoSoCenario = function (sim) { poeira.visible = !sim; panfletos.forEach(function (pf) { pf.g.visible = !sim; }); };
 
-  /* ══════════ o programa do outdoor ══════════ */
-  var atual = 0, proximo = -1, trocou = false, timerTroca = null;
-  var est = { fase: 'topo', t: 0, p: 0, de: 0, para: 0, mix: 0, total: 1, gasto: 0 };
-  var corTela = new THREE.Color(SITES[0].cor), corAlvo = new THREE.Color(SITES[0].cor);
-  // as imagens só carregam quando a cena está chegando na tela (HD no computador, SD no celular);
-  // a do site no ar primeiro, as outras depois
-  var carregou = false;
-  function iniciarCarga() {
-    if (carregou || !paginas.length) return; carregou = true;
-    var suf = beco.clientWidth < 900 ? '-sd.webp' : '-hd.webp';
-    function fonte(i) { return 'assets/portfolio/outdoor-' + SITES[i].nome + suf; }
-    paginas[0].onload = function () { for (var i = 1; i < paginas.length; i++) paginas[i].src = fonte(i); };
-    paginas[0].src = fonte(0);
-  }
-  if ('IntersectionObserver' in window) {
-    var obsCarga = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { iniciarCarga(); obsCarga.disconnect(); } }, { rootMargin: '900px 0px' });
-    obsCarga.observe(beco);
-  } else { iniciarCarga(); }
-  var GOLPE = 0.82, T_GOLPE = 0.95, T_PAUSA = 0.85, T_TOPO = 1.6, T_FIM = 1.1, T_TROCA = 0.8;
-  function duracao(i) { var s = SITES[i]; return T_TOPO + Math.ceil(s.fim / (s.rep * GOLPE)) * (T_GOLPE + T_PAUSA) + T_FIM; }
-  function mostrar(i, p) {                               // qual página está no ar e onde ela está rolada
-    paginas.forEach(function (img, k) { img.classList.toggle('is-no-ar', k === i); });
-    if (urlTexto) urlTexto.textContent = SITES[i].url;
-    if (janelaSite) janelaSite.style.background = SITES[i].fundo || '#fff';
-    rolar(i, p);
-  }
-  function rolar(i, p) { if (paginas[i]) paginas[i].style.transform = 'translate3d(0,' + (-p * SITES[i].altura).toFixed(1) + 'px,0)'; }
-  function iniciarSite(i) {
-    atual = i; est = { fase: 'topo', t: 0, p: 0, de: 0, para: 0, mix: 0, total: duracao(i), gasto: 0 };
-    mostrar(i, 0);
-    corAlvo.set(SITES[i].cor);
-    itens.forEach(function (li, k) { li.classList.toggle('is-ativo', k === i); });
-  }
-  function trocarPara(i) {
-    if (est.fase === 'troca' || i === atual) return;
-    proximo = i; trocou = false; est.fase = 'troca'; est.t = 0;
-    if (telaSite) {                                       // a interferência de sinal (CSS)
-      telaSite.classList.remove('is-trocando'); void telaSite.offsetWidth; telaSite.classList.add('is-trocando');
-      clearTimeout(timerTroca); timerTroca = setTimeout(function () { telaSite.classList.remove('is-trocando'); }, T_TROCA * 1000 + 60);
-    }
-  }
-  function suave(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-  function programa(dt) {
-    var s = SITES[atual];
-    est.t += dt; est.gasto += dt;
-    if (est.fase === 'topo' && est.t > T_TOPO) { est.fase = 'pausa'; est.t = T_PAUSA; }
-    if (est.fase === 'pausa' && est.t >= T_PAUSA) {
-      if (est.p >= s.fim - 1e-4) { est.fase = 'fim'; est.t = 0; }
-      else { est.fase = 'golpe'; est.t = 0; est.de = est.p; est.para = Math.min(s.fim, est.p + s.rep * GOLPE); }
-    }
-    if (est.fase === 'golpe') {
-      var k = Math.min(1, est.t / T_GOLPE); est.p = est.de + (est.para - est.de) * suave(k);
-      if (k >= 1) { est.fase = 'pausa'; est.t = 0; }
-    }
-    if (est.fase === 'fim' && est.t > T_FIM) trocarPara((atual + 1) % SITES.length);
-    if (est.fase === 'troca') {
-      var m = Math.min(1, est.t / T_TROCA);
-      if (m >= 0.5 && !trocou) { trocou = true; mostrar(proximo, 0); corAlvo.set(SITES[proximo].cor); }   // no meio do chiado
-      if (m >= 1) { var n = proximo; proximo = -1; iniciarSite(n); }
-      return;
-    }
-    rolar(atual, est.p);
-    var li = itens[atual];
-    if (li) li.style.setProperty('--prog', Math.min(1, est.gasto / est.total).toFixed(3));
-  }
-  itens.forEach(function (li, i) {
-    var b = li.querySelector('.beco-escolher');
-    if (b) b.addEventListener('click', function () {
-      if (reduzido) { iniciarSite(i); return; }
-      trocarPara(i);
-    });
-  });
-
+  // a luz da tela tinge o chão e o entorno com a cor do site no ar (gravando: uma cor neutra, a média deles)
+  var corTela = new THREE.Color(GRAV ? 0xd4b99c : SITES[atual].cor), corAlvo = corTela.clone();
+  if (!GRAV) aoMudarCor = function (c) { corAlvo.set(c); };
   /* ───────── câmera e enquadramento ───────── */
   var CAM = { alvo: new THREE.Vector3(), pos: new THREE.Vector3() }, mouse = { x: 0, y: 0, mx: 0, my: 0 };
   function medir() {
@@ -662,7 +730,8 @@ Cenas.preparar('beco', function becoDoOutdoor() {
     corTela.lerp(corAlvo, Math.min(1, dt * 2 || 1));
     luzTela.color.copy(corTela); reflexo.material.color.copy(corTela);
     mouse.mx += (mouse.x - mouse.mx) * Math.min(1, dt * 3 || 1); mouse.my += (mouse.y - mouse.my) * Math.min(1, dt * 3 || 1);
-    camera.position.set(CAM.pos.x + mouse.mx * 0.9 + Math.sin(tempo * 0.15) * 0.25, CAM.pos.y - mouse.my * 0.5, CAM.pos.z);
+    if (GRAV) camera.position.copy(CAM.pos);
+    else camera.position.set(CAM.pos.x + mouse.mx * 0.9 + Math.sin(tempo * 0.15) * 0.25, CAM.pos.y - mouse.my * 0.5, CAM.pos.z);
     camera.lookAt(CAM.alvo);
     renderer.render(cena, camera);
     encaixarTela();
@@ -681,7 +750,6 @@ Cenas.preparar('beco', function becoDoOutdoor() {
   }
   function desligar() { rodando = false; cancelAnimationFrame(quadro); }
 
-  iniciarSite(0);
   medir();
   // os shaders compilam em segundo plano assim que o reflexo chega; o primeiro quadro só sai quando o beco aparece
   function precompilar() { try { renderer.compile(cena, camera); } catch (e) { /* compila no primeiro quadro */ } }
@@ -697,3 +765,4 @@ Cenas.preparar('beco', function becoDoOutdoor() {
   }
   tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); desligar(); beco.classList.remove('beco--3d'); });
 });
+})();

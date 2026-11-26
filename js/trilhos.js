@@ -11,7 +11,30 @@
 
    Só desenha com a seção na tela e a aba visível; com "reduzir movimento", fica parado.
    Sem WebGL ou sem Three.js, simplesmente não aparece.
+   NO SITE, os trilhos aparecem como vídeo gravado deste 3D (assets/videos/trilhos-*.mp4, js/cenas.js), e a
+   descida da câmera com a rolagem vira um deslocamento suave do vídeo. O 3D abaixo só roda na gravação
+   (index.html?gravar=trilhos&periodo=40: o trem cruza e a câmera balança fechando o ciclo em 40 s).
 ══════════════════════════════════════════════════════════════ */
+if (window.Cenas && Cenas.emVideo) {
+  (function videoDosTrilhos() {
+    var janela = document.getElementById('vitCeu'), tela = document.getElementById('vitTrilhos');
+    var secao = document.getElementById('projetos');
+    if (!janela || !tela || !secao) return;
+    var v = Cenas.video({ nome: 'trilhos', lugar: janela, antes: tela, classe: 'vit-trilhos cena-video--luz' });
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // a câmera descia conforme a seção rolava (a cena subia na tela): o vídeo, um pouco maior, sobe junto
+    var marcado = false;
+    function mover() {
+      marcado = false;
+      var r = secao.getBoundingClientRect(), vh = window.innerHeight || 800;
+      if (r.bottom < 0 || r.top > vh) return;
+      var prog = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - vh)));
+      v.el.style.transform = 'translate3d(0,' + (-(prog - 0.5) * 0.12 * vh).toFixed(1) + 'px,0) scale(1.14)';
+    }
+    window.addEventListener('scroll', function () { if (!marcado) { marcado = true; requestAnimationFrame(mover); } }, { passive: true });
+    mover();
+  })();
+}
 Cenas.preparar('projetos', function trilhosEspaciais() {
   'use strict';
   var tela = document.getElementById('vitTrilhos');
@@ -160,6 +183,9 @@ Cenas.preparar('projetos', function trilhosEspaciais() {
 
   /* ── posição do trem numa curva: "frente" = onde está o bico da locomotiva (em unidades) ── */
   var L = principal.comp, VEL = L / 52;                       // ~52 s do fundo até sair pela direita
+  // gravando em vídeo (js/cenas.js): o trem cruza e volta a nascer fechando o ciclo no tempo do loop
+  var GRAV = Cenas.gravacao && Cenas.gravacao.periodo;
+  if (GRAV) VEL = (L + TREM_COMP) / Math.max(1, GRAV - 4);
   var s = reduzido ? L * 0.62 : 0;
   var alvo = new THREE.Vector3(), chamine = new THREE.Vector3(), frenteDir = new THREE.Vector3();
   function posicionar(curva, comp, frente) {
@@ -204,8 +230,8 @@ Cenas.preparar('projetos', function trilhosEspaciais() {
   var tempo = 0;
   function moverCamera() {
     var r = secao.getBoundingClientRect();
-    var prog = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight)));
-    camera.position.set(Math.sin(tempo * 0.06) * 30, 40 - prog * 110, 0);
+    var prog = GRAV ? 0.5 : Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - window.innerHeight)));
+    camera.position.set(Math.sin(tempo * (GRAV ? 2 * Math.PI / GRAV : 0.06)) * 30, 40 - prog * 110, 0);
     camera.lookAt(0, -20 - prog * 70, -1000);
   }
 

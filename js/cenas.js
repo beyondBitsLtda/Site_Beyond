@@ -1,8 +1,12 @@
 /* ══════════════════════════════════════════════════════════════
-   MAESTRO DAS CENAS 3D (23/11/2026)
+   MAESTRO DAS CENAS 3D (23/11/2026; vídeos em 26/11/2026)
    O site tem várias cenas em WebGL: o globo, os trilhos, o trem, o beco, o planeta, o disco de
-   ouro e os buracos (e o rosto da Lisa, que tem o próprio motor). Este arquivo cuida de quatro
-   coisas para elas não pesarem:
+   ouro e os buracos (e o rosto da Lisa, que tem o próprio motor).
+   NO SITE, ELAS APARECEM COMO VÍDEOS gravados do próprio 3D (parte 5, abaixo; a ferramenta que grava
+   fica em ferramentas/gravar-cenas/): nada de shader para compilar nem cena para desenhar a cada quadro,
+   e o Three.js nem é baixado. O 3D de verdade só monta nas cenas interativas (o disco, o planeta, a
+   Lisa) quando o visitante mexe nelas, e no modo gravação (index.html?gravar=<cena>).
+   Quando o 3D roda, este arquivo cuida de quatro coisas para ele não pesar:
 
    1. UM SÓ MOTOR 3D. Todas usam o mesmo contexto WebGL, desenhando fora da tela; a cena que
       desenha entrega o quadro pronto ao canvas dela na página (transferToImageBitmap, sem cópia).
@@ -36,6 +40,14 @@
 ══════════════════════════════════════════════════════════════ */
 window.Cenas = (function () {
   'use strict';
+  /* MODO GRAVAÇÃO (index.html?gravar=<cena>): o site volta a desenhar tudo em 3D ao vivo, para as cenas serem
+     gravadas em vídeo (ferramenta fora do site). A cena pedida fica sempre com a vez, sem qualidade
+     adaptativa, e cada cena faz o movimento dela fechar um ciclo em "periodo" segundos (loop sem emenda). */
+  var gravar = (location.search.match(/[?&]gravar=([\w-]+)/) || [])[1] || null;
+  var gravacao = gravar ? { cena: gravar, periodo: Number((location.search.match(/[?&]periodo=([\d.]+)/) || [])[1]) || 0 } : null;
+  // o Three.js: na gravação vem já (o 3D desenha tudo); no site, só quando uma cena interativa é usada
+  var THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  if (gravacao && !window.THREE) document.write('<script src="' + THREE_URL + '"><\/script>');
   var lista = [];
   var ativa = null;
   var foco = null, focoAte = 0;
@@ -79,7 +91,9 @@ window.Cenas = (function () {
     try {
       if (motor.fora) p._ctx.transferFromImageBitmap(motor.canvas.transferToImageBitmap());
       else { p._ctx.clearRect(0, 0, tela.width, tela.height); p._ctx.drawImage(motor.canvas, 0, 0); }
-    } catch (e) { /* contexto perdido: o próximo quadro tenta de novo */ }
+    } catch (e) { return; /* contexto perdido: o próximo quadro tenta de novo */ }
+    // o primeiro quadro de verdade: quem esperava (o vídeo no lugar da cena) pode sair
+    if (!tela.__desenhou) { tela.__desenhou = true; try { tela.dispatchEvent(new Event('cena:primeiro')); } catch (e) { /* navegador antigo */ } }
   }
   function marcar(p) {
     pendente = p;
@@ -167,7 +181,12 @@ window.Cenas = (function () {
     var melhor = null, nota = 0, i, c;
     for (i = 0; i < lista.length; i++) medir(lista[i]);
     if (!oculto) {
-      if (foco && foco.visivel && performance.now() < focoAte) {
+      if (gravacao) {
+        for (i = 0; i < lista.length; i++) if (lista[i].nome === gravacao.cena && lista[i].visivel) melhor = lista[i];
+      }
+      if (melhor) {
+        /* gravando: a vez é da cena gravada */
+      } else if (foco && foco.visivel && performance.now() < focoAte) {
         melhor = foco;
       } else {
         for (i = 0; i < lista.length; i++) {
@@ -210,6 +229,7 @@ window.Cenas = (function () {
 
   /* ═════════════ 3. qualidade adaptativa ═════════════ */
   function ritmo(c, agora) {
+    if (gravacao) return;                           // gravando: sempre resolução cheia
     var dt = c.ultimoOk ? agora - c.ultimoOk : 0;
     c.ultimoOk = agora;
     if (!dt || dt > 300) return;                    // pausa, troca de cena: não conta
@@ -307,6 +327,8 @@ window.Cenas = (function () {
   function preparar(el, fn) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
     if (!el) return;
+    // no site (fora da gravação), a cena aparece em vídeo: o 3D só monta se for pedido (Cenas.ativar)
+    if (emVideo) { sobDemanda.push({ el: el, fn: fn, promessa: null }); return; }
     var item = { el: el, fn: fn, pedido: false };
     function pedir() { if (item.pedido) return; item.pedido = true; fila.push(item); proxima(); }
     // 1) em segundo plano, um pouco depois de a página terminar de carregar
@@ -347,6 +369,82 @@ window.Cenas = (function () {
      que a tarefa serve, e ela passa na frente se esse lugar estiver para aparecer */
   function ocioso(fn, el) { fila.push({ el: el || null, fn: fn, leve: true }); proxima(); }
 
+  /* ═════════════ 5. as cenas já renderizadas, em vídeo ═════════════
+     No site, as cenas 3D aparecem como vídeos gravados do próprio 3D (assets/videos/<cena>-<pc|cel>.mp4,
+     ferramenta de gravação: index.html?gravar=<cena>). A placa de vídeo só decodifica o vídeo, quase de
+     graça: sem shaders para compilar, sem desenhar a cena a cada quadro e sem baixar o Three.js.
+     O 3D de verdade só é montado nas cenas interativas (o disco, o planeta, a Lisa) quando o visitante
+     mexe nelas: o Three.js chega, a cena monta por baixo do vídeo e, no primeiro quadro, troca de lugar
+     com ele. Cada vídeo só é baixado quando a cena chega perto, e só toca com ela na tela.
+     Com "reduzir movimento", fica a primeira imagem, parada. */
+  var emVideo = !gravacao;
+  if (emVideo) document.documentElement.classList.add('cenas-em-video');
+  var reduzido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var sobDemanda = [], tres = null;
+  function versao() { return (window.innerWidth || document.documentElement.clientWidth || 1024) < 700 ? 'cel' : 'pc'; }
+  function carregar3d() {
+    if (window.THREE) return Promise.resolve();
+    if (tres) return tres;
+    tres = new Promise(function (ok, erro) {
+      var s = document.createElement('script');
+      s.src = THREE_URL; s.async = true;
+      s.onload = function () { ok(); };
+      s.onerror = function () { tres = null; erro(new Error('Three.js não carregou')); };
+      document.head.appendChild(s);
+    });
+    return tres;
+  }
+  // monta o 3D de uma cena interativa (preparada com Cenas.preparar); o vídeo fica até o primeiro quadro
+  function ativar(el) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    var item = null;
+    for (var i = 0; i < sobDemanda.length; i++) if (sobDemanda[i].el === el) item = sobDemanda[i];
+    if (!item) return Promise.reject(new Error('cena sem 3D sob demanda'));
+    if (!item.promessa) item.promessa = carregar3d().then(function () { item.fn(); });
+    return item.promessa;
+  }
+  /* o vídeo de uma cena. o: { nome, lugar (onde entra), antes (entra antes deste elemento), classe,
+     versao ('pc' | 'cel'; sem ela, pela largura da tela), sempre (true: não pausa fora da tela) } */
+  function video(o) {
+    var v = document.createElement('video');
+    v.className = 'cena-video' + (o.classe ? ' ' + o.classe : '');
+    v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true; v.preload = 'none';
+    ['muted', 'loop', 'playsinline', 'disablepictureinpicture', 'disableremoteplayback'].forEach(function (a) { v.setAttribute(a, ''); });
+    v.setAttribute('aria-hidden', 'true');
+    var base = 'assets/videos/' + o.nome + '-' + (o.versao || versao());
+    var carregado = false, naTela = false, parado = false, pedido = false;
+    // cada vídeo entra na fila de tarefas (um de cada vez; na frente, o que está para aparecer): criar o
+    // tocador de vídeo custa algumas dezenas de ms, e vários juntos no mesmo quadro dariam um tranco
+    function carregar() {
+      if (carregado || pedido) return;
+      pedido = true;
+      ocioso(function () { carregarJa(); tocar(); }, o.lugar);
+    }
+    function carregarJa() {
+      if (carregado) return;
+      carregado = true;
+      v.poster = base + '.webp';
+      if (!reduzido) { v.src = base + '.mp4'; v.preload = 'auto'; }
+    }
+    function tocar() {
+      if (reduzido || !carregado) return;
+      if (parado || document.hidden || !naTela) { if (!v.paused) v.pause(); return; }
+      if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () { /* sem autoplay (economia de bateria): fica a imagem */ }); }
+    }
+    o.lugar.insertBefore(v, o.antes || null);
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (e) { if (e[0].isIntersecting) { carregar(); tocar(); } }, { rootMargin: '150% 0px' }).observe(o.lugar);
+      new IntersectionObserver(function (e) { naTela = e[0].isIntersecting; if (naTela) carregar(); tocar(); }, { rootMargin: '15% 0px' }).observe(o.lugar);
+    } else { naTela = true; carregarJa(); tocar(); }
+    document.addEventListener('visibilitychange', tocar);
+    return {
+      el: v,
+      tempo: function () { return v.currentTime || 0; },
+      parar: function (sim) { parado = !!sim; tocar(); },
+      carregar: function () { carregarJa(); tocar(); }
+    };
+  }
+
   /* ═════════════ e o resto da página, "por hero" ═════════════
      Seção a mais de uma tela de distância: classe "longe" (pausa as animações CSS e esconde as camadas
      decorativas; regras em css/vitrine.css). */
@@ -358,6 +456,13 @@ window.Cenas = (function () {
   }
 
   return {
+    gravacao: gravacao,
+    // gravando: segundos desde o primeiro quadro do vídeo (a ferramenta avisa quando ele começa)
+    tempoGravacao: function () { return (performance.now() - (window.__inicioGravacao || 0)) / 1000; },
+    emVideo: emVideo,
+    video: video,
+    ativar: ativar,
+    carregar3d: carregar3d,
     renderizador: renderizador,
     registrar: registrar,
     preparar: preparar,

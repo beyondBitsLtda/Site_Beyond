@@ -18,7 +18,7 @@
    No fundo, atrás do planeta, as naves cruzando (HTML, assets/nave.webp).
    Só desenha com a seção na tela e a aba visível. "Reduzir movimento": sem giro e sem naves.
 ══════════════════════════════════════════════════════════════ */
-Cenas.preparar('processo', function planetaDasEstacoes() {
+(function cicloPlaneta() {
   'use strict';
   var secao = document.getElementById('processo');
   var tela = document.getElementById('cicloPlaneta');
@@ -65,7 +65,44 @@ Cenas.preparar('processo', function planetaDasEstacoes() {
     if (visivel) timer = setTimeout(soltar, 900);
   })();
 
-  if (!tela || typeof THREE === 'undefined') return;
+  if (!tela) return;
+
+  /* NO SITE, o planeta aparece como vídeo gravado deste 3D (assets/videos/planeta-*.mp4, js/cenas.js): o inverno,
+     girando uma volta a cada CICLO segundos. Um disco preto do tamanho dele, logo abaixo, esconde as naves e as
+     estrelas que passam atrás; o vídeo soma a luz por cima (o brilho da atmosfera cai sobre o céu).
+     O 3D de verdade só monta quando o visitante usa os cards (mouse em cima, toque, carrossel no celular): ele
+     começa no mesmo ponto do giro em que o vídeo está e, no primeiro quadro, troca de lugar com o vídeo; então
+     gira até a estação escolhida. */
+  var CICLO = (window.Cenas && Cenas.gravacao && Cenas.gravacao.periodo) || 36;   // o loop do vídeo
+  var vid = null;
+  if (window.Cenas && Cenas.emVideo) {
+    var cenaEl = tela.parentNode;
+    vid = Cenas.video({ nome: 'planeta', lugar: cenaEl, antes: tela, classe: 'ciclo-planeta-video' });
+    var sombra = document.createElement('div');
+    sombra.className = 'ciclo-planeta-sombra'; sombra.setAttribute('aria-hidden', 'true');
+    secao.insertBefore(sombra, cenaEl);
+    var posicionarSombra = function () {
+      var sr = secao.getBoundingClientRect(), c = cenaEl.getBoundingClientRect();
+      var d = Math.min(c.width, c.height) * 0.845;              // o contorno do planeta (raio 1, a 4,5 unidades da câmera)
+      sombra.style.left = (c.left - sr.left + c.width / 2 - d / 2).toFixed(1) + 'px';
+      sombra.style.top = (c.top - sr.top + c.height / 2 - d / 2).toFixed(1) + 'px';
+      sombra.style.width = sombra.style.height = d.toFixed(1) + 'px';
+    };
+    posicionarSombra();
+    if ('ResizeObserver' in window) new ResizeObserver(posicionarSombra).observe(cenaEl);
+    window.addEventListener('resize', posicionarSombra, { passive: true });
+    var pedir3d = function () { Cenas.ativar(secao).catch(function () { /* sem 3D: fica o vídeo */ }); };
+    window.addEventListener('ciclo:fase', pedir3d);
+    var cardsEl = document.getElementById('cicloCards');
+    if (cardsEl) cardsEl.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') pedir3d(); });
+    tela.addEventListener('cena:primeiro', function () { cenaEl.classList.add('is-3d'); sombra.classList.add('is-fora'); vid.parar(true); });
+    tela.addEventListener('webglcontextlost', function () { cenaEl.classList.remove('is-3d'); sombra.classList.remove('is-fora'); vid.parar(false); });
+  }
+  if (window.Cenas) Cenas.preparar(secao, planetaDasEstacoes);
+
+  function planetaDasEstacoes() {
+  if (typeof THREE === 'undefined') return;
+  var GRAV = Cenas.gravacao && Cenas.gravacao.periodo;
   var renderer;
   try { renderer = Cenas.renderizador(tela); } catch (e) { return; }     // o motor 3D compartilhado (js/cenas.js)
   renderer.setClearColor(0x000000, 0);
@@ -103,7 +140,11 @@ Cenas.preparar('processo', function planetaDasEstacoes() {
         // primeiro quadro do planeta, e a página travava ~3 s)
         Cenas.ocioso(function () {
           try { renderer.initTexture(arq[1]); } catch (e) { /* vai no primeiro quadro */ }
-          if (--faltam === 0) { assado = true; aplicar(typeof window.__cicloFase === 'number' ? window.__cicloFase : 0); }
+          if (--faltam === 0) {
+            assado = true;
+            var fase = typeof window.__cicloFase === 'number' ? window.__cicloFase : 0;
+            if (vid || GRAV) { aplicar(0); if (fase && !GRAV) pedir(fase); } else aplicar(fase);
+          }
         }, tela);
       }, function () { /* sem a imagem o planeta não aparece; o resto da seção segue normal */ });
     });
@@ -207,7 +248,8 @@ Cenas.preparar('processo', function planetaDasEstacoes() {
   cena.add(atmosfera);
 
   /* ══════════ a troca de estação: um giro rápido e a estação muda no meio ══════════ */
-  var atual = 0, destino = 0, troca = null, rot = 0, extra = 0;
+  var atual = 0, destino = 0, troca = null, rot = vid ? vid.tempo() * 2 * Math.PI / CICLO : 0, extra = 0;
+  var GIRO = (GRAV || vid) ? 2 * Math.PI / CICLO : 0.06;
   function suave(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
   function pedir(i) {
     i = Math.max(0, Math.min(2, i | 0));
@@ -261,7 +303,9 @@ Cenas.preparar('processo', function planetaDasEstacoes() {
   function desenhar(dt) {
     tempo += dt;
     if (!assado) return;
-    if (dt) { rot += dt * 0.06; uNuvem.uDesl.value += dt * 0.004; andarTroca(dt); }
+    if (GRAV) rot = Cenas.tempoGravacao() * GIRO;                     // gravando: o giro fecha a volta no loop
+    else if (dt) { rot += dt * GIRO; uNuvem.uDesl.value += dt * 0.004; }
+    if (dt) andarTroca(dt);
     planeta.rotation.y = rot + extra;
     nuvens.rotation.y = planeta.rotation.y;
     mouse.sx += (mouse.x - mouse.sx) * Math.min(1, dt * 3 || 1); mouse.sy += (mouse.y - mouse.sy) * Math.min(1, dt * 3 || 1);
@@ -317,4 +361,5 @@ Cenas.preparar('processo', function planetaDasEstacoes() {
     }, { passive: true });
   }
   tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); desligar(); });
-});
+  }
+})();

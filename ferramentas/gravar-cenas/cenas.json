@@ -1,0 +1,436 @@
+{
+ "servidor": "http://127.0.0.1:8792/",
+ "cenas": {
+  "beco-cel": {
+   "url": "index.html?gravar=beco&periodo=11.6667",
+   "largura": 390,
+   "altura": 844,
+   "dpr": 2,
+   "alvo": "#beco",
+   "camadas": [
+    {
+     "sel": "#becoTela",
+     "alfa": 1
+    }
+   ],
+   "mascara": true,
+   "mascaraSel": "#becoTela",
+   "quadJs": "window.__becoCantos",
+   "periodo": 11.6667,
+   "fps": 24,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 33,
+   "aquecer": 2,
+   "esperaCarga": 14000,
+   "escala": 1.5,
+   "mascaraEscala": 1
+  },
+  "beco-pc": {
+   "url": "index.html?gravar=beco&periodo=11.6667",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": "#beco",
+   "camadas": [
+    {
+     "sel": "#becoTela",
+     "alfa": 1
+    }
+   ],
+   "mascara": true,
+   "mascaraSel": "#becoTela",
+   "quadJs": "window.__becoCantos",
+   "periodo": 11.6667,
+   "fps": 24,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 32,
+   "aquecer": 2,
+   "esperaCarga": 14000,
+   "mascaraEscala": 0.5
+  },
+  "buracos-cel": {
+   "url": "index.html?gravar=buracos&periodo=36",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": "#contato",
+   "camadas": [
+    "#ctaEstrelas",
+    "#ctaBrilhoA",
+    "#ctaBrilhoB",
+    {
+     "sel": "#ctaBuracos",
+     "alfa": 1
+    }
+   ],
+   "fundo": "#080818",
+   "recorteJs": "(function(){ var l = window.__buracosLugar; var r = 15.4 * l.U; return { x: l.cx - r, y: l.cy - r, w: 2 * r, h: 2 * r, U: l.U, cx: l.cx, cy: l.cy }; })()",
+   "escala": 0.45,
+   "periodo": 36,
+   "fps": 30,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 35,
+   "aquecer": 1,
+   "esperaCarga": 12000,
+   "fundoJs": "(function (x, a, rec, esc) {\n  var W = a.width, H = a.height, dx = 0.8829, dy = 0.4695;\n  var L = 1.2 * W * dx + 1.4 * H * dy, cx = W / 2, cy = H / 2;\n  var g = x.createLinearGradient((cx - dx * L / 2 - rec.x) * esc, (cy - dy * L / 2 - rec.y) * esc, (cx + dx * L / 2 - rec.x) * esc, (cy + dy * L / 2 - rec.y) * esc);\n  g.addColorStop(0, 'rgba(150,140,220,0)'); g.addColorStop(0.30, 'rgba(150,140,220,0)'); g.addColorStop(0.44, 'rgba(150,140,220,0.07)');\n  g.addColorStop(0.50, 'rgba(212,170,140,0.06)'); g.addColorStop(0.56, 'rgba(120,150,230,0.06)'); g.addColorStop(0.70, 'rgba(120,150,230,0)'); g.addColorStop(1, 'rgba(120,150,230,0)');\n  x.filter = 'blur(' + (30 * esc).toFixed(1) + 'px)'; x.fillStyle = g; x.fillRect(-100, -100, rec.w * esc + 200, rec.h * esc + 200); x.filter = 'none';\n})"
+  },
+  "buracos-pc": {
+   "url": "index.html?gravar=buracos&periodo=36",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": "#contato",
+   "camadas": [
+    "#ctaEstrelas",
+    "#ctaBrilhoA",
+    "#ctaBrilhoB",
+    {
+     "sel": "#ctaBuracos",
+     "alfa": 1
+    }
+   ],
+   "fundo": "#080818",
+   "recorteJs": "(function(){ var l = window.__buracosLugar; var r = 15.4 * l.U; return { x: l.cx - r, y: l.cy - r, w: 2 * r, h: 2 * r, U: l.U, cx: l.cx, cy: l.cy }; })()",
+   "escala": 0.75,
+   "periodo": 36,
+   "fps": 30,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 35,
+   "aquecer": 1,
+   "esperaCarga": 12000,
+   "fundoJs": "(function (x, a, rec, esc) {\n  var W = a.width, H = a.height, dx = 0.8829, dy = 0.4695;\n  var L = 1.2 * W * dx + 1.4 * H * dy, cx = W / 2, cy = H / 2;\n  var g = x.createLinearGradient((cx - dx * L / 2 - rec.x) * esc, (cy - dy * L / 2 - rec.y) * esc, (cx + dx * L / 2 - rec.x) * esc, (cy + dy * L / 2 - rec.y) * esc);\n  g.addColorStop(0, 'rgba(150,140,220,0)'); g.addColorStop(0.30, 'rgba(150,140,220,0)'); g.addColorStop(0.44, 'rgba(150,140,220,0.07)');\n  g.addColorStop(0.50, 'rgba(212,170,140,0.06)'); g.addColorStop(0.56, 'rgba(120,150,230,0.06)'); g.addColorStop(0.70, 'rgba(120,150,230,0)'); g.addColorStop(1, 'rgba(120,150,230,0)');\n  x.filter = 'blur(' + (30 * esc).toFixed(1) + 'px)'; x.fillStyle = g; x.fillRect(-100, -100, rec.w * esc + 200, rec.h * esc + 200); x.filter = 'none';\n})"
+  },
+  "disco-cel": {
+   "url": "index.html?gravar=disco&periodo=16",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": "#segDisco",
+   "camadas": [
+    {
+     "sel": "#segDiscoTela",
+     "alfa": 1
+    }
+   ],
+   "periodo": 16,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1,
+   "qp": 36,
+   "aquecer": 1,
+   "esperaCarga": 12000,
+   "escala": 0.62
+  },
+  "disco-pc": {
+   "url": "index.html?gravar=disco&periodo=16",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": "#segDisco",
+   "camadas": [
+    {
+     "sel": "#segDiscoTela",
+     "alfa": 1
+    }
+   ],
+   "periodo": 16,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1,
+   "qp": 35,
+   "aquecer": 1,
+   "esperaCarga": 12000
+  },
+  "globo-cel": {
+   "url": "index.html?gravar=globo&periodo=40",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1.5,
+   "alvo": "#earthGlobeViz",
+   "camadas": [
+    {
+     "sel": "#earthGlobeViz canvas",
+     "alfa": 1
+    }
+   ],
+   "periodo": 40,
+   "fps": 24,
+   "sub": 1,
+   "fundir": 1,
+   "qp": 36,
+   "aquecer": 1,
+   "esperaCarga": 12000,
+   "escala": 1.0
+  },
+  "globo-pc": {
+   "url": "index.html?gravar=globo&periodo=40",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1.5,
+   "alvo": "#earthGlobeViz",
+   "camadas": [
+    {
+     "sel": "#earthGlobeViz canvas",
+     "alfa": 1
+    }
+   ],
+   "periodo": 40,
+   "fps": 24,
+   "sub": 1,
+   "fundir": 1,
+   "qp": 35,
+   "aquecer": 1,
+   "esperaCarga": 12000
+  },
+  "lisa-falando-cel": {
+   "url": "index.html?gravar=lisa-falando&periodo=6",
+   "largura": 390,
+   "altura": 844,
+   "dpr": 2,
+   "escala": 1.5,
+   "alvo": "#lisaPalco",
+   "camadas": [
+    {
+     "sel": "#lisaPalco .lisa-rosto canvas",
+     "alfa": 1
+    }
+   ],
+   "periodo": 6,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 34,
+   "aquecer": 3,
+   "esperaCarga": 16000,
+   "reduzido": true
+  },
+  "lisa-falando-pc": {
+   "url": "index.html?gravar=lisa-falando&periodo=6",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "escala": 1,
+   "alvo": "#lisaPalco",
+   "camadas": [
+    {
+     "sel": "#lisaPalco .lisa-rosto canvas",
+     "alfa": 1
+    }
+   ],
+   "periodo": 6,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 33,
+   "aquecer": 3,
+   "esperaCarga": 16000,
+   "reduzido": true
+  },
+  "lisa-pensando-cel": {
+   "url": "index.html?gravar=lisa-pensando&periodo=8",
+   "largura": 390,
+   "altura": 844,
+   "dpr": 2,
+   "escala": 1.5,
+   "alvo": "#lisaPalco",
+   "camadas": [
+    {
+     "sel": "#lisaPalco .lisa-rosto canvas",
+     "alfa": 1
+    }
+   ],
+   "periodo": 8,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 34,
+   "aquecer": 3,
+   "esperaCarga": 16000,
+   "reduzido": true
+  },
+  "lisa-pensando-pc": {
+   "url": "index.html?gravar=lisa-pensando&periodo=8",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "escala": 1,
+   "alvo": "#lisaPalco",
+   "camadas": [
+    {
+     "sel": "#lisaPalco .lisa-rosto canvas",
+     "alfa": 1
+    }
+   ],
+   "periodo": 8,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 33,
+   "aquecer": 3,
+   "esperaCarga": 16000,
+   "reduzido": true
+  },
+  "lisa-pronta-cel": {
+   "url": "index.html?gravar=lisa-pronta&periodo=10",
+   "largura": 390,
+   "altura": 844,
+   "dpr": 2,
+   "escala": 1.5,
+   "alvo": "#lisaPalco",
+   "camadas": [
+    {
+     "sel": "#lisaPalco .lisa-rosto canvas",
+     "alfa": 1
+    }
+   ],
+   "periodo": 10,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 34,
+   "aquecer": 3,
+   "esperaCarga": 16000,
+   "reduzido": true
+  },
+  "lisa-pronta-pc": {
+   "url": "index.html?gravar=lisa-pronta&periodo=10",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "escala": 1,
+   "alvo": "#lisaPalco",
+   "camadas": [
+    {
+     "sel": "#lisaPalco .lisa-rosto canvas",
+     "alfa": 1
+    }
+   ],
+   "periodo": 10,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 33,
+   "aquecer": 3,
+   "esperaCarga": 16000,
+   "reduzido": true
+  },
+  "planeta-cel": {
+   "url": "index.html?gravar=planeta&periodo=36",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": ".ciclo-cena",
+   "camadas": [
+    {
+     "sel": "#cicloPlaneta",
+     "alfa": 1
+    }
+   ],
+   "recorteJs": "(function(){ var c = document.querySelector('.ciclo-cena').getBoundingClientRect(); return { x: (c.width - c.height) / 2, y: 0, w: c.height, h: c.height }; })()",
+   "periodo": 36,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1,
+   "qp": 36,
+   "aquecer": 1,
+   "esperaCarga": 14000,
+   "escala": 0.72
+  },
+  "planeta-pc": {
+   "url": "index.html?gravar=planeta&periodo=36",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": ".ciclo-cena",
+   "camadas": [
+    {
+     "sel": "#cicloPlaneta",
+     "alfa": 1
+    }
+   ],
+   "recorteJs": "(function(){ var c = document.querySelector('.ciclo-cena').getBoundingClientRect(); return { x: (c.width - c.height) / 2, y: 0, w: c.height, h: c.height }; })()",
+   "periodo": 36,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1,
+   "qp": 35,
+   "aquecer": 1,
+   "esperaCarga": 14000
+  },
+  "trem-cel": {
+   "url": "index.html?gravar=trem&periodo=3.4",
+   "largura": 390,
+   "altura": 844,
+   "dpr": 2,
+   "alvo": "#tremDivisa",
+   "camadas": [
+    "#tremTela"
+   ],
+   "periodo": 3.4,
+   "fps": 30,
+   "sub": 2,
+   "fundir": 0.6,
+   "qp": 33
+  },
+  "trem-pc": {
+   "url": "index.html?gravar=trem&periodo=3.4",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": "#tremDivisa",
+   "camadas": [
+    "#tremTela"
+   ],
+   "periodo": 3.4,
+   "fps": 30,
+   "sub": 2,
+   "fundir": 0.6,
+   "qp": 33
+  },
+  "trilhos-cel": {
+   "url": "index.html?gravar=trilhos&periodo=40",
+   "largura": 390,
+   "altura": 844,
+   "dpr": 2,
+   "alvo": "#vitCeu",
+   "camadas": [
+    {
+     "sel": "#vitTrilhos",
+     "alfa": 1
+    }
+   ],
+   "rolarPara": "#projTitle",
+   "periodo": 40,
+   "fps": 24,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 34,
+   "aquecer": 3,
+   "escala": 1.5
+  },
+  "trilhos-pc": {
+   "url": "index.html?gravar=trilhos&periodo=40",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": "#vitCeu",
+   "camadas": [
+    {
+     "sel": "#vitTrilhos",
+     "alfa": 1
+    }
+   ],
+   "rolarPara": "#projTitle",
+   "periodo": 40,
+   "fps": 24,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 34,
+   "aquecer": 3
+  }
+ }
+}

@@ -17,12 +17,75 @@
   'use strict';
   var secao = document.getElementById('contato');
   var tela = document.getElementById('ctaBuracos');
-  if (!secao || !tela || typeof THREE === 'undefined') return;
+  if (!secao || !tela) return;
   var reduzido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var base = document.getElementById('ctaEstrelas');
   var brilhoA = document.getElementById('ctaBrilhoA');
   var brilhoB = document.getElementById('ctaBrilhoB');
   if (!base || !brilhoA || !brilhoB) return;
+
+  /* ── o tamanho e o lugar dos buracos na seção (o mesmo no 3D e no vídeo) ──
+     cx, cy: o centro da órbita, em px da seção; U: px por unidade da cena (o raio do horizonte = 1) */
+  function direitaDoTexto() {
+    var sr = secao.getBoundingClientRect();
+    var direita = 0, baixo = 0;
+    var titulo = secao.querySelector('.cta-title');
+    if (titulo && document.createRange) {
+      var rg = document.createRange(); rg.selectNodeContents(titulo);
+      var rt = rg.getBoundingClientRect();
+      direita = Math.max(direita, rt.right - sr.left); baixo = Math.max(baixo, rt.bottom - sr.top);
+    }
+    secao.querySelectorAll('.cta-sub p, .cta-actions > *').forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      direita = Math.max(direita, r.right - sr.left); baixo = Math.max(baixo, r.bottom - sr.top);
+    });
+    return { direita: direita, baixo: baixo };
+  }
+  function calcularLugar(lugar) {
+    var w = secao.clientWidth, h = secao.clientHeight;
+    if (!w || !h) return false;
+    lugar.w = w; lugar.h = h;
+    var t = direitaDoTexto();
+    if (w < 900) {                                  // texto em cima, buracos embaixo
+      lugar.cx = w * 0.5;
+      lugar.cy = t.baixo + (h - t.baixo) * 0.5 + 6;
+      lugar.U = Math.max(9, Math.min(w / 29, (h - t.baixo) / 24));
+    } else {                                        // texto à esquerda, buracos à direita
+      var livre = w - t.direita;
+      lugar.cx = Math.max(w * 0.6, t.direita + livre * 0.47);
+      lugar.cy = h * 0.5;
+      lugar.U = Math.max(12, Math.min(livre / 29, h / 28, 38));
+    }
+    return true;
+  }
+
+  /* NO SITE, os buracos aparecem como vídeo gravado deste 3D (assets/videos/buracos-*.mp4, js/cenas.js),
+     no mesmo lugar e no mesmo tamanho que o 3D teria, com a borda sumindo no céu de verdade. O 3D abaixo só
+     roda na gravação (index.html?gravar=buracos&periodo=36: a órbita, a respiração e a câmera fecham o
+     ciclo em 36 s). REC: metade do recorte gravado, em unidades da cena. */
+  var REC = { rx: 15.4, ry: 15.4 };
+  if (window.Cenas && Cenas.emVideo) {
+    var v = Cenas.video({ nome: 'buracos', lugar: tela.parentNode, antes: tela, classe: 'cta-buracos-video' });
+    tela.style.display = 'none';
+    var lugarV = { cx: 0, cy: 0, U: 30, w: 1, h: 1 };
+    var posicionar = function () {
+      if (!calcularLugar(lugarV)) return;
+      var st = v.el.style;
+      st.left = (lugarV.cx - REC.rx * lugarV.U).toFixed(1) + 'px'; st.top = (lugarV.cy - REC.ry * lugarV.U).toFixed(1) + 'px';
+      st.width = (2 * REC.rx * lugarV.U).toFixed(1) + 'px'; st.height = (2 * REC.ry * lugarV.U).toFixed(1) + 'px';
+    };
+    posicionar();
+    if ('ResizeObserver' in window) {
+      var esperaV = null;
+      new ResizeObserver(function () { clearTimeout(esperaV); esperaV = setTimeout(posicionar, 120); }).observe(secao);
+    } else {
+      window.addEventListener('resize', posicionar, { passive: true });
+    }
+    setTimeout(posicionar, 1200);                   // o texto do contato entra com uma animação
+    return;
+  }
+  if (typeof THREE === 'undefined') return;
+  var GRAV = window.Cenas && Cenas.gravacao && Cenas.gravacao.periodo;
 
   // a cena é montada em segundo plano pelo maestro (js/cenas.js), num momento parado, ou na hora se o visitante chegar perto
   if (window.Cenas) window.Cenas.preparar(secao, montar); else montar();
@@ -282,43 +345,15 @@
     /* ── o tamanho e o lugar dos buracos na seção ── */
     var celular = Math.min(window.innerWidth, window.innerHeight) < 700;
     var escalaMax = celular ? 0.75 : 1.0;
-    var escala = celular ? 0.55 : 0.6;               // começa leve e sobe sozinho se a máquina aguentar
+    var escala = GRAV ? 1 : (celular ? 0.55 : 0.6);  // começa leve e sobe sozinho se a máquina aguentar (gravando: cheia)
     u.uPassos.value = celular ? 130 : 180;
     u.uPassosI.value = u.uPassos.value;
     var D = 52;                                    // distância da câmera ao centro da órbita
     var lugar = { cx: 0, cy: 0, U: 30, w: 1, h: 1 };
 
-    function direitaDoTexto() {
-      var sr = secao.getBoundingClientRect();
-      var direita = 0, baixo = 0;
-      var titulo = secao.querySelector('.cta-title');
-      if (titulo && document.createRange) {
-        var rg = document.createRange(); rg.selectNodeContents(titulo);
-        var rt = rg.getBoundingClientRect();
-        direita = Math.max(direita, rt.right - sr.left); baixo = Math.max(baixo, rt.bottom - sr.top);
-      }
-      secao.querySelectorAll('.cta-sub p, .cta-actions > *').forEach(function (el) {
-        var r = el.getBoundingClientRect();
-        direita = Math.max(direita, r.right - sr.left); baixo = Math.max(baixo, r.bottom - sr.top);
-      });
-      return { direita: direita, baixo: baixo };
-    }
-
+    if (GRAV) window.__buracosLugar = lugar;        // a gravação recorta o vídeo em volta do centro
     function medir() {
-      var w = secao.clientWidth, h = secao.clientHeight;
-      if (!w || !h) return;
-      lugar.w = w; lugar.h = h;
-      var t = direitaDoTexto();
-      if (w < 900) {                                // texto em cima, buracos embaixo
-        lugar.cx = w * 0.5;
-        lugar.cy = t.baixo + (h - t.baixo) * 0.5 + 6;
-        lugar.U = Math.max(9, Math.min(w / 29, (h - t.baixo) / 24));
-      } else {                                      // texto à esquerda, buracos à direita
-        var livre = w - t.direita;
-        lugar.cx = Math.max(w * 0.6, t.direita + livre * 0.47);
-        lugar.cy = h * 0.5;
-        lugar.U = Math.max(12, Math.min(livre / 29, h / 28, 38));
-      }
+      if (!calcularLugar(lugar)) return;
       aplicarTamanho();
       pedir();
       if (cena3d) cena3d.repintar();
@@ -343,8 +378,9 @@
     function atualizar(dt) {
       mouse.x += (mouse.ax - mouse.x) * (1 - Math.exp(-dt * 2));
       mouse.y += (mouse.ay - mouse.y) * (1 - Math.exp(-dt * 2));
-      var th = t * 0.11;
-      var sep = 13 + Math.sin(t * 0.17) * 1.0;
+      var w = GRAV ? 2 * Math.PI / GRAV : 0;        // gravando: tudo fecha o ciclo no tempo do loop
+      var th = GRAV ? t * w : t * 0.11;
+      var sep = 13 + Math.sin(GRAV ? t * w : t * 0.17) * 1.0;
       var xb = sep * 0.32, xw = sep * 0.68;
       var E1 = u.uE1.value, E2 = u.uE2.value;
       E1.copy(u.uA1.value).multiplyScalar(Math.cos(th)).addScaledVector(u.uA2.value, Math.sin(th));
@@ -352,8 +388,8 @@
       u.uB.value.copy(E1).multiplyScalar(-xb);
       u.uW.value.copy(E1).multiplyScalar(xw);
       u.uXB.value = xb; u.uXW.value = xw;
-      var el = 0.25 + 0.05 * Math.sin(t * 0.07) + mouse.y * 0.07;
-      var az = 0.12 * Math.sin(t * 0.05) + mouse.x * 0.12;
+      var el = 0.25 + 0.05 * Math.sin(GRAV ? t * w + 1 : t * 0.07) + mouse.y * 0.07;
+      var az = 0.12 * Math.sin(GRAV ? t * w + 2 : t * 0.05) + mouse.x * 0.12;
       var cam = u.uCam.value.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(D);
       u.uF.value.copy(cam).multiplyScalar(-1).normalize();
       u.uR.value.crossVectors(u.uF.value, UP).normalize();
@@ -364,7 +400,7 @@
     /* resolução que se ajusta: se os quadros ficarem lentos, desenha com menos pixels */
     var media = 34, contagem = 0;                  // a 30 quadros por segundo, um quadro a cada ~33 ms
     function ajustarQualidade(ms) {
-      if (ms > 250) return;                         // voltou de uma pausa: não conta
+      if (ms > 250 || GRAV) return;                 // voltou de uma pausa: não conta (gravando: não muda)
       media += (ms - media) * 0.05;
       if (++contagem < 40) return;
       contagem = 0;

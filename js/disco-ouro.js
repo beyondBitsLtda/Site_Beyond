@@ -49,7 +49,22 @@
   var tela = document.getElementById('segDiscoTela');
   var dica = document.getElementById('segDiscoDica');
   if (!palco || !tela) return;
-  if (typeof THREE === 'undefined') { palco.classList.add('is-sem-3d'); return; }
+
+  /* NO SITE, o disco aparece como vídeo gravado deste 3D (assets/videos/disco-*.mp4, js/cenas.js), fazendo a
+     coreografia de quando ninguém mexe (balança, gira devagar e vira duas vezes a cada 24 s). O 3D de verdade
+     só monta quando o visitante vai usar o disco (mouse em cima, toque, foco pelo teclado): ele começa no mesmo
+     ponto da coreografia em que o vídeo está e, no primeiro quadro, troca de lugar com o vídeo. */
+  var vid = null;
+  if (window.Cenas && Cenas.emVideo) {
+    vid = Cenas.video({ nome: 'disco', lugar: palco, antes: tela, classe: 'seg-disco-video' });
+    var pedir3d = function () { Cenas.ativar(palco).catch(function () { /* sem 3D: fica o vídeo */ }); };
+    palco.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') pedir3d(); });
+    palco.addEventListener('pointerdown', pedir3d);
+    tela.addEventListener('focus', pedir3d);
+    tela.addEventListener('cena:primeiro', function () { palco.classList.add('is-3d'); vid.parar(true); });
+    tela.addEventListener('webglcontextlost', function () { palco.classList.remove('is-3d'); vid.parar(false); });
+  } else if (typeof THREE === 'undefined') { palco.classList.add('is-sem-3d'); return; }
+  var GRAV = window.Cenas && Cenas.gravacao && Cenas.gravacao.periodo;
   if (dica && window.matchMedia && window.matchMedia('(hover: none)').matches) {
     dica.textContent = 'arraste para girar · toque duas vezes para virar';
   }
@@ -548,6 +563,24 @@
 
     /* ── o estado do movimento ── */
     var PI = Math.PI, PITCH = -0.3;
+    /* a coreografia de quando ninguém mexe, em função do tempo (a mesma do vídeo): balança, gira devagar e vira
+       duas vezes a cada CICLO segundos (aos 6 s e aos 18 s), voltando exatamente ao começo */
+    var CICLO = GRAV || 24;
+    var pose = { yaw: 0, pitch: PITCH, spin: -0.2, bob: 0, lx: -0.55, ly: 0.45 };
+    function suave01(x) { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); }
+    function poseOciosa(tau) {
+      var f = ((tau % CICLO) + CICLO) % CICLO, w = 2 * PI / CICLO;
+      var vira = suave01((f - CICLO * 0.25) / 1.4) + suave01((f - CICLO * 0.75) / 1.4);
+      pose.yaw = vira * PI + Math.sin(f * w) * 0.34;
+      pose.pitch = PITCH + Math.sin(f * w + 1.3) * 0.07;
+      pose.bob = Math.sin(f * w * 2) * 0.025;
+      pose.spin = -0.2 + Math.sin(f * w) * 0.25;
+      pose.lx = -0.55 + Math.sin(f * w) * 0.4;
+      pose.ly = 0.45 + Math.sin(f * w + 0.7) * 0.25;
+      return pose;
+    }
+    // gravando, ou recém-saído do vídeo: segue a coreografia até o visitante mexer
+    var coreografia = !!(GRAV || vid), inicioCoreo = vid ? vid.tempo() - performance.now() / 1000 : 0;
     var yaw = reduzido ? 0 : -1.5, yawAlvo = 0, yawVel = 0, virando = false;
     var pitch = PITCH, spin = -0.2, balanco = 0, entrada = reduzido ? 1 : 0;
     var arrastando = false, ultimaAcao = performance.now(), ultimoGiro = performance.now();
@@ -564,6 +597,11 @@
     }
     var cena3d = null, ultimoFoco = 0, voltaFps = 0;
     function usou() {
+      if (coreografia && !GRAV) {                         // o visitante assumiu: a partir daqui, a física de sempre
+        coreografia = false;
+        yawAlvo = Math.round(yaw / PI) * PI; balanco = 1; entrada = 1;
+        ultimoGiro = performance.now();
+      }
       ultimaAcao = performance.now();
       palco.classList.add('is-usado');
       if (!cena3d) return;
@@ -574,6 +612,19 @@
     }
 
     function passo(dt) {
+      if (coreografia) {
+        poseOciosa(GRAV ? Cenas.tempoGravacao() : inicioCoreo + performance.now() / 1000);
+        yaw = pose.yaw; pitch = pose.pitch; spin = pose.spin; entrada = 1;
+        if (!luz.mouse) { luz.ax = pose.lx; luz.ay = pose.ly; }
+        luz.x += (luz.ax - luz.x) * (1 - Math.exp(-dt * 4)); luz.y += (luz.ay - luz.y) * (1 - Math.exp(-dt * 4));
+        if (!dt && !luz.mouse) { luz.x = luz.ax; luz.y = luz.ay; }
+        pivo.scale.setScalar(1);
+        pivo.rotation.set(pitch, yaw, 0);
+        pivo.position.y = pose.bob;
+        disco.rotation.set(PI / 2, spin, 0);
+        luzP[0].set(luz.x * 2.8, luz.y * 2.4 + 0.3, 3.4);
+        return true;
+      }
       var agora = performance.now();
       var ocioso = (agora - ultimaAcao) / 1000;
       var mexendo = false;

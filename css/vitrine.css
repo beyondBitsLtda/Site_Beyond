@@ -775,6 +775,12 @@
 .lisa-rosto { position: absolute; inset: 0; }
 .lisa-reserva { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0.5; transition: opacity 0.7s ease 0.8s; }
 .lisa-palco.is-viva .lisa-reserva { opacity: 0; }   /* some devagar enquanto o rosto 3D "acende" do preto */
+/* o rosto em vídeo (js/vitrine.js): um vídeo por estado, o do estado atual no ar; o preto some no palco escuro.
+   Com o rosto 3D aceso, os vídeos somem devagar enquanto ele "acende" do preto. */
+html.cenas-em-video .lisa-reserva { display: none; }
+.lisa-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: screen; opacity: 0; transition: opacity 0.35s ease; z-index: 1; }
+.lisa-video.is-no-ar { opacity: 1; }
+.lisa-palco.is-viva .lisa-video { opacity: 0; transition: opacity 0.7s ease 0.8s; }
 .lisa-fala {
   position: absolute; left: 50%; bottom: 2%;
   transform: translateX(-50%);
@@ -1487,3 +1493,40 @@
 .longe *, .longe *::before, .longe *::after { animation-play-state: paused !important; }
 .longe .depo-ceu, .longe .vit-ceu, .longe .ciclo-fundo, .longe .beco-fundo,
 .longe .seg-ceu, .longe .seg-nave-rota, .longe .space-bg, .longe .space-frente, .longe .sat-track { visibility: hidden; }
+
+/* ══════════ as cenas em vídeo (js/cenas.js) ══════════
+   Cada cena 3D aparece como um vídeo gravado do próprio 3D. As gravadas sobre o preto (luz no escuro) somam
+   a luz delas ao céu que está atrás ("screen"): o preto do vídeo some e o céu continua aparecendo. */
+.cena-video { display: block; pointer-events: none; }
+/* a mistura fica no elemento que forma a camada da cena (senão o vídeo só se misturaria com o vazio dela) */
+.cena-video--luz { mix-blend-mode: screen; }
+html.cenas-em-video .trem-divisa { mix-blend-mode: lighten; }   /* o casco claro fica opaco; no preto do vídeo, o céu */
+.trem-divisa .cena-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; }
+html.cenas-em-video .trem-tela { visibility: hidden; }
+/* os trilhos em vídeo: o céu dos Sistemas ganha o fundo da seção (sólido), para o vídeo se misturar com ele */
+html.cenas-em-video .vit-ceu-janela { background: var(--bg); }
+html.cenas-em-video .vit-ceu-janela canvas.vit-trilhos { display: none; }
+.vit-ceu-janela .cena-video { object-fit: cover; will-change: transform; }
+/* o globo em vídeo: redondo como o canvas era, somando a luz ao espaço do fundo */
+html.cenas-em-video #earthGlobeViz { mix-blend-mode: screen; }
+#earthGlobeViz .cena-video { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+/* os buracos em vídeo: no lugar que o 3D teria, com a borda sumindo no céu de verdade */
+.cta-buracos-video {
+  position: absolute; object-fit: fill;
+  -webkit-mask-image: radial-gradient(closest-side, #000 70%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 70%, transparent 100%);
+}
+/* o planeta em vídeo (js/planeta-ciclo.js): soma a luz sobre um disco preto do tamanho dele (que esconde as naves
+   e as estrelas atrás); com o 3D de verdade no lugar, o disco sai (a câmera do 3D acompanha o mouse) */
+.ciclo-planeta-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity 0.4s ease; }
+html.cenas-em-video .ciclo-cena:not(.is-3d) { mix-blend-mode: lighten; }
+html.cenas-em-video .ciclo-cena:not(.is-3d) .ciclo-planeta { opacity: 0; }
+.ciclo-cena.is-3d .ciclo-planeta-video { opacity: 0; }
+.ciclo-planeta-sombra { position: absolute; z-index: 2; border-radius: 50%; background: #000; pointer-events: none; transition: opacity 0.4s ease; }
+.ciclo-planeta-sombra.is-fora { opacity: 0; }
+/* o outdoor em vídeo (js/beco.js): a máscara deixa o céu de verdade aparecer; a tela HTML vai por cima do vídeo e
+   soma com ele ("lighten": onde o vídeo é preto aparece o site; onde passa um panfleto claro, o panfleto) */
+.beco-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  -webkit-mask-size: cover; mask-size: cover; -webkit-mask-position: center; mask-position: center; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+.beco--video .beco-site-tela { mix-blend-mode: lighten; }
+html.cenas-em-video .beco-tela { display: none; }
