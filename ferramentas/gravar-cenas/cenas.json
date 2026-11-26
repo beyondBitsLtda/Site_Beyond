@@ -15,7 +15,6 @@
    ],
    "mascara": true,
    "mascaraSel": "#becoTela",
-   "quadJs": "window.__becoCantos",
    "periodo": 11.6667,
    "fps": 24,
    "sub": 1,
@@ -24,7 +23,9 @@
    "aquecer": 2,
    "esperaCarga": 14000,
    "escala": 1.5,
-   "mascaraEscala": 1
+   "mascaraEscala": 1,
+   "cantosJs": "window.__becoCantos",
+   "antes": "window.__becoSemVoadores && window.__becoSemVoadores(true)"
   },
   "beco-pc": {
    "url": "index.html?gravar=beco&periodo=11.6667",
@@ -40,7 +41,6 @@
    ],
    "mascara": true,
    "mascaraSel": "#becoTela",
-   "quadJs": "window.__becoCantos",
    "periodo": 11.6667,
    "fps": 24,
    "sub": 1,
@@ -48,7 +48,9 @@
    "qp": 32,
    "aquecer": 2,
    "esperaCarga": 14000,
-   "mascaraEscala": 0.5
+   "mascaraEscala": 0.5,
+   "cantosJs": "window.__becoCantos",
+   "antes": "window.__becoSemVoadores && window.__becoSemVoadores(true)"
   },
   "buracos-cel": {
    "url": "index.html?gravar=buracos&periodo=36",
@@ -123,7 +125,10 @@
    "qp": 36,
    "aquecer": 1,
    "esperaCarga": 12000,
-   "escala": 0.62
+   "escala": 0.62,
+   "alfa": true,
+   "kbps": 260,
+   "kbpsAlfa": 60
   },
   "disco-pc": {
    "url": "index.html?gravar=disco&periodo=16",
@@ -143,7 +148,10 @@
    "fundir": 1,
    "qp": 35,
    "aquecer": 1,
-   "esperaCarga": 12000
+   "esperaCarga": 12000,
+   "alfa": true,
+   "kbps": 700,
+   "kbpsAlfa": 150
   },
   "globo-cel": {
    "url": "index.html?gravar=globo&periodo=40",
@@ -164,7 +172,10 @@
    "qp": 36,
    "aquecer": 1,
    "esperaCarga": 12000,
-   "escala": 1.0
+   "escala": 1.0,
+   "alfa": true,
+   "kbps": 120,
+   "kbpsAlfa": 40
   },
   "globo-pc": {
    "url": "index.html?gravar=globo&periodo=40",
@@ -184,7 +195,10 @@
    "fundir": 1,
    "qp": 35,
    "aquecer": 1,
-   "esperaCarga": 12000
+   "esperaCarga": 12000,
+   "alfa": true,
+   "kbps": 200,
+   "kbpsAlfa": 60
   },
   "lisa-falando-cel": {
    "url": "index.html?gravar=lisa-falando&periodo=6",
@@ -206,7 +220,11 @@
    "qp": 34,
    "aquecer": 3,
    "esperaCarga": 16000,
-   "reduzido": true
+   "reduzido": true,
+   "alfa": true,
+   "alfaPorLuz": true,
+   "kbps": 190,
+   "kbpsAlfa": 60
   },
   "lisa-falando-pc": {
    "url": "index.html?gravar=lisa-falando&periodo=6",
@@ -228,7 +246,11 @@
    "qp": 33,
    "aquecer": 3,
    "esperaCarga": 16000,
-   "reduzido": true
+   "reduzido": true,
+   "alfa": true,
+   "alfaPorLuz": true,
+   "kbps": 400,
+   "kbpsAlfa": 130
   },
   "lisa-pensando-cel": {
    "url": "index.html?gravar=lisa-pensando&periodo=8",
@@ -250,7 +272,11 @@
    "qp": 34,
    "aquecer": 3,
    "esperaCarga": 16000,
-   "reduzido": true
+   "reduzido": true,
+   "alfa": true,
+   "alfaPorLuz": true,
+   "kbps": 180,
+   "kbpsAlfa": 60
   },
   "lisa-pensando-pc": {
    "url": "index.html?gravar=lisa-pensando&periodo=8",
@@ -272,7 +298,11 @@
    "qp": 33,
    "aquecer": 3,
    "esperaCarga": 16000,
-   "reduzido": true
+   "reduzido": true,
+   "alfa": true,
+   "alfaPorLuz": true,
+   "kbps": 380,
+   "kbpsAlfa": 120
   },
   "lisa-pronta-cel": {
    "url": "index.html?gravar=lisa-pronta&periodo=10",
@@ -294,7 +324,11 @@
    "qp": 34,
    "aquecer": 3,
    "esperaCarga": 16000,
-   "reduzido": true
+   "reduzido": true,
+   "alfa": true,
+   "alfaPorLuz": true,
+   "kbps": 170,
+   "kbpsAlfa": 60
   },
   "lisa-pronta-pc": {
    "url": "index.html?gravar=lisa-pronta&periodo=10",
@@ -316,7 +350,11 @@
    "qp": 33,
    "aquecer": 3,
    "esperaCarga": 16000,
-   "reduzido": true
+   "reduzido": true,
+   "alfa": true,
+   "alfaPorLuz": true,
+   "kbps": 350,
+   "kbpsAlfa": 120
   },
   "planeta-cel": {
    "url": "index.html?gravar=planeta&periodo=36",
@@ -338,7 +376,10 @@
    "qp": 36,
    "aquecer": 1,
    "esperaCarga": 14000,
-   "escala": 0.72
+   "escala": 0.72,
+   "alfa": true,
+   "kbps": 160,
+   "kbpsAlfa": 40
   },
   "planeta-pc": {
    "url": "index.html?gravar=planeta&periodo=36",
@@ -359,37 +400,10 @@
    "fundir": 1,
    "qp": 35,
    "aquecer": 1,
-   "esperaCarga": 14000
-  },
-  "trem-cel": {
-   "url": "index.html?gravar=trem&periodo=3.4",
-   "largura": 390,
-   "altura": 844,
-   "dpr": 2,
-   "alvo": "#tremDivisa",
-   "camadas": [
-    "#tremTela"
-   ],
-   "periodo": 3.4,
-   "fps": 30,
-   "sub": 2,
-   "fundir": 0.6,
-   "qp": 33
-  },
-  "trem-pc": {
-   "url": "index.html?gravar=trem&periodo=3.4",
-   "largura": 1920,
-   "altura": 1080,
-   "dpr": 1,
-   "alvo": "#tremDivisa",
-   "camadas": [
-    "#tremTela"
-   ],
-   "periodo": 3.4,
-   "fps": 30,
-   "sub": 2,
-   "fundir": 0.6,
-   "qp": 33
+   "esperaCarga": 14000,
+   "alfa": true,
+   "kbps": 280,
+   "kbpsAlfa": 60
   },
   "trilhos-cel": {
    "url": "index.html?gravar=trilhos&periodo=40",
@@ -410,7 +424,10 @@
    "fundir": 1.5,
    "qp": 34,
    "aquecer": 3,
-   "escala": 1.5
+   "escala": 1.5,
+   "alfa": true,
+   "kbps": 40,
+   "kbpsAlfa": 15
   },
   "trilhos-pc": {
    "url": "index.html?gravar=trilhos&periodo=40",
@@ -430,7 +447,10 @@
    "sub": 1,
    "fundir": 1.5,
    "qp": 34,
-   "aquecer": 3
+   "aquecer": 3,
+   "alfa": true,
+   "kbps": 150,
+   "kbpsAlfa": 50
   }
  }
 }

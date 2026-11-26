@@ -324,13 +324,18 @@ window.Cenas = (function () {
       setTimeout(proxima, item.leve ? 60 : 300);
     }, { timeout: urgente ? 120 : 1500 });
   }
-  function preparar(el, fn) {
+  function preparar(el, fn, opcoes) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
     if (!el) return;
-    // no site (fora da gravação), a cena aparece em vídeo: o 3D só monta se for pedido (Cenas.ativar)
-    if (emVideo) { sobDemanda.push({ el: el, fn: fn, promessa: null }); return; }
-    var item = { el: el, fn: fn, pedido: false };
-    function pedir() { if (item.pedido) return; item.pedido = true; fila.push(item); proxima(); }
+    // no site (fora da gravação), a cena aparece em vídeo: o 3D só monta se for pedido (Cenas.ativar);
+    // as cenas que continuam em 3D no site ({ sempre: true }: o trem, os panfletos) montam como sempre
+    if (emVideo && !(opcoes && opcoes.sempre)) { sobDemanda.push({ el: el, fn: fn, promessa: null }); return; }
+    var item = { el: el, fn: function () { if (window.THREE) fn(); }, pedido: false };
+    function pedir() {
+      if (item.pedido) return;
+      item.pedido = true;
+      carregar3d().then(function () { fila.push(item); proxima(); }, function () { /* sem Three.js: a cena não aparece */ });
+    }
     // 1) em segundo plano, um pouco depois de a página terminar de carregar
     function depoisDaCarga() { setTimeout(pedir, 1500); }
     if (document.readyState === 'complete') depoisDaCarga(); else window.addEventListener('load', depoisDaCarga);
@@ -379,6 +384,17 @@ window.Cenas = (function () {
      Com "reduzir movimento", fica a primeira imagem, parada. */
   var emVideo = !gravacao;
   if (emVideo) document.documentElement.classList.add('cenas-em-video');
+  /* vídeo TRANSPARENTE (WebM VP9 com alfa): nos navegadores baseados no Chrome (Chrome, Edge, Opera, Samsung,
+     Android). Nos outros (Safari, iPhone, Firefox) vai o MP4 com fundo preto, e o CSS soma a luz dele ao fundo
+     (classe videos-sem-alfa); nos baseados no Chrome, nada de mistura: a placa de vídeo às vezes mostra o vídeo
+     por um atalho que ignora a mistura, e o fundo preto aparecia. */
+  var alfaOk = (function () {
+    var ua = navigator.userAgent || '';
+    var ios = /iP(hone|ad|od)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (ios || !/Chrome\/|Chromium\//.test(ua)) return false;
+    try { return !!document.createElement('video').canPlayType('video/webm; codecs="vp09.00.10.08"'); } catch (e) { return false; }
+  })();
+  if (emVideo && !alfaOk) document.documentElement.classList.add('videos-sem-alfa');
   var reduzido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var sobDemanda = [], tres = null;
   function versao() { return (window.innerWidth || document.documentElement.clientWidth || 1024) < 700 ? 'cel' : 'pc'; }
@@ -404,7 +420,8 @@ window.Cenas = (function () {
     return item.promessa;
   }
   /* o vídeo de uma cena. o: { nome, lugar (onde entra), antes (entra antes deste elemento), classe,
-     versao ('pc' | 'cel'; sem ela, pela largura da tela), sempre (true: não pausa fora da tela) } */
+     versao ('pc' | 'cel'; sem ela, pela largura da tela), alfa (true: a cena tem a versão transparente),
+     posterOpaco (true: mesmo com o vídeo transparente, o primeiro quadro comum, mais leve) } */
   function video(o) {
     var v = document.createElement('video');
     v.className = 'cena-video' + (o.classe ? ' ' + o.classe : '');
@@ -415,16 +432,21 @@ window.Cenas = (function () {
     var carregado = false, naTela = false, parado = false, pedido = false;
     // cada vídeo entra na fila de tarefas (um de cada vez; na frente, o que está para aparecer): criar o
     // tocador de vídeo custa algumas dezenas de ms, e vários juntos no mesmo quadro dariam um tranco
+    var transparente = o.alfa && alfaOk;
+    // o primeiro quadro (uma imagem): aparece assim que a cena chega perto, sem esperar a fila; transparente junto
+    // com o vídeo transparente (posterOpaco: o comum, quando o fundo atrás já é preto)
+    function mostrarPoster() { if (!v.poster) v.poster = base + (transparente && !o.posterOpaco ? '-alfa.webp' : '.webp'); }
     function carregar() {
       if (carregado || pedido) return;
       pedido = true;
+      mostrarPoster();
       ocioso(function () { carregarJa(); tocar(); }, o.lugar);
     }
     function carregarJa() {
       if (carregado) return;
       carregado = true;
-      v.poster = base + '.webp';
-      if (!reduzido) { v.src = base + '.mp4'; v.preload = 'auto'; }
+      mostrarPoster();
+      if (!reduzido) { v.src = base + (transparente ? '.webm' : '.mp4'); v.preload = 'auto'; }
     }
     function tocar() {
       if (reduzido || !carregado) return;
@@ -460,6 +482,7 @@ window.Cenas = (function () {
     // gravando: segundos desde o primeiro quadro do vídeo (a ferramenta avisa quando ele começa)
     tempoGravacao: function () { return (performance.now() - (window.__inicioGravacao || 0)) / 1000; },
     emVideo: emVideo,
+    videoTransparente: emVideo && alfaOk,
     video: video,
     ativar: ativar,
     carregar3d: carregar3d,

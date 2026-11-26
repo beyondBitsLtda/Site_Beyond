@@ -20,7 +20,7 @@ if (window.Cenas && Cenas.emVideo) {
     var janela = document.getElementById('vitCeu'), tela = document.getElementById('vitTrilhos');
     var secao = document.getElementById('projetos');
     if (!janela || !tela || !secao) return;
-    var v = Cenas.video({ nome: 'trilhos', lugar: janela, antes: tela, classe: 'vit-trilhos cena-video--luz' });
+    var v = Cenas.video({ nome: 'trilhos', lugar: janela, antes: tela, classe: 'vit-trilhos cena-video--luz', alfa: true });
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     // a câmera descia conforme a seção rolava (a cena subia na tela): o vídeo, um pouco maior, sobe junto
     var marcado = false;

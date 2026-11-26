@@ -50,19 +50,16 @@
   var dica = document.getElementById('segDiscoDica');
   if (!palco || !tela) return;
 
-  /* NO SITE, o disco aparece como vídeo gravado deste 3D (assets/videos/disco-*.mp4, js/cenas.js), fazendo a
-     coreografia de quando ninguém mexe (balança, gira devagar e vira duas vezes a cada 24 s). O 3D de verdade
-     só monta quando o visitante vai usar o disco (mouse em cima, toque, foco pelo teclado): ele começa no mesmo
-     ponto da coreografia em que o vídeo está e, no primeiro quadro, troca de lugar com o vídeo. */
+  /* NO SITE, o disco é só o vídeo gravado deste 3D (assets/videos/disco-*, js/cenas.js), fazendo a coreografia
+     de quando ninguém mexe: balança, gira devagar e vira duas vezes a cada 16 s. Não é interativo (o 3D abaixo só
+     roda na gravação: index.html?gravar=disco&periodo=16). */
   var vid = null;
   if (window.Cenas && Cenas.emVideo) {
-    vid = Cenas.video({ nome: 'disco', lugar: palco, antes: tela, classe: 'seg-disco-video' });
-    var pedir3d = function () { Cenas.ativar(palco).catch(function () { /* sem 3D: fica o vídeo */ }); };
-    palco.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') pedir3d(); });
-    palco.addEventListener('pointerdown', pedir3d);
-    tela.addEventListener('focus', pedir3d);
-    tela.addEventListener('cena:primeiro', function () { palco.classList.add('is-3d'); vid.parar(true); });
-    tela.addEventListener('webglcontextlost', function () { palco.classList.remove('is-3d'); vid.parar(false); });
+    vid = Cenas.video({ nome: 'disco', lugar: palco, antes: tela, classe: 'seg-disco-video', alfa: true });
+    palco.setAttribute('role', 'img');
+    palco.setAttribute('aria-label', 'Réplica do Disco de Ouro das sondas Voyager, balançando devagar e virando para mostrar os dois lados.');
+    tela.removeAttribute('tabindex'); tela.setAttribute('aria-hidden', 'true');
+    return;
   } else if (typeof THREE === 'undefined') { palco.classList.add('is-sem-3d'); return; }
   var GRAV = window.Cenas && Cenas.gravacao && Cenas.gravacao.periodo;
   if (dica && window.matchMedia && window.matchMedia('(hover: none)').matches) {

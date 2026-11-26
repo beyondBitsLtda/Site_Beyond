@@ -30,6 +30,7 @@ if (!nomes.length) { console.log('Nenhuma cena com esse nome. Cenas:', Object.ke
 let porta = 9671, falhas = 0;
 for (const nome of nomes) {
   const cfg = Object.assign({}, cenas[nome], { url: servidor + cenas[nome].url, saida: join(raiz, 'assets', 'videos', nome).split('\\').join('/'), porta: porta++ });
+  if (process.env.SO_MP4) cfg.alfa = false;          // SO_MP4=1: refaz só o MP4 (e o pôster dele), sem mexer no WebM transparente
   const tmp = join(tmpdir(), 'gravar-cena-' + nome + '.json');
   writeFileSync(tmp, JSON.stringify(cfg));
   console.log('\n── ' + nome);

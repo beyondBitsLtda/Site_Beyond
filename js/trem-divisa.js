@@ -16,15 +16,9 @@
 
    Só desenha com a faixa na tela e a aba visível. Com "reduzir movimento", fica parado.
    Sem WebGL ou sem Three.js, a faixa fica vazia (só o respiro entre as partes).
-   NO SITE, o trem aparece como vídeo gravado deste 3D (assets/videos/trem-*.mp4, js/cenas.js): o 3D
-   abaixo só roda na gravação (index.html?gravar=trem&periodo=5).
+   Continua em 3D no site (é rápido demais para vídeo), mas com menos pixels: ~75% da resolução da tela no
+   computador e ~90% no celular; o borrão de movimento esconde a diferença.
 ══════════════════════════════════════════════════════════════ */
-if (window.Cenas && Cenas.emVideo) {
-  (function () {
-    var faixa = document.getElementById('tremDivisa');
-    if (faixa) Cenas.video({ nome: 'trem', lugar: faixa, classe: 'cena-video--luz' });
-  })();
-}
 Cenas.preparar('tremDivisa', function tremDaDivisa() {
   'use strict';
   var faixa = document.getElementById('tremDivisa');
@@ -321,12 +315,6 @@ Cenas.preparar('tremDivisa', function tremDaDivisa() {
   });
   var VEL = 132;                                          // unidades por segundo: uns 4 vagões por segundo
   var PULSO = 15;                                         // as luzes dos dormentes correndo
-  // gravando em vídeo (js/cenas.js): o trem e as luzes fecham o ciclo exatamente no tempo do loop
-  var GRAV = window.Cenas && Cenas.gravacao && Cenas.gravacao.periodo;
-  if (GRAV) {
-    VEL = Math.max(1, Math.round(GRAV * VEL / (N * PASSO))) * N * PASSO / GRAV;
-    PULSO = 2 * Math.PI * Math.max(1, Math.round(PULSO * GRAV / (2 * Math.PI))) / GRAV;
-  }
 
   /* ───────── trilho: dois trilhos de metal, dormentes com luzes que correm, viga e canal de energia ───────── */
   var LARG = 460;
@@ -456,7 +444,7 @@ Cenas.preparar('tremDivisa', function tremDaDivisa() {
   function medir() {
     var w = faixa.clientWidth, h = faixa.clientHeight;
     if (!w || !h) return;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, w < 700 ? 1.25 : 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, w < 700 ? 0.9 : 0.75));   // menos pixels: o borrão esconde
     renderer.setSize(w, h, false);
     renderer.getDrawingBufferSize(buf);
     rt.setSize(buf.x, buf.y);
@@ -530,4 +518,4 @@ Cenas.preparar('tremDivisa', function tremDaDivisa() {
     motor: renderer, aoMudarQualidade: medir,             // o borrão usa o tamanho da imagem: recalcula
     pintar: function () { if (!rodando) desenhar(0); } });
   tela.addEventListener('webglcontextlost', function (e) { e.preventDefault(); desligar(); });
-});
+}, { sempre: true });

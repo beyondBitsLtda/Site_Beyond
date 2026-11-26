@@ -249,7 +249,7 @@ const benefitsSec = document.querySelector('.benefits-section');
 if (benefitsSec) {
   // no site, o globo é um vídeo gravado deste 3D (assets/videos/globo-*.mp4); o 3D só roda na gravação
   const globoEl = document.getElementById('earthGlobeViz');
-  if (window.Cenas && window.Cenas.emVideo && globoEl) window.Cenas.video({ nome: 'globo', lugar: globoEl });
+  if (window.Cenas && window.Cenas.emVideo && globoEl) window.Cenas.video({ nome: 'globo', lugar: globoEl, alfa: true });
   if (window.Cenas) window.Cenas.preparar(benefitsSec, initEarthGlobe);
   else initEarthGlobe();
 }

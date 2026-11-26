@@ -77,7 +77,8 @@
   var vid = null;
   if (window.Cenas && Cenas.emVideo) {
     var cenaEl = tela.parentNode;
-    vid = Cenas.video({ nome: 'planeta', lugar: cenaEl, antes: tela, classe: 'ciclo-planeta-video' });
+    vid = Cenas.video({ nome: 'planeta', lugar: cenaEl, antes: tela, classe: 'ciclo-planeta-video', alfa: true });
+    // sem vídeo transparente (Safari, Firefox): o disco preto atrás do vídeo esconde as naves e as estrelas
     var sombra = document.createElement('div');
     sombra.className = 'ciclo-planeta-sombra'; sombra.setAttribute('aria-hidden', 'true');
     secao.insertBefore(sombra, cenaEl);

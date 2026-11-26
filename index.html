@@ -978,14 +978,13 @@ body.page-hidden *::after {
 .seg-disco.is-usado .seg-disco-dica { opacity: 0; }
 /* sem WebGL: o palco some e o texto ocupa a abertura sozinho */
 .seg-disco.is-sem-3d { display: none; }
-/* o disco em vídeo (js/disco-ouro.js): por baixo do canvas, que fica invisível (mas recebe o toque) até o 3D
-   desenhar o primeiro quadro; o preto do vídeo some no céu (o dourado, mais claro, fica por cima) */
-.seg-disco-video { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: lighten; transition: opacity 0.4s ease; }
-/* para o vídeo enxergar o céu, a abertura não pode formar uma camada própria (a nave, com z-index 4, continua
-   passando por cima dos cards; a abertura continua acima do céu pela ordem do HTML) */
-html.cenas-em-video .seg-section > .seg-hero { z-index: auto; }
-html.cenas-em-video .seg-disco:not(.is-3d) .seg-disco-tela { opacity: 0; }
-.seg-disco.is-3d .seg-disco-video { opacity: 0; }
+/* o disco em vídeo (js/disco-ouro.js): só o vídeo, com fundo transparente; sem o canvas e sem a dica de arrastar */
+.seg-disco-video { position: absolute; inset: 0; width: 100%; height: 100%; }
+html.cenas-em-video .seg-disco-tela, html.cenas-em-video .seg-disco-dica { display: none; }
+/* navegador sem vídeo transparente (Safari): o vídeo tem fundo preto e soma a luz sobre o céu ("lighten"); para
+   ele enxergar o céu, a abertura não pode formar uma camada própria (a nave, com z-index 4, continua por cima) */
+html.videos-sem-alfa .seg-disco-video { mix-blend-mode: lighten; }
+html.videos-sem-alfa .seg-section > .seg-hero { z-index: auto; }
 
 /* a nave gigante: atravessa a base da abertura da direita para a esquerda, bem perto da câmera.
    O desfoque já vem na imagem (mais leve que filter: blur numa peça desse tamanho em movimento). */

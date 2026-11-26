@@ -778,7 +778,8 @@
 /* o rosto em vídeo (js/vitrine.js): um vídeo por estado, o do estado atual no ar; o preto some no palco escuro.
    Com o rosto 3D aceso, os vídeos somem devagar enquanto ele "acende" do preto. */
 html.cenas-em-video .lisa-reserva { display: none; }
-.lisa-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: screen; opacity: 0; transition: opacity 0.35s ease; z-index: 1; }
+.lisa-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.35s ease; z-index: 1; }
+html.videos-sem-alfa .lisa-video { mix-blend-mode: screen; }
 .lisa-video.is-no-ar { opacity: 1; }
 .lisa-palco.is-viva .lisa-video { opacity: 0; transition: opacity 0.7s ease 0.8s; }
 .lisa-fala {
@@ -1499,16 +1500,13 @@ html.cenas-em-video .lisa-reserva { display: none; }
    a luz delas ao céu que está atrás ("screen"): o preto do vídeo some e o céu continua aparecendo. */
 .cena-video { display: block; pointer-events: none; }
 /* a mistura fica no elemento que forma a camada da cena (senão o vídeo só se misturaria com o vazio dela) */
-.cena-video--luz { mix-blend-mode: screen; }
-html.cenas-em-video .trem-divisa { mix-blend-mode: lighten; }   /* o casco claro fica opaco; no preto do vídeo, o céu */
-.trem-divisa .cena-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; }
-html.cenas-em-video .trem-tela { visibility: hidden; }
+html.videos-sem-alfa .cena-video--luz { mix-blend-mode: screen; }
 /* os trilhos em vídeo: o céu dos Sistemas ganha o fundo da seção (sólido), para o vídeo se misturar com ele */
 html.cenas-em-video .vit-ceu-janela { background: var(--bg); }
 html.cenas-em-video .vit-ceu-janela canvas.vit-trilhos { display: none; }
 .vit-ceu-janela .cena-video { object-fit: cover; will-change: transform; }
 /* o globo em vídeo: redondo como o canvas era, somando a luz ao espaço do fundo */
-html.cenas-em-video #earthGlobeViz { mix-blend-mode: screen; }
+html.videos-sem-alfa #earthGlobeViz { mix-blend-mode: screen; }
 #earthGlobeViz .cena-video { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 /* os buracos em vídeo: no lugar que o 3D teria, com a borda sumindo no céu de verdade */
 .cta-buracos-video {
@@ -1519,14 +1517,43 @@ html.cenas-em-video #earthGlobeViz { mix-blend-mode: screen; }
 /* o planeta em vídeo (js/planeta-ciclo.js): soma a luz sobre um disco preto do tamanho dele (que esconde as naves
    e as estrelas atrás); com o 3D de verdade no lugar, o disco sai (a câmera do 3D acompanha o mouse) */
 .ciclo-planeta-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity 0.4s ease; }
-html.cenas-em-video .ciclo-cena:not(.is-3d) { mix-blend-mode: lighten; }
+html.videos-sem-alfa .ciclo-cena:not(.is-3d) { mix-blend-mode: lighten; }
+html.videos-sem-alfa .ciclo-planeta-video { transition: none; }   /* sem vídeo transparente: a troca para o 3D é seca (a mistura sai junto, sem quadro preto) */
 html.cenas-em-video .ciclo-cena:not(.is-3d) .ciclo-planeta { opacity: 0; }
 .ciclo-cena.is-3d .ciclo-planeta-video { opacity: 0; }
+html:not(.videos-sem-alfa) .ciclo-planeta-sombra { display: none; }
 .ciclo-planeta-sombra { position: absolute; z-index: 2; border-radius: 50%; background: #000; pointer-events: none; transition: opacity 0.4s ease; }
 .ciclo-planeta-sombra.is-fora { opacity: 0; }
-/* o outdoor em vídeo (js/beco.js): a máscara deixa o céu de verdade aparecer; a tela HTML vai por cima do vídeo e
-   soma com ele ("lighten": onde o vídeo é preto aparece o site; onde passa um panfleto claro, o panfleto) */
+/* o outdoor em vídeo (js/beco.js): a máscara deixa o céu de verdade e a tela HTML (atrás do vídeo) aparecerem onde o
+   3D era transparente; os panfletos voando são um canvas 3D por cima (abaixo da personagem) */
 .beco-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
   -webkit-mask-size: cover; mask-size: cover; -webkit-mask-position: center; mask-position: center; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
-.beco--video .beco-site-tela { mix-blend-mode: lighten; }
+.beco-panfletos { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 html.cenas-em-video .beco-tela { display: none; }
+
+/* ══════════ as divisas entre as seções ══════════
+   Cada seção tem o próprio céu e um tom de fundo um pouco diferente; em vez de uma linha seca na troca, cada
+   uma se dissolve na mesma cor de junção, em cima e embaixo, e a seguinte nasce dela. As faixas ficam por cima
+   de tudo da seção (sem pegar o clique) e são baixas o bastante para não alcançar os textos. */
+:root { --juncao: #06060f; --juncao-0: rgba(6, 6, 15, 0); --divisa: clamp(90px, 13vh, 170px); }
+.depo-section { position: relative; }
+.hero::after,
+.benefits-section::before, .benefits-section::after,
+.depo-section::before, .depo-section::after,
+.vit-section::before, .vit-section::after,
+.ciclo-section::before, .ciclo-section::after,
+.seg-section::before, .seg-section::after,
+.cta-section::before {
+  content: ''; position: absolute; left: 0; right: 0; z-index: 6;
+  height: var(--divisa); pointer-events: none;
+}
+.hero::after, .benefits-section::after, .depo-section::after, .vit-section::after,
+.ciclo-section::after, .seg-section::after {
+  bottom: 0;
+  background: linear-gradient(to bottom, var(--juncao-0) 0%, rgba(6, 6, 15, 0.38) 42%, rgba(6, 6, 15, 0.82) 78%, var(--juncao) 100%);
+}
+.benefits-section::before, .depo-section::before, .vit-section::before,
+.ciclo-section::before, .seg-section::before, .cta-section::before {
+  top: 0;
+  background: linear-gradient(to top, var(--juncao-0) 0%, rgba(6, 6, 15, 0.38) 42%, rgba(6, 6, 15, 0.82) 78%, var(--juncao) 100%);
+}

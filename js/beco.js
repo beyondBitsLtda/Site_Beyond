@@ -62,6 +62,39 @@
   })();
 
   function tela2d(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  /* ── o papel dos panfletos da Beyond Bits (frente e verso, desenhados em canvas) ── */
+  function pintarPanfleto(frenteC, versoC) {
+    var x = frenteC.getContext('2d'), W = 512, H = 724;
+    var g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#f3ece0'); g.addColorStop(1, '#e2d8c8');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (var i = 0; i < 1800; i++) { x.fillStyle = 'rgba(80,60,40,' + (Math.random() * 0.06).toFixed(3) + ')'; x.fillRect(Math.random() * W, Math.random() * H, 1.4, 1.4); }
+    // marca: um planeta com órbita, em cobre
+    x.strokeStyle = '#b87333'; x.lineWidth = 6; x.beginPath(); x.arc(84, 92, 30, 0, Math.PI * 2); x.stroke();
+    x.save(); x.translate(84, 92); x.rotate(-0.4); x.lineWidth = 4; x.beginPath(); x.ellipse(0, 0, 52, 14, 0, 0, Math.PI * 2); x.stroke(); x.restore();
+    x.fillStyle = '#b87333'; x.beginPath(); x.arc(130, 74, 7, 0, Math.PI * 2); x.fill();
+    // o nome
+    x.fillStyle = '#121218'; x.textBaseline = 'alphabetic';
+    x.font = '800 96px Unbounded, "Arial Black", sans-serif'; x.fillText('BEYOND', 40, 262);
+    x.font = '800 96px Unbounded, "Arial Black", sans-serif'; x.fillText('BITS', 40, 364);
+    x.fillStyle = '#b87333'; x.fillRect(44, 392, 128, 9);
+    x.fillStyle = '#2a2a33'; x.font = '700 34px Manrope, system-ui, sans-serif';
+    x.fillText('Sites que trazem', 44, 462); x.fillText('clientes.', 44, 504);
+    x.fillStyle = '#6a6270'; x.font = '500 24px Manrope, system-ui, sans-serif'; x.fillText('Sistemas e sites sob medida', 44, 552);
+    // faixa de baixo
+    x.fillStyle = '#15151c'; x.fillRect(0, 604, W, 120);
+    x.fillStyle = '#d4944a'; x.font = '700 28px "Space Mono", monospace'; x.fillText('beyond.dev.br', 44, 656);
+    x.fillStyle = '#efe7da'; x.font = '600 22px Manrope, system-ui, sans-serif'; x.fillText('Seu projeto começa aqui', 44, 694);
+    // vincos de dobra e borda gasta
+    x.fillStyle = 'rgba(0,0,0,0.07)'; x.fillRect(W / 2 - 1, 0, 2, H); x.fillRect(0, H / 3, W, 2); x.fillRect(0, 2 * H / 3, W, 2);
+    x.fillStyle = 'rgba(255,255,255,0.18)'; x.fillRect(W / 2 + 1, 0, 1, H);
+    var v = x.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.75);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(60,40,20,0.22)'); x.fillStyle = v; x.fillRect(0, 0, W, H);
+    // verso: papel com a impressão transparecendo
+    var y = versoC.getContext('2d');
+    y.fillStyle = '#e8e0d2'; y.fillRect(0, 0, W, H);
+    y.save(); y.globalAlpha = 0.1; y.translate(W, 0); y.scale(-1, 1); y.drawImage(frenteC, 0, 0); y.restore();
+    y.fillStyle = 'rgba(0,0,0,0.07)'; y.fillRect(W / 2 - 1, 0, 2, H); y.fillRect(0, H / 3, W, 2); y.fillRect(0, 2 * H / 3, W, 2);
+  }
   /* ───────── a tela: os sites rolando (HTML de verdade por baixo do canvas) ───────── */
   // altura de cada captura em relação à largura (as imagens têm 1920 px de largura no HD)
   var SITES = [
@@ -179,12 +212,116 @@
   iniciarSite(0);
 
   var GRAV = window.Cenas && Cenas.gravacao;
+  /* ── os panfletos voando, em 3D de verdade por cima do vídeo ──
+     Quatro (o 3D completo tinha onze), sempre entre a cerca e a câmera: assim não precisam de nada da cena para
+     passar por trás. A luz é a da cena, resumida (céu, lua, refletores, a tela e o poste). */
+  function panfletosVoando() {
+    if (typeof THREE === 'undefined') return;
+    var cv = document.createElement('canvas');
+    cv.className = 'beco-panfletos'; cv.setAttribute('aria-hidden', 'true');
+    beco.insertBefore(cv, document.getElementById('becoPersonagem'));
+    var renderer;
+    try { renderer = Cenas.renderizador(cv); } catch (e) { cv.parentNode.removeChild(cv); return; }
+    renderer.setClearColor(0x000000, 0);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+    var cena = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(40, 2, 0.5, 200);
+    var BW = 16.4, BH = 8.2, by = 3.05 + 0.36 + BH / 2, CERCA = 2.2;
+    cena.add(new THREE.HemisphereLight(0x8a9cff, 0x140e0a, 0.42));
+    var lua = new THREE.DirectionalLight(0xb7c6ff, 0.55); lua.position.set(-10, 18, 8); cena.add(lua);
+    var refl = new THREE.PointLight(0xffd9a6, 1.1, 14, 2); refl.position.set(0, by + BH / 2 + 0.4, 1.8); cena.add(refl);
+    var luzTela = new THREE.PointLight(0xd4b99c, 1.6, 22, 2); luzTela.position.set(0, by - 1, 3.2); cena.add(luzTela);
+    var luzPoste = new THREE.PointLight(0xffc27a, 2.4, 16, 2); cena.add(luzPoste);
+    var frenteC = tela2d(512, 724), versoC = tela2d(512, 724);
+    var tex = function (c) { var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t; };
+    var frenteT = tex(frenteC), versoT = tex(versoC);
+    var redesenhar = function () { pintarPanfleto(frenteC, versoC); frenteT.needsUpdate = true; versoT.needsUpdate = true; };
+    redesenhar();
+    if (document.fonts && document.fonts.load) {
+      Promise.all([document.fonts.load('800 96px "Unbounded"'), document.fonts.load('700 34px "Manrope"'), document.fonts.load('700 28px "Space Mono"')])
+        .then(redesenhar, function () {});
+    }
+    var matF = new THREE.MeshStandardMaterial({ map: frenteT, roughness: 0.85, metalness: 0, side: THREE.FrontSide });
+    var matV = new THREE.MeshStandardMaterial({ map: versoT, roughness: 0.9, metalness: 0, side: THREE.BackSide });
+    var LIM = { x: 14, y0: 0.6, y1: 11 }, Z0 = CERCA + 0.9, Z1 = CERCA + 6;
+    var voando = [];
+    function sortear(pf, espalhar) {
+      pf.g.position.set(espalhar ? (Math.random() * 2 - 1) * LIM.x : -LIM.x - 1 - Math.random() * 3,
+        LIM.y0 + Math.random() * (LIM.y1 - LIM.y0), Z0 + Math.random() * (Z1 - Z0));
+    }
+    for (var k = 0; k < 4; k++) {
+      var geo = new THREE.PlaneGeometry(0.9, 1.27, 8, 10), g = new THREE.Group();
+      g.add(new THREE.Mesh(geo, matF)); g.add(new THREE.Mesh(geo, matV));
+      var pf = { g: g, geo: geo, base: geo.attributes.position.array.slice(), fase: Math.random() * 100,
+        vento: new THREE.Vector3(0.45 + Math.random() * 0.6, 0.06 + Math.random() * 0.2, (Math.random() - 0.5) * 0.12),
+        giro: new THREE.Vector3((Math.random() - 0.5) * 0.9, (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 0.8) };
+      sortear(pf, true);
+      g.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
+      cena.add(g); voando.push(pf);
+    }
+    function voar(dt, t) {                           // o mesmo vento do 3D completo
+      for (var i = 0; i < voando.length; i++) {
+        var pf = voando[i], g = pf.g, ph = pf.fase;
+        g.position.x += (pf.vento.x + Math.sin(t * 0.6 + ph) * 0.3) * dt;
+        g.position.y += (pf.vento.y + Math.sin(t * 0.9 + ph * 1.3) * 0.35) * dt;
+        g.position.z += (pf.vento.z + Math.cos(t * 0.5 + ph) * 0.1) * dt;
+        g.position.z = Math.min(Z1, Math.max(Z0, g.position.z));
+        g.rotation.x += pf.giro.x * dt; g.rotation.y += pf.giro.y * dt; g.rotation.z += pf.giro.z * dt;
+        if (g.position.x > LIM.x + 1.5 || g.position.y > LIM.y1 + 1.5) sortear(pf, false);
+        if (g.position.y < LIM.y0) g.position.y = LIM.y0;
+        var a = pf.geo.attributes.position.array, b = pf.base;
+        for (var q = 0; q < a.length; q += 3) {
+          var x = b[q], y = b[q + 1];
+          a[q + 2] = Math.sin(x * 3.4 + t * 4.1 + ph) * 0.05 + Math.sin(y * 2.3 + t * 3.0 + ph) * 0.06 +
+                     Math.pow(Math.max(0, x + y * 0.5 + 0.3), 2) * 0.16 * Math.sin(t * 2.2 + ph);
+        }
+        pf.geo.attributes.position.needsUpdate = true;
+        pf.geo.computeVertexNormals();
+      }
+    }
+    // a mesma câmera do 3D completo (parada, como no vídeo)
+    function medir() {
+      var w = beco.clientWidth, h = beco.clientHeight;
+      if (!w || !h) return;
+      var asp = w / h, celular = asp < 1.2;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+      renderer.setSize(w, h, false);
+      camera.aspect = asp; camera.fov = celular ? 52 : 40; camera.updateProjectionMatrix();
+      var tg = Math.tan(camera.fov * Math.PI / 360), yMin = 0.2, yMax = by + BH / 2 + 1.35;
+      var D = Math.max((yMax - yMin) / (2 * tg) * 1.03, BW / (celular ? 0.94 : 0.66) / (2 * tg * asp));
+      var alvoY = celular ? by - 1.2 : (yMin + yMax) / 2;
+      camera.position.set(celular ? 0 : 0.6, alvoY - 2.4, D); camera.lookAt(0, alvoY, 0);
+      LIM.x = D * tg * asp + 3;
+      var zp = CERCA + 0.8, meiaP = (D - zp) * tg * asp;
+      luzPoste.position.set(Math.max(-BW / 2 - 1.1, -meiaP * 0.72) - 2.2, 9.1, zp + 0.25);
+    }
+    var tempo = 0, rodando = false, ultimo = 0, quadro = 0, cena3d = null;
+    function desenhar(dt) { tempo += dt; if (dt > 0) voar(dt, tempo); renderer.render(cena, camera); }
+    function passo(agora) {
+      if (!rodando) return;
+      quadro = requestAnimationFrame(passo);
+      if (!cena3d.vez(agora)) return;
+      var dt = Math.min(0.05, (agora - ultimo) / 1000 || 0); ultimo = agora;
+      desenhar(dt);
+    }
+    function ligar() { if (rodando || reduzido || document.hidden) return; rodando = true; ultimo = performance.now(); quadro = requestAnimationFrame(passo); }
+    function desligar() { rodando = false; cancelAnimationFrame(quadro); }
+    medir();
+    if ('ResizeObserver' in window) new ResizeObserver(medir).observe(beco); else window.addEventListener('resize', medir, { passive: true });
+    try { renderer.compile(cena, camera); } catch (e) { /* compila no primeiro quadro */ }
+    cena3d = Cenas.registrar({ nome: 'panfletos', el: beco, peso: 1, fps: 30, ligar: ligar, desligar: desligar, motor: renderer,
+      pintar: function () { if (!rodando) desenhar(0); } });
+    cv.addEventListener('webglcontextlost', function (e) { e.preventDefault(); desligar(); cv.style.display = 'none'; });
+  }
+
   /* NO SITE, a cena aparece como vídeo gravado deste 3D (assets/videos/beco-*.mp4, js/cenas.js), com a câmera
-     parada. Por cima do vídeo, uma máscara tirada do próprio 3D (assets/videos/beco-mascara-*.png) deixa o céu de
-     verdade aparecer onde o 3D era transparente (estrelas e meteoros continuam vivos). A tela do outdoor continua
-     sendo o HTML de verdade, agora por cima do vídeo, no lugar gravado (CANTOS) e misturada com ele ("lighten"):
-     os panfletos brancos que passam na frente dela continuam aparecendo. O programa (os sites rolando, a lista)
-     anda sozinho, sem o 3D. O 3D abaixo só roda na gravação (index.html?gravar=beco&periodo=12). */
+     parada e sem os panfletos que voam. Uma máscara tirada do próprio 3D (assets/videos/beco-mascara-*.png) deixa o
+     vídeo transparente onde o 3D era: ali aparecem o céu de verdade (estrelas e meteoros vivos) e, por trás do
+     painel, a tela do outdoor, que continua sendo o HTML de verdade, no lugar gravado (CANTOS); o guarda-corpo e o
+     brilho dos refletores ficam na frente dela, como no 3D. Os panfletos voando são 3D de verdade, por cima (menos
+     que no 3D completo). O programa (os sites rolando, a lista) anda sozinho. O 3D completo só roda na gravação
+     (index.html?gravar=beco&periodo=11.6667). */
   // os cantos da tela no vídeo, como a gravação os mediu: { W, H (a caixa da cena), q (em cima à esquerda,
   // em cima à direita, embaixo à esquerda, embaixo à direita, em px) }
   var CANTOS = {
@@ -193,9 +330,20 @@
   };
   if (window.Cenas && Cenas.emVideo) {
     var versao = (window.innerWidth || 1024) < 700 ? 'cel' : 'pc';
-    var v = Cenas.video({ nome: 'beco', lugar: beco, antes: telaSite, classe: 'beco-video', versao: versao });
-    v.el.style.webkitMaskImage = v.el.style.maskImage = 'url(assets/videos/beco-mascara-' + versao + '.png)';
+    var v = Cenas.video({ nome: 'beco', lugar: beco, antes: tela, classe: 'beco-video', versao: versao });
+    // o vídeo só aparece com a máscara pronta (sem ela, cobriria o céu e a tela de preto por um instante)
+    var urlMascara = 'assets/videos/beco-mascara-' + versao + '.png', mascara = new Image();
+    v.el.style.visibility = 'hidden';
+    mascara.onload = function () {
+      var aplicar = function () {
+        v.el.style.webkitMaskImage = v.el.style.maskImage = 'url(' + urlMascara + ')';
+        requestAnimationFrame(function () { requestAnimationFrame(function () { v.el.style.visibility = ''; }); });
+      };
+      if (mascara.decode) mascara.decode().then(aplicar, aplicar); else aplicar();
+    };
+    mascara.src = urlMascara;
     beco.classList.add('beco--3d', 'beco--video');
+    Cenas.preparar(beco, panfletosVoando, { sempre: true });
     var gravado = CANTOS[versao];
     var posicionar = function () {
       if (!gravado) return;
@@ -582,39 +730,7 @@ Cenas.preparar('beco', function becoDoOutdoor() {
   var PANF = { w: 0.9, h: 1.27 };
   var frenteC = tela2d(512, 724), versoC = tela2d(512, 724);
   var frenteT = textura(frenteC), versoT = textura(versoC);
-  function desenharPanfleto() {
-    var x = frenteC.getContext('2d'), W = 512, H = 724;
-    var g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#f3ece0'); g.addColorStop(1, '#e2d8c8');
-    x.fillStyle = g; x.fillRect(0, 0, W, H);
-    for (var i = 0; i < 1800; i++) { x.fillStyle = 'rgba(80,60,40,' + (Math.random() * 0.06).toFixed(3) + ')'; x.fillRect(Math.random() * W, Math.random() * H, 1.4, 1.4); }
-    // marca: um planeta com órbita, em cobre
-    x.strokeStyle = '#b87333'; x.lineWidth = 6; x.beginPath(); x.arc(84, 92, 30, 0, Math.PI * 2); x.stroke();
-    x.save(); x.translate(84, 92); x.rotate(-0.4); x.lineWidth = 4; x.beginPath(); x.ellipse(0, 0, 52, 14, 0, 0, Math.PI * 2); x.stroke(); x.restore();
-    x.fillStyle = '#b87333'; x.beginPath(); x.arc(130, 74, 7, 0, Math.PI * 2); x.fill();
-    // o nome
-    x.fillStyle = '#121218'; x.textBaseline = 'alphabetic';
-    x.font = '800 96px Unbounded, "Arial Black", sans-serif'; x.fillText('BEYOND', 40, 262);
-    x.font = '800 96px Unbounded, "Arial Black", sans-serif'; x.fillText('BITS', 40, 364);
-    x.fillStyle = '#b87333'; x.fillRect(44, 392, 128, 9);
-    x.fillStyle = '#2a2a33'; x.font = '700 34px Manrope, system-ui, sans-serif';
-    x.fillText('Sites que trazem', 44, 462); x.fillText('clientes.', 44, 504);
-    x.fillStyle = '#6a6270'; x.font = '500 24px Manrope, system-ui, sans-serif'; x.fillText('Sistemas e sites sob medida', 44, 552);
-    // faixa de baixo
-    x.fillStyle = '#15151c'; x.fillRect(0, 604, W, 120);
-    x.fillStyle = '#d4944a'; x.font = '700 28px "Space Mono", monospace'; x.fillText('beyond.dev.br', 44, 656);
-    x.fillStyle = '#efe7da'; x.font = '600 22px Manrope, system-ui, sans-serif'; x.fillText('Seu projeto começa aqui', 44, 694);
-    // vincos de dobra e borda gasta
-    x.fillStyle = 'rgba(0,0,0,0.07)'; x.fillRect(W / 2 - 1, 0, 2, H); x.fillRect(0, H / 3, W, 2); x.fillRect(0, 2 * H / 3, W, 2);
-    x.fillStyle = 'rgba(255,255,255,0.18)'; x.fillRect(W / 2 + 1, 0, 1, H);
-    var v = x.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.75);
-    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(60,40,20,0.22)'); x.fillStyle = v; x.fillRect(0, 0, W, H);
-    // verso: papel com a impressão transparecendo
-    var y = versoC.getContext('2d');
-    y.fillStyle = '#e8e0d2'; y.fillRect(0, 0, W, H);
-    y.save(); y.globalAlpha = 0.1; y.translate(W, 0); y.scale(-1, 1); y.drawImage(frenteC, 0, 0); y.restore();
-    y.fillStyle = 'rgba(0,0,0,0.07)'; y.fillRect(W / 2 - 1, 0, 2, H); y.fillRect(0, H / 3, W, 2); y.fillRect(0, 2 * H / 3, W, 2);
-    frenteT.needsUpdate = true; versoT.needsUpdate = true;
-  }
+  function desenharPanfleto() { pintarPanfleto(frenteC, versoC); frenteT.needsUpdate = true; versoT.needsUpdate = true; }
   desenharPanfleto();
   if (document.fonts && document.fonts.load) {
     Promise.all([document.fonts.load('800 96px "Unbounded"'), document.fonts.load('700 34px "Manrope"'), document.fonts.load('700 28px "Space Mono"')])
@@ -679,7 +795,7 @@ Cenas.preparar('beco', function becoDoOutdoor() {
   var poeira = new THREE.Points(geoP, new THREE.PointsMaterial({ map: GLOW_QUENTE, color: 0xffe2bd, size: 0.12, transparent: true, opacity: 0.7,
     blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
   poeira.frustumCulled = false; cena.add(poeira);
-  if (GRAV) window.__becoSoCenario = function (sim) { poeira.visible = !sim; panfletos.forEach(function (pf) { pf.g.visible = !sim; }); };
+  if (GRAV) window.__becoSemVoadores = function (sim) { panfletos.forEach(function (pf) { pf.g.visible = !sim; }); };
 
   // a luz da tela tinge o chão e o entorno com a cor do site no ar (gravando: uma cor neutra, a média deles)
   var corTela = new THREE.Color(GRAV ? 0xd4b99c : SITES[atual].cor), corAlvo = corTela.clone();

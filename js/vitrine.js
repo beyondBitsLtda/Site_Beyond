@@ -610,7 +610,7 @@
     if (window.Cenas && Cenas.emVideo) {
       videos = {};
       ['pronta', 'falando', 'pensando'].forEach(function (e) {
-        videos[e] = Cenas.video({ nome: 'lisa-' + e, lugar: palco, classe: 'lisa-video' });
+        videos[e] = Cenas.video({ nome: 'lisa-' + e, lugar: palco, classe: 'lisa-video', alfa: true, posterOpaco: true });   // o palco dela já é quase preto
       });
       trocarVideo(true);
       setInterval(function () { if (!document.hidden) trocarVideo(false); }, 150);
