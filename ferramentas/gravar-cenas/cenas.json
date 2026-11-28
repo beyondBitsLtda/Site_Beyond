@@ -397,6 +397,133 @@
    "alfa": true,
    "kbps": 150,
    "kbpsAlfa": 50
+  },
+  "disco-hd": {
+   "url": "index.html?gravar=disco&periodo=16",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": "#segDisco",
+   "camadas": [
+    {
+     "sel": "#segDiscoTela",
+     "alfa": 1
+    }
+   ],
+   "periodo": 16,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1,
+   "qp": 35,
+   "aquecer": 1,
+   "esperaCarga": 12000,
+   "alfa": true,
+   "kbps": 1300,
+   "kbpsAlfa": 280,
+   "escala": 1.5
+  },
+  "planeta-hd": {
+   "url": "index.html?gravar=planeta&periodo=36",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": ".ciclo-cena",
+   "camadas": [
+    {
+     "sel": "#cicloPlaneta",
+     "alfa": 1
+    }
+   ],
+   "recorteJs": "(function(){ var c = document.querySelector('.ciclo-cena').getBoundingClientRect(); return { x: (c.width - c.height) / 2, y: 0, w: c.height, h: c.height }; })()",
+   "periodo": 36,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1,
+   "qp": 35,
+   "aquecer": 1,
+   "esperaCarga": 14000,
+   "alfa": true,
+   "kbps": 520,
+   "kbpsAlfa": 110,
+   "escala": 1.5
+  },
+  "lisa-pronta-hd": {
+   "url": "index.html?gravar=lisa-pronta&periodo=12",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "escala": 1.5,
+   "alvo": "#lisaPalco",
+   "camadas": [
+    {
+     "sel": "#lisaPalco .lisa-rosto canvas",
+     "alfa": 1
+    }
+   ],
+   "periodo": 12,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 33,
+   "aquecer": 4,
+   "esperaCarga": 16000,
+   "alfa": true,
+   "alfaPorLuz": true,
+   "kbps": 650,
+   "kbpsAlfa": 220
+  },
+  "lisa-falando-hd": {
+   "url": "index.html?gravar=lisa-falando&periodo=6",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "escala": 1.5,
+   "alvo": "#lisaPalco",
+   "camadas": [
+    {
+     "sel": "#lisaPalco .lisa-rosto canvas",
+     "alfa": 1
+    }
+   ],
+   "periodo": 6,
+   "fps": 20,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 33,
+   "aquecer": 3,
+   "esperaCarga": 16000,
+   "alfa": true,
+   "alfaPorLuz": true,
+   "kbps": 750,
+   "kbpsAlfa": 240,
+   "antes": "window.LisaGraoParado = true"
+  },
+  "buracos-hd": {
+   "url": "index.html?gravar=buracos&periodo=36",
+   "largura": 1920,
+   "altura": 1080,
+   "dpr": 1,
+   "alvo": "#contato",
+   "camadas": [
+    "#ctaEstrelas",
+    "#ctaBrilhoA",
+    "#ctaBrilhoB",
+    {
+     "sel": "#ctaBuracos",
+     "alfa": 1
+    }
+   ],
+   "fundo": "#080818",
+   "recorteJs": "(function(){ var l = window.__buracosLugar; var r = 15.4 * l.U; return { x: l.cx - r, y: l.cy - r, w: 2 * r, h: 2 * r, U: l.U, cx: l.cx, cy: l.cy }; })()",
+   "escala": 0.9375,
+   "periodo": 36,
+   "fps": 30,
+   "sub": 1,
+   "fundir": 1.5,
+   "qp": 35,
+   "aquecer": 1,
+   "esperaCarga": 12000,
+   "fundoJs": "(function (x, a, rec, esc) {\n  var W = a.width, H = a.height, dx = 0.8829, dy = 0.4695;\n  var L = 1.2 * W * dx + 1.4 * H * dy, cx = W / 2, cy = H / 2;\n  var g = x.createLinearGradient((cx - dx * L / 2 - rec.x) * esc, (cy - dy * L / 2 - rec.y) * esc, (cx + dx * L / 2 - rec.x) * esc, (cy + dy * L / 2 - rec.y) * esc);\n  g.addColorStop(0, 'rgba(150,140,220,0)'); g.addColorStop(0.30, 'rgba(150,140,220,0)'); g.addColorStop(0.44, 'rgba(150,140,220,0.07)');\n  g.addColorStop(0.50, 'rgba(212,170,140,0.06)'); g.addColorStop(0.56, 'rgba(120,150,230,0.06)'); g.addColorStop(0.70, 'rgba(120,150,230,0)'); g.addColorStop(1, 'rgba(120,150,230,0)');\n  x.filter = 'blur(' + (30 * esc).toFixed(1) + 'px)'; x.fillStyle = g; x.fillRect(-100, -100, rec.w * esc + 200, rec.h * esc + 200); x.filter = 'none';\n})"
   }
  }
 }

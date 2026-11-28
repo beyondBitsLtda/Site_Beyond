@@ -65,7 +65,7 @@
      ciclo em 36 s). REC: metade do recorte gravado, em unidades da cena. */
   var REC = { rx: 15.4, ry: 15.4 };
   if (window.Cenas && Cenas.emVideo) {
-    var v = Cenas.video({ nome: 'buracos', lugar: tela.parentNode, antes: tela, classe: 'cta-buracos-video' });
+    var v = Cenas.video({ nome: 'buracos', lugar: tela.parentNode, antes: tela, classe: 'cta-buracos-video', hd: true });
     tela.style.display = 'none';
     var lugarV = { cx: 0, cy: 0, U: 30, w: 1, h: 1 };
     var posicionar = function () {

@@ -728,7 +728,7 @@
       // só vídeo (nada de 3D no site): parada, ela olha em volta; falando, a boca mexe
       videos = {};
       ['pronta', 'falando'].forEach(function (e) {
-        videos[e] = Cenas.video({ nome: 'lisa-' + e, lugar: palco, classe: 'lisa-video', alfa: true, posterOpaco: true });   // o palco dela já é quase preto
+        videos[e] = Cenas.video({ nome: 'lisa-' + e, lugar: palco, classe: 'lisa-video', alfa: true, posterOpaco: true, hd: true });   // o palco dela já é quase preto
       });
       trocarVideo(true);
       // o estado da conversa só é conferido com ela na tela (js/cenas.js: a janela)

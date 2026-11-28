@@ -495,6 +495,10 @@ window.Cenas = (function () {
   var reduzido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var sobDemanda = [], tres = null;
   function versao() { return (window.innerWidth || document.documentElement.clientWidth || 1024) < 700 ? 'cel' : 'pc'; }
+  // o HD perdeu quadros nesta visita: as outras cenas também vêm na versão comum
+  var hdDesligado = false;
+  function semHD() { if (hdDesligado) return true; try { return sessionStorage.getItem('beyond-sem-hd') === '1'; } catch (e) { return false; } }
+  function desligarHD() { hdDesligado = true; try { sessionStorage.setItem('beyond-sem-hd', '1'); } catch (e) { /* sem armazenamento: vale só para esta página */ } }
   function carregar3d() {
     if (window.THREE) return Promise.resolve();
     if (tres) return tres;
@@ -518,14 +522,18 @@ window.Cenas = (function () {
   }
   /* o vídeo de uma cena. o: { nome, lugar (onde entra), antes (entra antes deste elemento), classe,
      versao ('pc' | 'cel'; sem ela, pela largura da tela), alfa (true: a cena tem a versão transparente),
-     posterOpaco (true: mesmo com o vídeo transparente, o primeiro quadro comum, mais leve) } */
+     posterOpaco (true: mesmo com o vídeo transparente, o primeiro quadro comum, mais leve), hd (true: tem a versão HD) } */
   function video(o) {
     var v = document.createElement('video');
     v.className = 'cena-video' + (o.classe ? ' ' + o.classe : '');
     v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true; v.preload = 'none';
     ['muted', 'loop', 'playsinline', 'disablepictureinpicture', 'disableremoteplayback'].forEach(function (a) { v.setAttribute(a, ''); });
     v.setAttribute('aria-hidden', 'true');
-    var base = 'assets/videos/' + o.nome + '-' + (o.versao || versao());
+    // versões: 'cel' (tela estreita), 'pc' e, nas cenas com detalhe fino (o: hd), 'hd' — 1,5× mais pixels, só para
+    // computador com tela de alta densidade (zoom de 130% ou mais), onde o 'pc' apareceria esticado
+    var ver = o.versao || versao();
+    if (o.hd && ver === 'pc' && (window.devicePixelRatio || 1) >= 1.3 && !semHD()) ver = 'hd';
+    var base = 'assets/videos/' + o.nome + '-' + ver;
     var carregado = false, naTela = false, parado = false, pedido = false;
     // cada vídeo entra na fila de tarefas (um de cada vez; na frente, o que está para aparecer): criar o
     // tocador de vídeo custa algumas dezenas de ms, e vários juntos no mesmo quadro dariam um tranco
@@ -542,6 +550,7 @@ window.Cenas = (function () {
     // longe: o vídeo é solto (o tocador, o que já baixou e o decodificador); fica a primeira imagem
     function soltar() {
       pedido = false;
+      vigiarHD(false);
       if (!carregado) return;
       carregado = false;
       try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) { /* segue */ }
@@ -554,8 +563,28 @@ window.Cenas = (function () {
     }
     function tocar() {
       if (reduzido || !carregado) return;
-      if (parado || document.hidden || !naTela) { if (!v.paused) v.pause(); return; }
+      if (parado || document.hidden || !naTela) { if (!v.paused) v.pause(); vigiarHD(false); return; }
       if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () { /* sem autoplay (economia de bateria): fica a imagem */ }); }
+      vigiarHD(true);
+    }
+    /* o HD perdendo quadros (máquina sem fôlego para decodificar): troca, no mesmo ponto, pela versão comum, e as
+       próximas cenas desta visita já vêm na comum */
+    var vigia = 0, perdidos0 = 0, totais0 = 0;
+    function vigiarHD(ligar) {
+      clearInterval(vigia); vigia = 0;
+      if (!ligar || ver !== 'hd' || !v.getVideoPlaybackQuality) return;
+      var q = v.getVideoPlaybackQuality(); perdidos0 = q.droppedVideoFrames; totais0 = q.totalVideoFrames;
+      vigia = setInterval(function () {
+        var q = v.getVideoPlaybackQuality(), perd = q.droppedVideoFrames - perdidos0, tot = q.totalVideoFrames - totais0;
+        perdidos0 = q.droppedVideoFrames; totais0 = q.totalVideoFrames;
+        if (tot < 20 || perd / tot < 0.08) return;
+        clearInterval(vigia); vigia = 0;
+        desligarHD();
+        var t = v.currentTime || 0;
+        ver = 'pc'; base = 'assets/videos/' + o.nome + '-pc';
+        v.addEventListener('loadedmetadata', function () { try { v.currentTime = t; } catch (e) { /* segue */ } tocar(); }, { once: true });
+        v.src = base + (transparente ? '.webm' : '.mp4');
+      }, 2000);
     }
     o.lugar.insertBefore(v, o.antes || null);
     janela.observar(o.lugar, {

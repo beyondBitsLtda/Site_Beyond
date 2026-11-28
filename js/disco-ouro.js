@@ -55,7 +55,7 @@
      roda na gravação: index.html?gravar=disco&periodo=16). */
   var vid = null;
   if (window.Cenas && Cenas.emVideo) {
-    vid = Cenas.video({ nome: 'disco', lugar: palco, antes: tela, classe: 'seg-disco-video', alfa: true });
+    vid = Cenas.video({ nome: 'disco', lugar: palco, antes: tela, classe: 'seg-disco-video', alfa: true, hd: true });
     palco.setAttribute('role', 'img');
     palco.setAttribute('aria-label', 'Réplica do Disco de Ouro das sondas Voyager, balançando devagar e virando para mostrar os dois lados.');
     tela.removeAttribute('tabindex'); tela.setAttribute('aria-hidden', 'true');
