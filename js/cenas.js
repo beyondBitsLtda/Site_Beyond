@@ -336,16 +336,13 @@ window.Cenas = (function () {
       item.pedido = true;
       carregar3d().then(function () { fila.push(item); proxima(); }, function () { /* sem Three.js: a cena não aparece */ });
     }
-    // 1) em segundo plano, um pouco depois de a página terminar de carregar
+    // 1) em segundo plano, um pouco depois de a página terminar de carregar: montar uma cena (e compilar os
+    //    shaders dela) é um custo único que não dá para dividir; feito com a página parada no topo, ninguém vê
+    //    (feito na hora em que a cena chega perto, travava a rolagem por ~2 s em placas integradas)
     function depoisDaCarga() { setTimeout(pedir, 1500); }
     if (document.readyState === 'complete') depoisDaCarga(); else window.addEventListener('load', depoisDaCarga);
-    // 2) ou antes, se o visitante chegar perto
-    if ('IntersectionObserver' in window) {
-      var io2 = new IntersectionObserver(function (e) {
-        if (e[0].isIntersecting) { io2.disconnect(); pedir(); }
-      }, { rootMargin: '1800px 0px' });
-      io2.observe(el);
-    }
+    // 2) ou antes, se o visitante chegar perto (na direção da rolagem; js: a janela, abaixo)
+    janela.observar(el, { carregar: pedir });
   }
 
   /* imagens para texturas: decodificadas fora da tarefa principal (createImageBitmap) e sem conversão de
@@ -373,6 +370,106 @@ window.Cenas = (function () {
      entram na mesma fila das montagens, uma por vez e só com a rolagem parada; "el" é o lugar da página a
      que a tarefa serve, e ela passa na frente se esse lugar estiver para aparecer */
   function ocioso(fn, el) { fila.push({ el: el || null, fn: fn, leve: true }); proxima(); }
+
+  /* ═════════════ 6. a janela: só existe o que está perto da tela (como no Doom) ═════════════
+     A página é dividida em blocos (as seções e as partes grandes de dentro delas). A posição de cada bloco fica
+     guardada (medida só quando o layout muda); a cada quadro de rolagem, só com conta, cada bloco ganha um estado:
+       visível — na tela (com uma folguinha): anima, toca, desenha;
+       perto   — logo à frente na direção da rolagem (1,5 tela, mais quanto mais rápido se rola) ou logo atrás
+                 (0,6 tela): tudo carregado e pronto, mas parado;
+       longe   — além disso: as camadas decorativas somem; e, a mais de LONGE telas por ESPERA ms, o que pesa
+                 na memória (vídeos, céus, imagens grandes) é solto. Volta sozinho quando o bloco chega perto.
+     Classes no bloco: "parado" (fora da tela: as animações CSS param) e "longe" (camadas decorativas escondidas;
+     css/vitrine.css). Quem precisa saber usa Cenas.janela.observar(elemento, { carregar, mostrar, esconder, soltar }):
+     vale o bloco mais de dentro que contém o elemento. */
+  var janela = (function () {
+    var SELETORES = ['#inicio', '#solucoes', '#depoimentos', '#projetos', '#proj-sistemas', '#proj-sistemas > .mock-cena',
+      '#tremDivisa', '#proj-sites', '#proj-lab', '#lisaHero', '#proj-lab > .mock-cena', '#processo', '#seguranca', '#contato', 'footer'];
+    var LONGE = 2.5, ESPERA = 3000;
+    var blocos = [], marcado = false, timerSoltar = 0;
+    var yAnt = window.scrollY || 0, tAnt = performance.now(), vel = 0, dir = 1;
+
+    function novo(el) { var b = { el: el, topo: 0, base: 0, visivel: null, perto: false, carregado: false, longeDesde: 0, obs: [] }; blocos.push(b); return b; }
+    function achar(el) { for (var i = 0; i < blocos.length; i++) if (blocos[i].el === el) return blocos[i]; return null; }
+    // o bloco mais de dentro que contém o elemento (sem nenhum, o próprio elemento vira um bloco)
+    function blocoDe(el) {
+      var melhor = null;
+      for (var i = 0; i < blocos.length; i++) {
+        var b = blocos[i];
+        if (b.el === el || b.el.contains(el)) { if (!melhor || melhor.el.contains(b.el)) melhor = b; }
+      }
+      if (!melhor) { melhor = novo(el); medir(); }
+      return melhor;
+    }
+    function medir() {
+      var sy = window.scrollY || 0;
+      for (var i = 0; i < blocos.length; i++) {
+        var r = blocos[i].el.getBoundingClientRect();
+        blocos[i].topo = r.top + sy; blocos[i].base = r.bottom + sy;
+      }
+    }
+    function chamar(b, qual) {
+      for (var i = 0; i < b.obs.length; i++) { var f = b.obs[i][qual]; if (f) { try { f(); } catch (e) { if (window.console) console.error(e); } } }
+    }
+    function atualizar() {
+      marcado = false;
+      var agora = performance.now(), y = window.scrollY || 0, vh = window.innerHeight || 800;
+      var dy = y - yAnt, dt = Math.max(1, agora - tAnt);
+      if (Math.abs(dy) > 1) dir = dy > 0 ? 1 : -1;
+      vel = dt > 400 ? 0 : vel * 0.6 + (Math.abs(dy) / dt) * 0.4;          // px por ms
+      yAnt = y; tAnt = agora;
+      var frente = vh * 1.5 + Math.min(vh * 3, vel * 700), tras = vh * 0.6, folga = vh * 0.05;
+      var pendente = false;
+      for (var i = 0; i < blocos.length; i++) {
+        var b = blocos[i];
+        if (b.base <= b.topo) continue;                                      // escondido (sem tamanho)
+        var acima = y - b.base, abaixo = b.topo - (y + vh);                  // > 0: o bloco está acima / abaixo da tela
+        var visivel = acima < folga && abaixo < folga;
+        var dist = visivel ? 0 : Math.max(acima, abaixo);
+        var aFrente = (dir > 0 && abaixo > 0) || (dir < 0 && acima > 0);
+        var perto = visivel || dist <= (aFrente ? frente : tras);
+        if (perto && !b.carregado) { b.carregado = true; chamar(b, 'carregar'); }
+        if (visivel !== b.visivel) { b.visivel = visivel; b.el.classList.toggle('parado', !visivel); chamar(b, visivel ? 'mostrar' : 'esconder'); }
+        if (perto !== b.perto) { b.perto = perto; b.el.classList.toggle('longe', !perto); }
+        if (!perto && dist > vh * LONGE && b.carregado) {
+          if (!b.longeDesde) b.longeDesde = agora;
+          if (agora - b.longeDesde >= ESPERA) { b.carregado = false; b.longeDesde = 0; chamar(b, 'soltar'); }
+          else pendente = true;
+        } else b.longeDesde = 0;
+      }
+      // quem está esperando para soltar é conferido de novo (a página pode ficar parada)
+      clearTimeout(timerSoltar);
+      if (pendente) timerSoltar = setTimeout(agendarJanela, ESPERA + 50);
+    }
+    function agendarJanela() { if (marcado) return; marcado = true; requestAnimationFrame(atualizar); }
+    function remedir() { medir(); agendarJanela(); }
+
+    SELETORES.forEach(function (sel) { Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) { if (!achar(el)) novo(el); }); });
+    medir();
+    window.addEventListener('scroll', agendarJanela, { passive: true });
+    window.addEventListener('resize', remedir, { passive: true });
+    window.addEventListener('load', remedir);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(remedir);
+    if ('ResizeObserver' in window) {
+      var esperaRO = 0;
+      var ro = new ResizeObserver(function () { clearTimeout(esperaRO); esperaRO = setTimeout(remedir, 60); });
+      blocos.forEach(function (b) { ro.observe(b.el); });
+    }
+    atualizar();
+
+    return {
+      observar: function (el, h) {
+        var b = blocoDe(el);
+        b.obs.push(h);
+        if (b.carregado && h.carregar) { try { h.carregar(); } catch (e) { /* segue */ } }
+        if (b.visivel && h.mostrar) { try { h.mostrar(); } catch (e) { /* segue */ } }
+        agendarJanela();
+      },
+      estado: function () {
+        return blocos.map(function (b) { return (b.el.id || b.el.className.split(' ')[0] || b.el.tagName) + ':' + (b.visivel ? 'visível' : b.perto ? 'perto' : 'longe') + (b.carregado ? '' : '(solto)'); });
+      }
+    };
+  })();
 
   /* ═════════════ 5. as cenas já renderizadas, em vídeo ═════════════
      No site, as cenas 3D aparecem como vídeos gravados do próprio 3D (assets/videos/<cena>-<pc|cel>.mp4,
@@ -440,7 +537,14 @@ window.Cenas = (function () {
       if (carregado || pedido) return;
       pedido = true;
       mostrarPoster();
-      ocioso(function () { carregarJa(); tocar(); }, o.lugar);
+      ocioso(function () { if (pedido) { carregarJa(); tocar(); } }, o.lugar);
+    }
+    // longe: o vídeo é solto (o tocador, o que já baixou e o decodificador); fica a primeira imagem
+    function soltar() {
+      pedido = false;
+      if (!carregado) return;
+      carregado = false;
+      try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) { /* segue */ }
     }
     function carregarJa() {
       if (carregado) return;
@@ -454,10 +558,12 @@ window.Cenas = (function () {
       if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () { /* sem autoplay (economia de bateria): fica a imagem */ }); }
     }
     o.lugar.insertBefore(v, o.antes || null);
-    if ('IntersectionObserver' in window) {
-      new IntersectionObserver(function (e) { if (e[0].isIntersecting) { carregar(); tocar(); } }, { rootMargin: '150% 0px' }).observe(o.lugar);
-      new IntersectionObserver(function (e) { naTela = e[0].isIntersecting; if (naTela) carregar(); tocar(); }, { rootMargin: '15% 0px' }).observe(o.lugar);
-    } else { naTela = true; carregarJa(); tocar(); }
+    janela.observar(o.lugar, {
+      carregar: function () { carregar(); tocar(); },
+      mostrar: function () { naTela = true; carregar(); tocar(); },
+      esconder: function () { naTela = false; tocar(); },
+      soltar: soltar
+    });
     document.addEventListener('visibilitychange', tocar);
     return {
       el: v,
@@ -467,21 +573,12 @@ window.Cenas = (function () {
     };
   }
 
-  /* ═════════════ e o resto da página, "por hero" ═════════════
-     Seção a mais de uma tela de distância: classe "longe" (pausa as animações CSS e esconde as camadas
-     decorativas; regras em css/vitrine.css). */
-  if ('IntersectionObserver' in window) {
-    var ioSecoes = new IntersectionObserver(function (es) {
-      es.forEach(function (e) { e.target.classList.toggle('longe', !e.isIntersecting); });
-    }, { rootMargin: '100% 0px' });
-    Array.prototype.forEach.call(document.querySelectorAll('section'), function (s) { ioSecoes.observe(s); });
-  }
-
   return {
     gravacao: gravacao,
     // gravando: segundos desde o primeiro quadro do vídeo (a ferramenta avisa quando ele começa)
     tempoGravacao: function () { return (performance.now() - (window.__inicioGravacao || 0)) / 1000; },
     emVideo: emVideo,
+    janela: janela,
     videoTransparente: emVideo && alfaOk,
     video: video,
     ativar: ativar,

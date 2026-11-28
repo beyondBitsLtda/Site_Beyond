@@ -45,15 +45,77 @@
     (window.requestIdleCallback || function (f) { return setTimeout(f, 30); })(fn, { timeout: 500 });
   }
 
+  /* ── os canvas grandes de fundo (céus, rastros) como "texturas pré-prontas" ──
+     Desenhar um céu custa de 100 a 300 ms; guardar a imagem pronta (PNG, centenas de KB, codificada fora da
+     tarefa principal) é barato. Então cada céu é desenhado UMA vez (em segundo plano, depois que a página
+     carrega), guardado, e o canvas (de 10 a 30 MB) só existe com a seção perto da tela: longe, é solto; perto de
+     novo, a imagem guardada é decodificada fora da tarefa principal e só copiada (poucos ms). */
+  function texturaGuardada(telas) {
+    var imagens = null, chave = '', guardando = false;
+    return {
+      tem: function (k) { return !!imagens && chave === k && imagens.every(Boolean); },
+      guardar: function (k, pronto) {
+        if (!telas[0].toBlob) { if (pronto) pronto(); return; }
+        chave = k; imagens = new Array(telas.length); guardando = true;
+        var faltam = telas.length;
+        telas.forEach(function (c, i) {
+          c.toBlob(function (b) { imagens[i] = b; if (--faltam === 0) { guardando = false; if (pronto) pronto(); } }, 'image/png');
+        });
+      },
+      guardando: function () { return guardando; },
+      restaurar: function (pronto) {
+        if (!window.createImageBitmap) { if (pronto) pronto(false); return; }
+        Promise.all(imagens.map(function (b) { return createImageBitmap(b); })).then(function (bms) {
+          telas.forEach(function (c, i) {
+            c.width = bms[i].width; c.height = bms[i].height;
+            c.getContext('2d').drawImage(bms[i], 0, 0); bms[i].close();
+          });
+          if (pronto) pronto(true);
+        }, function () { imagens = null; if (pronto) pronto(false); });
+      },
+      soltar: function () { telas.forEach(function (c) { c.width = 0; c.height = 0; }); }
+    };
+  }
+  /* um laço longo em fatias: passo(i) é chamado para i = 0..total-1, ~6 ms por vez (o resto fica para o próximo
+     quadro), e fim() no final. Devolve uma função que cancela (quando o desenho recomeça antes de acabar). */
+  function emFatias(total, passo, fim) {
+    var i = 0, vivo = true;
+    (function fatia() {
+      if (!vivo) return;
+      var limite = performance.now() + 6;
+      while (i < total && performance.now() < limite) { for (var k = 0; k < 6 && i < total; k++) passo(i++); }
+      if (i < total) requestAnimationFrame(fatia); else if (fim) fim();
+    })();
+    return function () { vivo = false; };
+  }
+  // depois que a página carrega, num momento ocioso
+  function depoisDaCarga(fn) {
+    function ir() { setTimeout(fn, 2500); }
+    if (document.readyState === 'complete') ir(); else window.addEventListener('load', ir);
+  }
+
   function ceuEstrelado(ceu, base, brilhos, semente, densidade, espelha) {
     if (!ceu || !base || !base.getContext) return;
     var tamanho = { w: 0, h: 0 };
     var todas = [base].concat(brilhos.filter(Boolean));
-    var perto = !('IntersectionObserver' in window);
-    function desenhar() {
-      if (!perto) return;                           // longe da tela: os canvas ficam vazios (memória livre)
+    var perto = !(window.Cenas && Cenas.janela);
+    var textura = texturaGuardada(todas), cancelar = null;
+    function chaveAgora() { return ceu.clientWidth + 'x' + ceu.clientHeight + '@' + Math.min(window.devicePixelRatio || 1, 2); }
+    // forcar: desenha mesmo longe (o preparo em segundo plano, que guarda a imagem e solta o canvas em seguida)
+    function desenhar(forcar) {
+      if (!perto && !forcar) return;                // longe da tela: os canvas ficam vazios (memória livre)
       var w = ceu.clientWidth, h = ceu.clientHeight;
       if (!w || !h || (Math.abs(w - tamanho.w) < 2 && Math.abs(h - tamanho.h) < 2)) return;
+      var k = chaveAgora();
+      if (textura.tem(k)) {                         // já desenhado antes: só a imagem guardada de volta
+        tamanho = { w: w, h: h };
+        textura.restaurar(function (ok) {
+          if (ok === false) { tamanho = { w: 0, h: 0 }; desenhar(forcar); return; }
+          if (!perto) { textura.soltar(); tamanho = { w: 0, h: 0 }; return; }
+          try { ceu.dispatchEvent(new CustomEvent('ceu:desenhado')); } catch (e) { /* navegador antigo */ }
+        });
+        return;
+      }
       tamanho = { w: w, h: h };
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
       var telas = [base].concat(brilhos.filter(Boolean));
@@ -63,7 +125,9 @@
       });
       var rnd = sorteio(semente);
       var total = Math.round(w * h / densidade);
-      for (var i = 0; i < total; i++) {
+      if (cancelar) cancelar();
+      // em fatias de ~6 ms (um céu inteiro levava de 100 a 300 ms de uma vez só)
+      cancelar = emFatias(total, function (i) {
         var x = rnd() * w, y = rnd() * h;
         if (i % 3 === 0) {                          // 1/3 das estrelas puxadas para a faixa da galáxia
           var t = rnd(), espalha = (rnd() + rnd() + rnd() - 1.5) * h * 0.18;
@@ -85,13 +149,28 @@
         }
         ctx.fillStyle = 'rgba(' + cor + ',' + alfa.toFixed(2) + ')';
         ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-      }
-      // avisa quem usa o céu como textura (os buracos do contato, js/buracos.js)
-      try { ceu.dispatchEvent(new CustomEvent('ceu:desenhado')); } catch (e) { /* navegador antigo */ }
+      }, function () {
+        cancelar = null;
+        // guarda a imagem pronta; se o céu foi desenhado só para isso (longe da tela), o canvas é solto em seguida
+        textura.guardar(k, function () { if (!perto) { textura.soltar(); tamanho = { w: 0, h: 0 }; } });
+        // avisa quem usa o céu como textura (os buracos do contato, js/buracos.js)
+        try { ceu.dispatchEvent(new CustomEvent('ceu:desenhado')); } catch (e) { /* navegador antigo */ }
+      });
     }
-    // a mais de duas telas de distância, os três canvas do céu são esvaziados (cada um tem o tamanho da
-    // seção inteira); ao se aproximar, o céu é redesenhado igualzinho (a semente é fixa)
-    if ('IntersectionObserver' in window) {
+    // longe da tela, os três canvas do céu são esvaziados (cada um tem o tamanho da seção inteira); quando a
+    // seção chega perto (na direção da rolagem), a imagem guardada volta (ou o céu é desenhado, igualzinho:
+    // a semente é fixa). Depois que a página carrega, cada céu é desenhado uma vez e guardado, em segundo plano.
+    if (window.Cenas && Cenas.janela) {
+      Cenas.janela.observar(ceu, {
+        carregar: function () { perto = true; if (textura.tem(chaveAgora())) desenhar(); else ocioso(desenhar, ceu); },
+        soltar: function () {
+          perto = false;
+          if (cancelar && !textura.tem(chaveAgora())) return;   // ainda desenhando: termina, guarda e solta sozinho
+          if (!textura.guardando()) { textura.soltar(); tamanho = { w: 0, h: 0 }; }
+        }
+      });
+      depoisDaCarga(function () { ocioso(function () { if (!textura.tem(chaveAgora()) && !cancelar) desenhar(true); }, null); });
+    } else if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (e) {
         perto = e[0].isIntersecting;
         if (perto) ocioso(desenhar, ceu);
@@ -392,14 +471,37 @@
     var janela = document.getElementById(idJanela);
     var tela = document.getElementById(idTela);
     if (!janela || !tela || !tela.getContext) return;
-    var feito = { w: 0, h: 0 };
+    var feito = { w: 0, h: 0 }, vazio = true;
+    // o canvas é grande (de 20 a 30 MB): só existe com a seção perto da tela (js/cenas.js: a janela); a imagem
+    // pronta fica guardada (texturaGuardada) e volta em poucos ms
+    var ativo = !(window.Cenas && Cenas.janela);
+    var textura = texturaGuardada([tela]), cancelarR = null;
+    function mesmoTamanho() { var w = janela.clientWidth, h = janela.clientHeight; return Math.abs(w - feito.w) < 2 && Math.abs(h - feito.h) < 140; }
+    if (!ativo) {
+      Cenas.janela.observar(janela, {
+        carregar: function () { ativo = true; if (vazio && textura.tem('r') && mesmoTamanho()) desenhar(); else ocioso(desenhar, janela); },
+        soltar: function () { ativo = false; if (!cancelarR && !textura.guardando()) { tela.width = tela.height = 0; vazio = true; } }
+      });
+      depoisDaCarga(function () { ocioso(function () { if (!textura.tem('r') && !cancelarR) desenhar(true); }, null); });
+    }
 
-    function desenhar() {
+    function desenhar(forcar) {
+      if (!ativo && !forcar) return;
       var w = janela.clientWidth, h = janela.clientHeight;
       if (!w || !h) return;
       // no celular a barra de endereço muda a altura ao rolar: só redesenha se mudar de verdade
-      if (Math.abs(w - feito.w) < 2 && Math.abs(h - feito.h) < 140) return;
-      feito = { w: w, h: h };
+      if (mesmoTamanho()) {
+        if (!vazio) return;
+        if (textura.tem('r')) {                     // já desenhado antes: só a imagem guardada de volta
+          vazio = false;
+          textura.restaurar(function (ok) {
+            if (ok === false) { vazio = true; feito = { w: 0, h: 0 }; desenhar(forcar); return; }
+            if (!ativo) { tela.width = tela.height = 0; vazio = true; }
+          });
+          return;
+        }
+      }
+      feito = { w: w, h: h }; vazio = false;
       var p = polo(w), px = w * p[0], py = h * p[1];   // posição do polo na tela
       var R = Math.ceil(Math.max(Math.hypot(px, py), Math.hypot(w - px, py),
                                  Math.hypot(px, h - py), Math.hypot(w - px, h - py))) + 6;
@@ -423,7 +525,9 @@
       var rnd = sorteio(semente);
       var conico = typeof ctx.createConicGradient === 'function';
       var total = Math.round(D * D / 2600);          // pouco denso: fundo, não protagonista
-      for (var i = 0; i < total; i++) {
+      if (cancelarR) cancelarR();
+      // em fatias de ~6 ms (os rastros levavam de 200 a 400 ms de uma vez só)
+      cancelarR = emFatias(total, function () {
         var r = 10 + Math.sqrt(rnd()) * (R - 10);
         var ini = rnd() * Math.PI * 2;
         var arco = (0.3 + rnd() * 0.3) * (rnd() < 0.2 ? 0.45 : 1);   // ~17–34° (algumas mais curtas)
@@ -442,7 +546,8 @@
           ctx.strokeStyle = 'rgba(' + cor + ', ' + (alfa * 0.7).toFixed(3) + ')';
         }
         ctx.beginPath(); ctx.arc(R, R, r, ini, ini + arco); ctx.stroke();
-      }
+      }, function () {
+        cancelarR = null;
       // a estrela do polo, parada no centro do giro
       var polar = ctx.createRadialGradient(R, R, 0, R, R, 9);
       polar.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
@@ -450,6 +555,9 @@
       polar.addColorStop(1, 'rgba(210, 222, 255, 0)');
       ctx.fillStyle = polar;
       ctx.beginPath(); ctx.arc(R, R, 9, 0, Math.PI * 2); ctx.fill();
+      // guarda a imagem pronta; desenhado só para isso (longe da tela), o canvas é solto em seguida
+      textura.guardar('r', function () { if (!ativo) { tela.width = tela.height = 0; vazio = true; } });
+      });
     }
     desenhar();
     if ('ResizeObserver' in window) {
@@ -498,14 +606,10 @@
     }
 
     /* ── o rosto ──
-       NO SITE, o rosto aparece em vídeos gravados do próprio 3D (assets/videos/lisa-<estado>-*.mp4, js/cenas.js),
-       um para cada estado (pronta, falando, pensando), trocando conforme a conversa: nada para compilar, e ela
-       aparece na hora. O rosto 3D de verdade (js/lisa-rosto.js, com motor próprio, ~8 s para compilar em placas
-       integradas) só monta quando o mouse passa por ela (ou num toque): aí ela passa a olhar para o mouse. Ele
-       monta por baixo dos vídeos e, quando acende, os vídeos somem devagar. Bem longe (a mais de duas telas e
-       meia, por 10 s), desmonta para liberar a placa, e os vídeos voltam.
-       NA GRAVAÇÃO (index.html?gravar=lisa-pronta|lisa-falando|lisa-pensando&periodo=N), o rosto monta direto, no
-       estado pedido. */
+       NO SITE, o rosto é só vídeo, gravado do próprio 3D (assets/videos/lisa-<estado>-*, js/cenas.js): parada, ela
+       olha em volta; falando, a boca mexe. Nada é desenhado ao vivo (o rosto 3D, js/lisa-rosto.js, levava ~8 s para
+       compilar em placas integradas e nem é baixado).
+       NA GRAVAÇÃO (index.html?gravar=lisa-pronta|lisa-falando&periodo=N), o rosto 3D monta direto, no estado pedido. */
     var GRAV = window.Cenas && Cenas.gravacao;
     var estadoGravado = GRAV && /^lisa-/.test(GRAV.cena) ? GRAV.cena.slice(5) : null;
     function bocaGravada() {                         // a mesma boca de nivelBoca(), fechando o ciclo no loop
@@ -593,12 +697,25 @@
       if (window.LisaRosto) montar(); else baixarRosto();
     }
 
+    /* gravando a Lisa parada: um "mouse" invisível passeia em volta dela (esquerda, direita, um pouco acima e
+       abaixo, fechando o ciclo no loop), e ela acompanha com o olhar, como faz com o cursor de verdade. O grão do
+       filme fica parado (window.LisaGraoParado, em js/lisa-rosto.js): grão mudando a cada quadro pesa no vídeo. */
+    function olharEmVolta() {
+      window.LisaGraoParado = true;
+      (function passo() {
+        var P = GRAV.periodo || 12, t = Cenas.tempoGravacao(), w = 2 * Math.PI / P, r = palco.getBoundingClientRect();
+        var x = r.left + r.width / 2 + Math.sin(t * w) * r.width * 0.62;
+        var y = r.top + r.height * 0.4 + Math.sin(t * w * 2 + 0.6) * r.height * 0.14;
+        try { window.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y, pointerType: 'mouse' })); } catch (e) { /* sem PointerEvent */ }
+        requestAnimationFrame(passo);
+      })();
+    }
     /* os vídeos de cada estado: o do estado atual fica no ar (e tocando); com o 3D aceso, todos param */
     var videos = null, noAr = null;
     function trocarVideo(forcar) {
       if (!videos) return;
       var e = sinal().estado;
-      if (!videos[e]) e = e === 'ouvindo' ? 'pensando' : 'pronta';
+      if (!videos[e]) e = 'pronta';                 // pensando e ouvindo: o vídeo dela parada, olhando em volta
       if (e === noAr && !forcar) return;
       noAr = e;
       var viva = palco.classList.contains('is-viva');
@@ -608,28 +725,23 @@
       });
     }
     if (window.Cenas && Cenas.emVideo) {
+      // só vídeo (nada de 3D no site): parada, ela olha em volta; falando, a boca mexe
       videos = {};
-      ['pronta', 'falando', 'pensando'].forEach(function (e) {
+      ['pronta', 'falando'].forEach(function (e) {
         videos[e] = Cenas.video({ nome: 'lisa-' + e, lugar: palco, classe: 'lisa-video', alfa: true, posterOpaco: true });   // o palco dela já é quase preto
       });
       trocarVideo(true);
-      setInterval(function () { if (!document.hidden) trocarVideo(false); }, 150);
-      // o 3D: o mouse passando por ela (ou um toque no rosto)
-      var pedirRosto = function () { if (!desmontar && !querMontar) carregar(); };
-      hero.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') pedirRosto(); });
-      palco.parentNode.addEventListener('pointerdown', pedirRosto);
-      if ('IntersectionObserver' in window) {
-        var saida = 0;
-        new IntersectionObserver(function (e) {
-          clearTimeout(saida);
-          if (e[0].isIntersecting || !desmontar) return;
-          saida = setTimeout(desmontarRosto, Math.max(10000, 15000 - (Date.now() - montadoEm)));
-        }, { rootMargin: '250% 0px' }).observe(palco);
-      }
-      // aqui ela só entra no maestro (js/cenas.js), para as outras cenas pararem enquanto ela está na tela
+      // o estado da conversa só é conferido com ela na tela (js/cenas.js: a janela)
+      var conferindo = 0;
+      Cenas.janela.observar(palco, {
+        mostrar: function () { clearInterval(conferindo); trocarVideo(false); conferindo = setInterval(function () { if (!document.hidden) trocarVideo(false); }, 150); },
+        esconder: function () { clearInterval(conferindo); conferindo = 0; }
+      });
+      // aqui ela só entra no maestro (js/cenas.js), para as cenas 3D (os panfletos) pararem enquanto ela está na tela
       Cenas.registrar({ nome: 'lisa', el: palco, peso: 1, fps: 60 });
     } else if (estadoGravado) {
       carregar();                                    // gravando a Lisa: o rosto monta já
+      if (estadoGravado === 'pronta') olharEmVolta();
     } else if (!GRAV) {
       carregar();                                    // sem o sistema de cenas: o 3D direto
     }

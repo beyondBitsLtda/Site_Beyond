@@ -147,10 +147,18 @@
     if (carregou || !paginas.length) return; carregou = true;
     var suf = beco.clientWidth < 900 ? '-sd.webp' : '-hd.webp';
     function fonte(i) { return 'assets/portfolio/outdoor-' + SITES[i].nome + suf; }
-    paginas[0].onload = function () { for (var i = 1; i < paginas.length; i++) paginas[i].src = fonte(i); };
-    paginas[0].src = fonte(0);
+    var primeiro = atual >= 0 && atual < paginas.length ? atual : 0;   // a do site no ar primeiro
+    paginas[primeiro].onload = function () { paginas[primeiro].onload = null; for (var i = 0; i < paginas.length; i++) if (i !== primeiro) paginas[i].src = fonte(i); };
+    paginas[primeiro].src = fonte(primeiro);
   }
-  if ('IntersectionObserver' in window) {
+  // longe da tela, as capturas (cada uma, decodificada, ocupa dezenas de MB) são soltas; voltam ao chegar perto
+  function soltarPaginas() {
+    if (!carregou) return; carregou = false;
+    paginas.forEach(function (img) { img.onload = null; img.removeAttribute('src'); });
+  }
+  if (window.Cenas && Cenas.janela) {
+    Cenas.janela.observar(beco, { carregar: iniciarCarga, soltar: soltarPaginas });
+  } else if ('IntersectionObserver' in window) {
     var obsCarga = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { iniciarCarga(); obsCarga.disconnect(); } }, { rootMargin: '900px 0px' });
     obsCarga.observe(beco);
   } else { iniciarCarga(); }

@@ -220,11 +220,11 @@
    "qp": 34,
    "aquecer": 3,
    "esperaCarga": 16000,
-   "reduzido": true,
    "alfa": true,
    "alfaPorLuz": true,
    "kbps": 190,
-   "kbpsAlfa": 60
+   "kbpsAlfa": 60,
+   "antes": "window.LisaGraoParado = true"
   },
   "lisa-falando-pc": {
    "url": "index.html?gravar=lisa-falando&periodo=6",
@@ -246,66 +246,14 @@
    "qp": 33,
    "aquecer": 3,
    "esperaCarga": 16000,
-   "reduzido": true,
    "alfa": true,
    "alfaPorLuz": true,
    "kbps": 400,
-   "kbpsAlfa": 130
-  },
-  "lisa-pensando-cel": {
-   "url": "index.html?gravar=lisa-pensando&periodo=8",
-   "largura": 390,
-   "altura": 844,
-   "dpr": 2,
-   "escala": 1.5,
-   "alvo": "#lisaPalco",
-   "camadas": [
-    {
-     "sel": "#lisaPalco .lisa-rosto canvas",
-     "alfa": 1
-    }
-   ],
-   "periodo": 8,
-   "fps": 20,
-   "sub": 1,
-   "fundir": 1.5,
-   "qp": 34,
-   "aquecer": 3,
-   "esperaCarga": 16000,
-   "reduzido": true,
-   "alfa": true,
-   "alfaPorLuz": true,
-   "kbps": 180,
-   "kbpsAlfa": 60
-  },
-  "lisa-pensando-pc": {
-   "url": "index.html?gravar=lisa-pensando&periodo=8",
-   "largura": 1920,
-   "altura": 1080,
-   "dpr": 1,
-   "escala": 1,
-   "alvo": "#lisaPalco",
-   "camadas": [
-    {
-     "sel": "#lisaPalco .lisa-rosto canvas",
-     "alfa": 1
-    }
-   ],
-   "periodo": 8,
-   "fps": 20,
-   "sub": 1,
-   "fundir": 1.5,
-   "qp": 33,
-   "aquecer": 3,
-   "esperaCarga": 16000,
-   "reduzido": true,
-   "alfa": true,
-   "alfaPorLuz": true,
-   "kbps": 380,
-   "kbpsAlfa": 120
+   "kbpsAlfa": 130,
+   "antes": "window.LisaGraoParado = true"
   },
   "lisa-pronta-cel": {
-   "url": "index.html?gravar=lisa-pronta&periodo=10",
+   "url": "index.html?gravar=lisa-pronta&periodo=12",
    "largura": 390,
    "altura": 844,
    "dpr": 2,
@@ -317,21 +265,20 @@
      "alfa": 1
     }
    ],
-   "periodo": 10,
+   "periodo": 12,
    "fps": 20,
    "sub": 1,
    "fundir": 1.5,
    "qp": 34,
-   "aquecer": 3,
+   "aquecer": 4,
    "esperaCarga": 16000,
-   "reduzido": true,
    "alfa": true,
    "alfaPorLuz": true,
    "kbps": 170,
    "kbpsAlfa": 60
   },
   "lisa-pronta-pc": {
-   "url": "index.html?gravar=lisa-pronta&periodo=10",
+   "url": "index.html?gravar=lisa-pronta&periodo=12",
    "largura": 1920,
    "altura": 1080,
    "dpr": 1,
@@ -343,14 +290,13 @@
      "alfa": 1
     }
    ],
-   "periodo": 10,
+   "periodo": 12,
    "fps": 20,
    "sub": 1,
    "fundir": 1.5,
    "qp": 33,
-   "aquecer": 3,
+   "aquecer": 4,
    "esperaCarga": 16000,
-   "reduzido": true,
    "alfa": true,
    "alfaPorLuz": true,
    "kbps": 350,
